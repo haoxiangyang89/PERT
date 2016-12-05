@@ -124,7 +124,7 @@ function makeMaster(D,r,H,b,B,ee,II,JJ,SS,GG,dH,dR,p)
     #env = Gurobi.Env();
     #setparams!(env;MIPGap = 1e-8,MIPFocus = 2);
     #solver = GurobiSolver(env);
-    solver = CplexSolver(CPX_PARAM_THREADS = 8);
+    solver = CplexSolver(CPXPARAM_Threads = 3, CPXPARAM_ScreenOutput = 0);
 
     # construct a master problem
     m = Model();
@@ -298,7 +298,7 @@ end
 function fullExt(D,r,H,b,B,ee,II,JJ,SS,GG,dH,dR,p,M)
   m = Model();
   # set up the solver as Cplex
-  solver = CplexSolver(CPX_PARAM_THREADS = 8);
+  solver = CplexSolver(CPXPARAM_Threads = 3, CPXPARAM_ScreenOutput = 0);
 
   @variables(m,begin
       t[i in II, s in SS] >= 0
@@ -388,7 +388,8 @@ function solveSub(xmaster,tmaster,D,rsub,Hsub,b,B,ee,II,JJ,GG,zint)
     zk = 0;
     counter = 0;
     mr = subLagP(xmaster,tmaster,D,Hsub,tau,b,B,ee,II,I1,I2,I3,JJ,GG,lambda1,lambda2,ppi);
-    while (k<=20)&&(!stopBool)
+    solver = CplexSolver(CPXPARAM_Threads = 3, CPXPARAM_ScreenOutput = 0);
+    while (k<=50)&&(!stopBool)
         k += 1;
         @objective(mr,Min,mr.varDict[:tNr]+sum{lambda1[i,j]*(xmaster[i,j] - mr.varDict[:xr1][i,j]),i in I1,j in JJ}
             +sum{lambda2[i,j]*(xmaster[i,j]-mr.varDict[:xr2][i,j]),i in I2,j in JJ}
@@ -471,7 +472,7 @@ function solveSub(xmaster,tmaster,D,rsub,Hsub,b,B,ee,II,JJ,GG,zint)
 end
 
 function solveSub2(xmaster,tmaster,D,rsub,Hsub,b,B,ee,II,JJ,GG,zint,M)
-    # solve the lagrangian relaxation of the subproblem
+    # solve the lagrangian relaxation of the full subproblem
     # categorize each activity and build the (relaxed) subproblem
     I1,I2,I3,tau = obtainIs(xmaster,tmaster,D,rsub,Hsub,b,B,ee,II,JJ,GG);
 

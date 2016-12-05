@@ -1,13 +1,14 @@
 # this is the collection of executions
-include("AllFunc.jl");
+cd("C:\\Documents\\Git\\PERT\\");
+include("AllFunc_Cplex.jl");
 InputAdd = "test_Input_graph_Full.csv";
 D,r,H,b,B,ee,II,JJ,M,SS,GG,dH,dR,p = readIn(InputAdd);
 
-mf = fullExt(D,r,H,b,B,ee,II,JJ,SS,GG,dH,dR,p,M);
-solve(mf);
-mfObj = getobjectivevalue(mf);
-mfX = getvalue(mf.varDict[:x])[:,:,1];
-mft = getvalue(mf.varDict[:t])[:,1];
+#mf = fullExt(D,r,H,b,B,ee,II,JJ,SS,GG,dH,dR,p,M);
+#solve(mf);
+#mfObj = getobjectivevalue(mf);
+#mfX = getvalue(mf.varDict[:x])[:,:,1];
+#mft = getvalue(mf.varDict[:t])[:,1];
 
 # intialize with the solutions
 mi = makeMaster(D,r,H,b,B,ee,II,JJ,SS,GG,dH,dR,p);
@@ -39,6 +40,7 @@ trec = [];
 xfinrec = [];
 tfinrec = [];
 ztight = 0;
+solver = CplexSolver(CPXPARAM_Threads = 3, CPXPARAM_ScreenOutput = 0);
 
 while keepIter
     # obtain the current master solutions
