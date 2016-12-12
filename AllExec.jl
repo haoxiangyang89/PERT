@@ -1,5 +1,5 @@
 # this is the collection of executions
-cd("C:\\Documents\\Git\\PERT\\");
+#cd("C:\\Documents\\Git\\PERT\\");
 include("AllFunc_Cplex.jl");
 InputAdd = "test_Input_graph_Full.csv";
 D,r,H,b,B,ee,II,JJ,M,SS,GG,dH,dR,p = readIn(InputAdd);
@@ -74,7 +74,7 @@ while keepIter
         mlag = subLag(miX,mit,D,rscen[s],H[s],M[s],b,B,ee,II,I1,I2,I3,JJ,GG,lambda1,lambda2,ppi);
         solve(mlag);
         zlag = getobjectivevalue(mlag);
-        if zlag < zlagp - ϵ
+        if abs(zlagp - zlag) < ϵ
             ztight += 1;
         end
       #  xreal1 = getvalue(mlag.varDict[:xre1]);
@@ -117,3 +117,15 @@ end
 fvfin = ub[length(ub)];
 xfin = xfinrec[length(xfinrec)];
 tfin = tfinrec[length(tfinrec)];
+
+# print out the result
+println("---------------------lb--------------------");
+println(lb);
+println("---------------------ub--------------------");
+println(ub);
+println("---------------------x---------------------");
+println(xfin);
+println("---------------------t---------------------");
+println(tfin);
+println("---------------------f---------------------");
+println(fvfin);
