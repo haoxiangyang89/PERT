@@ -1,0 +1,209 @@
+\documentclass[11pt]{article}
+\usepackage[small]{titlesec}
+\usepackage[top = 0.66in,textwidth = 6.5in, textheight=9.1in]{geometry}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{latexsym}
+\usepackage{color}
+\usepackage{amssymb}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{verbatim}
+\usepackage{multirow}
+\usepackage{framed}
+\usepackage{natbib}
+\usepackage{float, subfig}
+\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{mathrsfs}
+\usepackage{amsfonts}
+\usepackage{listings}
+\usepackage{amsthm}
+\usepackage{grffile}
+\usepackage{sidecap}
+\usepackage{pbox}
+
+\def\qed{\hfill{\(\vcenter{\hrule height1pt \hbox{\vrule width1pt height5pt
+     \kern5pt \vrule width1pt} \hrule height1pt}\)} \medskip}
+\allowdisplaybreaks
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\renewcommand{\textfraction}{0.0}
+\newcommand{\dst}{\displaystyle}
+\newcommand{\minx}{\mbox{\( \dst \min_{x \in X} \)}}
+\newcommand{\Efx}{\mbox{\( \dst E f (x, \xi) \)}}
+\newcommand{\Efxhat}{\mbox{\( \dst E f (\hat{x}, \xi) \)}}
+\newcommand{\hxx}{\mbox{\( \hat{x} \)}}
+\newcommand{\bpi}{\bar{\pi}}
+\newcommand{\xx}{\mbox{\( x \)}}
+\newcommand{\txxi}{\mbox{\(\xi\)}}
+\newcommand{\var}{\mbox{var}}
+\newcommand{\cF}{{\cal F}}
+\newcommand{\cG}{{\cal G}}
+\newcommand{\cN}{{\cal N}}
+\newcommand{\cO}{{\cal O}}
+\newcommand{\txi}{{\xi}}
+\newcommand{\PP}{\mbox{\(SP\)}}
+\newcommand{\PPn}{\mbox{\(SP_n\)}}
+\newcommand{\PPnx}{\mbox{\(SP_{n_x}\)}}
+\newcommand{\noi}{\noindent}
+\renewcommand{\ss}{\smallskip}
+\newcommand{\ms}{\medskip}
+\newcommand{\bs}{\bigskip}
+\newcommand{\st}{\mbox{s.t.}}
+\newcommand{\wpo}{\mbox{wp1}}
+\newcommand{\iid}{\mbox{i.i.d.\ }}
+\newcommand{\vsmo}{\vspace*{-0.1in}}
+\newcommand{\vsmt}{\vspace*{-0.2in}}
+\newcommand{\vso}{\vspace*{0.1in}}
+\newcommand{\vst}{\vspace*{0.2in}}
+\newcommand{\mc}{\multicolumn}
+\newcommand{\cP}{{\cal P}}
+\newcommand{\underv}{\mbox{$\underbar{$v$}$}}
+%\allowdisplaybreaks 
+
+\renewcommand{\P}{{\mathbb P}}
+\newcommand{\E}{{\mathbb E}}
+\newcommand{\R}{{\mathbb R}}
+\renewcommand{\Re}{{\mathbb R}}
+
+\bibliographystyle{plain}
+
+\begin{document}
+%0.27
+\baselineskip0.25in
+
+\begin{center}
+\begin{large}
+\begin{bf}
+
+Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
+
+Haoxiang Yang \ms
+
+\today \ms
+\end{bf}
+\end{large}
+\end{center}
+
+\section{Introduction to the Project Management Problem with Disruptions}
+A project could be viewed as a collection of activities, each of which will consume some time and resources. There will be precedence relationships between activities due to logical or technological considerations. The objective is to find the smallest amount of time needed to finish all activities. The project could be represented as an activity network where the length of each link shows the duration of an activity, and the direction of it shows the precedence relationship. An activity cannot start until all its predecessors are completed. Two dummy nodes \((S,T)\) are created in the network to represent the start and the end of the project. In the network setting with no uncertainty, finding the shortest project span is equivalent to finding the longest path from \(S\) to \(T\). Since the activity network is usually acyclic, it is easy to use shortest path algorithms to find a longest path in polynomial time. More details about the activity network are discussed in \cite{Elmaghraby77}.\\
+\newline In the planning stage of a project, a set of decisions can be made to crash a certain set of activities. Here crashing an activity means accelerating its progress or compress its duration. In this paper, a discrete set of crashing options will be given to the decision makers, each with a fractional number which equals to the crashed duration divided by the original duration. One project can only be crashed once with one specific option. Each option will incur a certain cost as well and the total cost of crashing could not exceed the budget.\\
+\newline In this paper, we focus on the perspective of time and we assume that multiple projects can be processed at the same time without a upper limit, as long as the precedence requirement is satisfied. A disruption is an event that may occur any time in the time horizon and will significantly affect the duration of all activities. The number of disruption is limited to one for this paper. We assume before the disruption the original duration of all activities are deterministic and given. The distribution of the timing for the disruption is known as well. Once the disruption occurs, the duration of all unfinished activities will be revealed.
+
+\section{A Motivating Example}
+V-42 problem goes here.
+
+\section{Stochastic Program Formulations} \label{formulation}
+In this section we will discuss a scenario in which the disruption does not affect the activities that have already started. Under this scenario, if an activity starts before the disruption time, the duration of that activity is deterministic and known as the original activity duration. If an activity is started after the disruption, the activity will have a new duration, which is a random number according to a known distribution. Additionally, we are considering a finite discrete distribution for the duration after disruption of every activity. The decision of crashing has to be made the same time when the activity starts and cannot be changed after that.\\
+\newline The notation for the model is displayed as follows:
+\begin{table}[H]
+	\begin{tabular}{ l l l l }
+		\multicolumn{4}{l}{Indices and index sets} \\
+		\\
+		\(I\) & \(\qquad\) & the set of activities;&\\
+		\(J\) & \(\qquad\) & the set of crashing options;&\\
+		\(\Omega\) & \(\qquad\) & the set of possible realizations of disruption;&\\
+		\\
+		\multicolumn{4}{l}{Parameters} \\
+		\\
+		\(D_{i}\)& \(\qquad\) & original duration of activity \(i\), \(i \in I\);&\\
+		\(e_{j}\) & \(\qquad\) & effectiveness of crashing option \(j\), \(j \in J\);&\\
+		\(B\) & \(\qquad\) & total budget;&\\
+		\(b_{j}\) & \(\qquad\) & cost of crashing option \(j\), \(j \in J\);&\\
+		\(\mathcal{A}\) &\(\qquad\) & set of arcs which represents the precedence relationship;&\\
+		\(H^\omega\) &\(\qquad\) & disruption time in realization \(\omega\), \(\omega \in \Omega\);&\\
+		\\
+		\multicolumn{4}{l}{Decision Variables}\\
+		\\
+		\(t_{i}\) & \(\qquad\) & original starting time of activity \(i\);&\\
+		\(x_{ij}\) & \(\qquad\) & indicator whether activity \(i\) is crashed by option \(j\) in the original plan; &\\
+		\(F_i^\omega\) & \(\qquad\) & indicator whether activity \(i\) starts before disruption in realization \(\omega\);&\\
+		\(G_i^\omega\) & \(\qquad\) & indicator whether activity \(i\) starts after disruption in realization \(\omega\);&\\
+		\(\tilde{F}_i^\omega\) & \(\qquad\) & indicator whether activity \(i\) ends when disruption occurs in realization \(\omega\); &\\
+		\(\tilde{G}_i^\omega\) & \(\qquad\) & indicator whether activity \(i\) ends when disruption occurs in realization \(\omega\); &\\
+	\end{tabular}
+\end{table}
+
+\noi Given the assumption that only one disruption will occur, we can model the problem as a two stage stochastic mixed integer program. We assume after disruption the duration of activity \(i\) will be \(D_i + d_i^\omega \geq 0\) in realization \(\omega\). The master program can be displayed as follows:
+	\begin{subequations}
+		\begin{align}
+			\min \quad & \sum_{\omega \in \Omega} f^\omega(t,x) &\\
+			\text{s.t.} \quad & t_k - t_i \geq D_i(1 - \sum_{j \in J} e_jx_{ij}) & \forall (i,k) \in \mathcal{A}\\
+			& \sum_{j \in J} x_{ij} \leq 1 & \forall i \in I\\
+			& \sum_{i \in I}\sum_{j \in J} b_jx_{ij} \leq B &\\
+			& x_{ij} \in \{0,1\} & \forall i \in I, j \in J
+		\end{align}
+		\label{masterOrigin}
+	\end{subequations}
+And the subproblem is formed in the following way. Here we set up two status variables \(F_i^\omega, G_i^\omega\) for each activity under every circumstance to indicator whether it starts before or after the disruption, since the relationship between the starting time and the disruption time decides the length of that activity.
+	\begin{subequations}
+		\begin{align}
+			f^\omega(t,x) = \min \quad & t_N^\omega &\\
+			\text{s.t.} \quad & H^\omega - F_i^\omega M \leq t_i & \forall i \in I\\
+			& H^\omega + G_i^\omega M \geq t_i & \forall i \in I\\
+			& F_i^\omega + G_i^\omega = 1 & \forall i \in I\\
+			& t_i^\omega + (1 - F_i^\omega)M \geq t_i & \forall i \in I\\
+			& t_i^\omega - (1 - F_i^\omega)M \leq t_i & \forall i \in I\\
+			& x_{ij}^\omega + (1 - F_i^\omega) \geq x_{ij} & \forall i \in I, j \in J \\
+			& x_{ij}^\omega - (1 - F_i^\omega) \leq x_{ij} & \forall i \in I, j \in J \\
+			& t_N^\omega \geq t_i^\omega & \forall i \in I\\
+			& t_k^\omega - t_i^\omega \geq (D_i + d_i^\omega G_i^\omega)(\sum_{j \in J} e_jx_{ij}^\omega) & \forall i \in I, j \in J \label{constr:Duration}\\
+			& \sum_{j \in J} x_{ij}^\omega \leq 1 & \forall i \in I \\
+			& \sum_{i \in I}\sum_{j \in J} b_jx_{ij}^\omega \leq B & \forall \omega \in \Omega\\
+			& x_{ij}^\omega \in \{0,1\} & \forall i \in I, j \in J\\
+			& t_{i}^\omega \geq 0 & \forall i \in I, j \in J
+		\end{align}
+	\end{subequations}
+In this formulation, the right hand side of constraint (\ref{constr:Duration}) is not a linear expression of the decision variables. However, since both \(G_i^\omega\) and \(x_{ij}^\omega\) are binary variables, it is possible to linearize this constraint by letting \(Z_{ij}^\omega\) represent \(G_i^\omega x_{ij}^\omega\):
+	\begin{subequations}
+		\begin{align*}
+		& Z_{ij}^\omega \leq G_i^\omega & \forall i \in I, j \in J\\
+		& Z_{ij}^\omega \leq x_{ij}^\omega & \forall i \in I, j \in J\\
+		& Z_{ij}^\omega \geq x_{ij}^\omega + G_i^\omega - 1 & \forall i \in I, j \in J
+		\end{align*}
+	\end{subequations}
+
+\section{Decomposition Method to Solve the Stochastic Program}
+In this section we create a decomposition method for the problem in Section~\ref{formulation}, where the disruption affects the unfinished part of the activities that have started by the time of disruption. Same procedure can be applied to the other two cases.\\
+\newline 
+The second stage problem, as stated in Section~\ref{formulation}, is a mixed integer program (MIP) with both binary variables and continuous variables passing down from the master problem. This problem is neither convex nor continuous. This type of stochastic mixed integer problem has been studied by many researchers. Primal methods are derived using Benders-like cuts to characterize the second stage function. \cite{laporte1993integer} developed an integer L-shaped method to solve two stage stochastic programs with only binary first stage variables and complete recourse. More recently, \cite{zou2016nested} proposed a type of Lagrangian cuts and strengthened Benders cuts to solve multi-stage stochastic integer programs with binary state variables. The Lagrangian cuts are tight at the feasible previous stage solution, valid globally and finite. On the other side, dual methods are also widely used, especially in solving multi-stage stochastic mixed integer problems. Progressive hedging method has been successfully used in many occasions \textcolor{blue}{(add citations here about the dual method)}. In general, it is hard to come up with a lower approximation tight at the solution, especially when our state variables contain both binary ones and continuous ones. However, it is possible to come up with a lower approximation scheme based on dualization.\\
+\newline 
+Here we write down the master program again, with linear constraints (\ref{cuts}) that form a lower approximation of the second stage problem. 
+	\begin{subequations}
+		\begin{align}
+			\min \quad & \sum_{\omega \in \Omega} \theta^\omega &\\
+			\text{s.t.} \quad & t_k - t_i \geq D_i(\sum_{j \in J} e_jx_{ij}) & \forall (i,k) \in \mathcal{A}\\
+			& \sum_{j \in J} x_{ij} \leq 1 & \forall i \in I\\
+			& \sum_{i \in I}\sum_{j \in J} b_jx_{ij} \leq B &\\
+			& \theta^{\omega} \geq v_{s}^\omega + \sum_{i \in I}\sum_{j \in J}\lambda_{ij,s}^\omega (x_{ij} - \hat{x}_{ij,s}) + \sum_{i \in I} \pi_{i,s}^\omega(t_i - \hat{t}_i)& s = 1,2,\dots \label{cuts}\\
+			& x_{ij} \in \{0,1\} & \forall i \in I, j \in J
+		\end{align}
+		\label{master}
+	\end{subequations}
+Solving this master program will yield a lower bound of the original problem (\ref{masterOrigin}). If the cuts can characterize the function, that is, if \[f^\omega(t,x) = \max_{s} v_{s}^\omega + \sum_{i \in I}\sum_{j \in J}\lambda_{ij,s}^\omega (x_{ij} - \hat{x}_{ij,s}) + \sum_{i \in I} \pi_{i,s}^\omega(t_i - \hat{t}_i) \qquad \forall \omega \in \Omega\]
+for all feasible \(x\) and \(t\), then solving problem (\ref{master}) will be equivalent to solving the original problem. However, since \(t\) is continuous and \(f^\omega\) is a non-convex function in \(t\), it is impossible to use a set of linear cuts to approximate \(f^\omega\). So the optimal value of problem (\ref{master}) is strictly less than that of problem (\ref{masterOrigin}).\\
+\newline 
+Although solving the transformation of the original problem only provides a lower bound, it might still lead to an optimal solution. \textcolor{blue}{We would like to derive an algorithm that terminates in finite number of iterations to one optimal solution.}\\
+\textcolor{blue}{Remaining Points:
+	\begin{itemize}
+		\item write down the algorithm to generate a good solution
+		\item describe the computational result of the optimality gap
+		\item describe the comparison between the disruption model and the deterministic model
+		\item prove how loose the lagrangian cut method can be
+		\item assume if every activity needs to start as soon as all its prerequisites have finished
+		\item assume continuous x: could we get rid of all binary variables?
+	\end{itemize}
+}
+
+\bibliographystyle{plain}
+\bibliography{PERT_Bib}
+
+\end{document}
