@@ -1,0 +1,124 @@
+\documentclass[11pt]{article}
+\usepackage[small]{titlesec}
+\usepackage[top = 0.66in,textwidth = 6.5in, textheight=9.1in]{geometry}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{latexsym}
+\usepackage{color}
+\usepackage{amssymb}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{verbatim}
+\usepackage{multirow}
+\usepackage{framed}
+\usepackage{natbib}
+\usepackage{float, subfig}
+\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{mathrsfs}
+\usepackage{amsfonts}
+\usepackage{listings}
+\usepackage{amsthm}
+\usepackage{grffile}
+\usepackage{sidecap}
+\usepackage{pbox}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+\def\qed{\hfill{\(\vcenter{\hrule height1pt \hbox{\vrule width1pt height5pt
+     \kern5pt \vrule width1pt} \hrule height1pt}\)} \medskip}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}
+\renewcommand{\textfraction}{0.0}
+\newcommand{\dst}{\displaystyle}
+\newcommand{\minx}{\mbox{\( \dst \min_{x \in X} \)}}
+\newcommand{\Efx}{\mbox{\( \dst E f (x, \xi) \)}}
+\newcommand{\Efxhat}{\mbox{\( \dst E f (\hat{x}, \xi) \)}}
+\newcommand{\hxx}{\mbox{\( \hat{x} \)}}
+\newcommand{\bpi}{\bar{\pi}}
+\newcommand{\xx}{\mbox{\( x \)}}
+\newcommand{\txxi}{\mbox{\(\xi\)}}
+\newcommand{\var}{\mbox{var}}
+\newcommand{\cF}{{\cal F}}
+\newcommand{\cG}{{\cal G}}
+\newcommand{\cN}{{\cal N}}
+\newcommand{\cO}{{\cal O}}
+\newcommand{\txi}{{\xi}}
+\newcommand{\PP}{\mbox{\(SP\)}}
+\newcommand{\PPn}{\mbox{\(SP_n\)}}
+\newcommand{\PPnx}{\mbox{\(SP_{n_x}\)}}
+\newcommand{\noi}{\noindent}
+\renewcommand{\ss}{\smallskip}
+\newcommand{\ms}{\medskip}
+\newcommand{\bs}{\bigskip}
+\newcommand{\st}{\mbox{s.t.}}
+\newcommand{\wpo}{\mbox{wp1}}
+\newcommand{\iid}{\mbox{i.i.d.\ }}
+\newcommand{\vsmo}{\vspace*{-0.1in}}
+\newcommand{\vsmt}{\vspace*{-0.2in}}
+\newcommand{\vso}{\vspace*{0.1in}}
+\newcommand{\vst}{\vspace*{0.2in}}
+\newcommand{\mc}{\multicolumn}
+\newcommand{\cP}{{\cal P}}
+\newcommand{\underv}{\mbox{$\underbar{$v$}$}}
+%\allowdisplaybreaks 
+
+\renewcommand{\P}{{\mathbb P}}
+\newcommand{\E}{{\mathbb E}}
+\newcommand{\R}{{\mathbb R}}
+\renewcommand{\Re}{{\mathbb R}}
+\newcommand{\mbf}{\mathbf}
+
+\bibliographystyle{plain}
+
+\begin{document}
+%0.27
+\baselineskip0.25in
+
+\begin{center}
+\begin{large}
+\begin{bf}
+
+Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
+
+\today \ms
+\end{bf}
+\end{large}
+\end{center}
+
+\section{Introduction}
+	\begin{itemize}
+		\item Literature review: PERT set up, applications.
+		\item Literature review: stochastic disruptions.
+		\item Paper structure.
+	\end{itemize}
+\section{Problem Formulation}
+	\begin{itemize}
+		\item Static PERT problem formulation/ Stochastic PERT literature review: simulation optimization/ Distributionally robust: Natarajan
+		\item Assumptions: not affected by the disruption once started.
+		\item Formulation: extensive, master, sub
+	\end{itemize}
+\section{Decomposition Method}
+	\begin{itemize}
+		\item Cut generation
+		\item Branch and bound method
+	\end{itemize}
+\section{Computational Results}
+\section{Conclusions}
+	\begin{itemize}
+		\item Contributions
+		\item Further directions
+	\end{itemize}
+
+\bibliographystyle{plain}
+\bibliography{PERT_Bib}
+
+\end{document}
