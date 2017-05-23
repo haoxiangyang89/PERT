@@ -94,25 +94,39 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 \end{large}
 \end{center}
 
-\section{Introduction}
+\section{Introduction} \label{sec:intro}
 	\begin{itemize}
 		\item Literature review: PERT set up, applications.
 		\item Literature review: stochastic disruptions.
 		\item Paper structure.
 	\end{itemize}
-\section{Problem Formulation}
+	\textcolor{blue}{One sentence background/history on project management.} A project could be viewed as a collection of activities, each of which will consume some time and resources. There will be precedence relationships between activities due to logical or technological considerations. The objective is to find the smallest amount of time needed to finish all activities. The project could be represented as an activity network where the length of each link shows the duration of an activity, and the direction of it shows the precedence relationship. An activity cannot start until all its predecessors are completed. Two dummy nodes \((S,T)\) are created in the network to represent the start and the end of the project. In the network setting with no uncertainty, finding the shortest project span is equivalent to finding the longest path from \(S\) to \(T\). Since the activity network is usually acyclic, it is easy to use shortest path algorithms to find a longest path in polynomial time. Multiple projects can be processed at the same time without a upper limit, as long as the precedence requirement is satisfied. More details about the activity network are discussed in \cite{Elmaghraby77}.\\
+	\newline 
+	In the planning stage of a project, decisions can be made to crash a certain set of activities in order to achieve the shortest project span. Here crashing an activity means accelerating its progress or compress its duration. In this paper, a discrete set of crashing options will be given to the decision makers, each with a fractional number which equals to the crashed duration divided by the original duration. One project can only be crashed once with one specific option. Each option will incur a certain cost as well and the total cost of crashing could not exceed the budget. Static crashing optimization problem is first researched in \textcolor{blue}{list the original crashing problem literature} and then extended to incorporate uncertainty of activity durations in \textcolor{blue}{list the stochastic crashing optimization problems.}\\
+	\newline
+	The uncertainty in our paper lies in the timing and the magnitude of the stochastic disruption, which is modeled in a different way from the random variable distribution in the stochastic programming setting, or from the uncertainty set in the robust optimization setting. A stochastic disruption is an event that may occur any time in the time horizon and change the system parameters significantly. \textcolor{blue}{list the past papers about the (lacked) work in the stochastic disruption}.\\
+	\newline
+	Since it is a new model of uncertainty, we first formally describe the crashing optimization problem with disruptions. Given the limited number of disruption occurrence, the problem can be formulated as a stochastic mixed integer program and we will present the extensive formulation in Section~\ref{sec:formulation}. The large scale and the discrete non-convex nature of the extended formulation means it may not be solved efficiently to desirable tolerance level. In Section~\ref{sec:decomposition}, a branch-and-bound method based on Benders decomposition is developed to solve the crashing optimization problem with a disruption. We show such a decomposition method will solve the integer program to the exactness within finite number of iterations. \\
+	\newline
+	The experiment results are presented in Section~\ref{sec:results}, including the comparison between the quality of our solution and the static solution obtained by solving the crashing optimization, and the time improvement by using the decomposition method in Section~\ref{sec:decomposition} compared to solving the extensive formulation. The experiment result shows \textcolor{blue}{append summary of the experiment results here.} We will conclude our paper with remarks on potential extensions of this model in Section~\ref{sec:conclusions}.
+	
+\section{Problem Formulation} \label{sec:formulation}
 	\begin{itemize}
 		\item Static PERT problem formulation/ Stochastic PERT literature review: simulation optimization/ Distributionally robust: Natarajan
 		\item Assumptions: not affected by the disruption once started.
-		\item Formulation: extensive, master, sub
 	\end{itemize}
-\section{Decomposition Method}
+	Suppose at most one stochastic disruption will occur in the entire project span. When the disruption happens is a random variable, of which the distribution is known to us. The stochastic disruption 
+	
+\section{Decomposition Method} \label{sec:decomposition}
 	\begin{itemize}
+		\item Formulation: extensive, master, sub
 		\item Cut generation
 		\item Branch and bound method
 	\end{itemize}
-\section{Computational Results}
-\section{Conclusions}
+
+\section{Computational Results} \label{sec:results}
+
+\section{Conclusions} \label{sec:conclusions}
 	\begin{itemize}
 		\item Contributions
 		\item Further directions
