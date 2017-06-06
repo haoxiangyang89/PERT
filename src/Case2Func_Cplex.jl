@@ -4,8 +4,10 @@ using JuMP,Distributions,CPLEX;
 function readIn(InputAdd)
     # no of activities
     data = readdlm(InputAdd,',');
+    # number of events
     lI = data[1,1];
     II = 1:lI;
+    # number of crashing options
     lJ = data[1,1];
     J = 1:data[1,2];
     row = 3;
@@ -99,11 +101,14 @@ function readIn(InputAdd)
     # the number of scenarios
     row += 1;
     S = data[row,1] + 1;
+    # the probability of no disruption
     p = data[row,2];
     M = Dict();
 
     for s in 2:S
+      # generate a disruption time
         H[s] = round(rand(distrH),4);
+        # if the disruption time is larger than the entire project span, resample
         while H[s] > 97
             H[s] = round(rand(distrH),4);
         end
@@ -114,6 +119,7 @@ function readIn(InputAdd)
     end
     H[1] = maximum(values(M));
     M[1] = 2*sum(values(D));
+    # set of scenarios
     SS = 1:S;
 
     return D,r,H,b,B,ee,II,J,M,SS,G,distrH,disRList,p
