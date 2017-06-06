@@ -44,11 +44,12 @@ function readIn(InputAdd)
     end
 
     # sample according to the distribution
-    r = Dict();
+    d = Dict();
     H = Dict();
     # no disruption in first scenario
 
     # first read in the distribution names and then the parameters
+    # information about the disruption time
     row += 1;
     Hname = data[row,1];
     if Hname == "Exponential"
@@ -67,6 +68,8 @@ function readIn(InputAdd)
         ub = data[row,3];
         distrH = Uniform(la,ub+1e-10);
     end
+
+    # information about the disruption magnitude
     row += 1;
     rname = data[row,1];
     row += 1;
@@ -80,7 +83,7 @@ function readIn(InputAdd)
         end
         disRList = Dict();
         for i in II
-            r[i,1] = 1;
+            d[i,1] = 0;
             disRList[i] = Uniform(la[i],ub[i]+1e-10);
         end
     elseif rname == "LogNormal"
@@ -93,7 +96,7 @@ function readIn(InputAdd)
         end
         disRList = Dict();
         for i in II
-            r[i,1] = 1;
+            d[i,1] = 0;
             disRList[i] = LogNormal(μ,σ);
         end
     end
@@ -113,7 +116,7 @@ function readIn(InputAdd)
             H[s] = round(rand(distrH),4);
         end
         for i in II
-            r[i,s] = round(rand(disRList[i]),4);
+            d[i,s] = round(rand(disRList[i]),4);
         end
         M[s] = sum(values(D))*maximum([r[i,s] for i in II]);
     end
@@ -122,5 +125,5 @@ function readIn(InputAdd)
     # set of scenarios
     SS = 1:S;
 
-    return D,r,H,b,B,ee,II,J,M,SS,G,distrH,disRList,p
+    return D,d,H,b,B,ee,II,J,M,SS,G,distrH,disRList,p
 end

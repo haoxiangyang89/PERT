@@ -1,6 +1,6 @@
-# this is the collection of executions
+# this is the collection of executions for case 2: the disruption affects the remaining events
 #cd("C:\\Documents\\Git\\PERT\\");
-include("AllFunc_Cplex.jl");
+include("Case2Func_Cplex.jl");
 InputAdd = "test_Input_graph_Full.csv";
 D,r,H,b,B,ee,II,JJ,M,SS,GG,dH,dR,p = readIn(InputAdd);
 
