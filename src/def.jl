@@ -4,8 +4,15 @@ type nodeType
   nodeID :: Int64
   lbCost :: Float64
   ubCost :: Float64
-  # Lagrangian cuts
-  LC :: Array{Any,1}
-  # branch-and-bound constraints
-  SC :: Array{Any,1}
+  mp :: JuMP.Model
+end
+
+type LagCut
+  s :: Int64
+  # coefficients for t
+  πl :: Dict{Any,Any}
+  # coefficients for t
+  λl :: Dict{Any,Any}
+  # constant term
+  z :: Float64
 end
