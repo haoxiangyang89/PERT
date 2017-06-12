@@ -130,9 +130,9 @@ end
 
 # function to create the basic version of the master program
 function createMaster(D,d,b,B,ee,II,JJ,SS,GG,p)
-  mp = Model(solver = CplexSolver(CPXPARAM_ScreenOutput = 0));
+  mp = Model(solver = CplexSolver());
   @variables(mp, begin
-    θ[s in SS;s >= 2]
+    θ[s in SS;s >= 2] >= 0
     x[i in II,j in JJ], Bin
     t[i in II] >= 0
     tN >= 0
@@ -141,7 +141,7 @@ function createMaster(D,d,b,B,ee,II,JJ,SS,GG,p)
   @constraint(mp, durationConstr[g in GG], t[g[2]] - t[g[1]] >= D[g[1]]*(1-sum(ee[j]*x[g[1],j] for j in JJ)));
   @constraint(mp, tNConstr[i in II], tN >= t[i]);
   @constraint(mp, xConstr[i in II], sum(x[i,j] for j in JJ) <= 1);
-  @objective(mp,Min,p*tN + sum(1/(length(SS)-1)*θ[s] for s in SS if s >= 2));
+  @objective(mp,Min,p*tN + sum((1 - p)/(length(SS)-1)*θ[s] for s in SS if s >= 2));
 
   return mp;
 end
@@ -188,13 +188,15 @@ function subInt(xs,ts,D,b,B,ee,II,I1,I2,dscen,JJ,GG)
     t[i in II] >= 0
     tN >= 0
   end);
-  @constraint(mp, budgetConstr, sum(sum(b[i,j]*x[i,j] for j in JJ) for i in II) <= B);
-  @constraint(mp, durationConstr1[g in GG;g[1] in I1], t[g[2]] - t[g[1]] >= D[g[1]]*(1-sum(ee[j]*x[g[1],j] for j in JJ)));
-  @constraint(mp, durationConstr2[g in GG;g[1] in I2], t[g[2]] - t[g[1]] >= (D[g[1]]+dscen[g[1]])*(1-sum(ee[j]*x[g[1],j] for j in JJ)));
-  @constraint(mp, tNConstr[i in II], tN >= t[i]);
-  @constraint(mp, xConstr[i in II], sum(x[i,j] for j in JJ) <= 1);
-  @constraint(mp, tConstant[i in I1], t[i] == ts[i]);
-  @constraint(mp, xConstant[i in I1, j in JJ], x[i,j] == xs[i,j]);
+  @constraint(sip, budgetConstr, sum(sum(b[i,j]*x[i,j] for j in JJ) for i in II) <= B);
+  @constraint(sip, durationConstr1[g in GG;g[1] in I1], t[g[2]] - t[g[1]] >= D[g[1]]*(1-sum(ee[j]*x[g[1],j] for j in JJ)));
+  @constraint(sip, durationConstr2[g in GG;g[1] in I2], t[g[2]] - t[g[1]] >= (D[g[1]]+dscen[g[1]])*(1-sum(ee[j]*x[g[1],j] for j in JJ)));
+  @constraint(sip, tNConstr[i in II], tN >= t[i]);
+  @constraint(sip, xConstr[i in II], sum(x[i,j] for j in JJ) <= 1);
+  @constraint(sip, tConstant[i in I1], t[i] == ts[i]);
+  @constraint(sip, xConstant[i in I1, j in JJ], x[i,j] == xs[i,j]);
+
+  @objective(sip,Min,tN);
   return sip;
 end
 
@@ -212,7 +214,7 @@ function subLagP(D,dscen,b,B,ee,II,I1,I2,JJ,GG)
   @constraint(spLp,durationConstr1[g in GG; g[1] in I1], t[g[2]] - t[g[1]] >= D[g[1]]*(1-sum(ee[j]*x1[g[1],j] for j in JJ)));
   @constraint(spLp,durationConstr2[g in GG; g[1] in I2], t[g[2]] - t[g[1]] >= (D[g[1]]+dscen[g[1]])*(1-sum(ee[j]*x2[g[1],j] for j in JJ)));
   @constraint(spLp,xConstr1[i in I1], sum(x1[i,j] for j in JJ) <= 1);
-  @constraint(spLp,xConstr2[i in I1], sum(x2[i,j] for j in JJ) <= 1);
+  @constraint(spLp,xConstr2[i in I2], sum(x2[i,j] for j in JJ) <= 1);
   @constraint(spLp,budgetConstr, sum(sum(b[i,j]*x1[i,j] for j in JJ) for i in I1) + sum(sum(b[i,j]*x2[i,j] for j in JJ) for i in I2) <= B);
 
   return spLp;
@@ -233,7 +235,7 @@ function subLag(xs,ts,D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG,πle,λle)
     G[i in II], Bin
     # S is the linearization of the G[i]*z[i,j]
     S[i in II, j in JJ], Bin
-  );
+  end);
   @constraint(spL, tNConstr[i in II], tN >= τ[i]);
   @constraint(spL, FLogic[i in II], td - F[i]*M <= t[i]);
   @constraint(spL, GLogic[i in II], td + G[i]*M >= t[i]);
@@ -245,7 +247,7 @@ function subLag(xs,ts,D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG,πle,λle)
   @constraint(spL, durationConstr[g in GG], τ[g[2]] - τ[g[1]] >= (D[g[1]] + dscen[g[1]]*G[g[1]]) -
                     sum(D[g[1]]*ee[j]*z[g[1],j] for j in JJ) - sum(dscen[g[1]]*ee[j]*S[g[1],j] for j in JJ));
   @constraint(spL, xConstr[j in JJ], sum(z[i,j] for j in JJ) <= 1);
-  @constraint(spL, budgetConstr, sum(sum(b[i,j]*z[i,j] for j in JJ) for i in II));
+  @constraint(spL, budgetConstr, sum(sum(b[i,j]*z[i,j] for j in JJ) for i in II) <= B);
   # linearization constraints
   @constraint(spL, Slinear1[i in II, j in JJ], S[i,j] <= G[i]);
   @constraint(spL, Slinear2[i in II, j in JJ], S[i,j] <= z[i,j]);
@@ -278,61 +280,95 @@ function solveSub(xs,ts,D,dscen,td,b,B,ee,II,JJ,GG,zint)
   zk = 0;
   counter = 0;
   mr = subLagP(xs,ts,D,dscen,td,b,B,ee,II,I1,I2,JJ,GG);
-  while (k<=50)&(!stopBool)
+  while (k<=100)&(!stopBool)
     k += 1;
     @objective(mr,Min,mr.varDict[:tN] - sum(πls[i]*(mr.varDict[:t][i] - ts[i]) for i in I1)
                 - sum(sum(λls[i,j]*(mr.varDict[:x1][i,j] - xs[i,j]) for j in JJ) for i in I1));
-    solve(mr);
-    xk1 = getvalue(mr.varDict[:x1]);
-    tk = getvalue(mr.varDict[:t]);
-    if getobjectivevalue(mr) > zk
-        counter = 0;
-    else
-        counter += 1;
-    end
-    if counter >= 5
-        μ = μ/2;
-    end
-    zk = getobjectivevalue(mr);
+    mrStatus = solve(mr);
+    if mrStatus != :Unbounded
+      xk1 = getvalue(mr.varDict[:x1]);
+      tk = getvalue(mr.varDict[:t]);
+      if getobjectivevalue(mr) > zk
+          counter = 0;
+      else
+          counter += 1;
+      end
+      if counter >= 5
+          μ = μ/2;
+      end
+      zk = getobjectivevalue(mr);
 
-    # check if there is still room for improvement
-    stopTemp = true;
-    for j in JJ
+      # check if there is still room for improvement
+      stopTemp = true;
+      for j in JJ
+        for i in I1
+          if abs(xk1[i,j] - xs[i,j]) >= 1e-5
+              stopTemp = false;
+          end
+        end
+      end
       for i in I1
-        if abs(xk1[i,j] - xs[i,j]) >= 1e-5
-            stopTemp = false;
+        if abs(tk[i] - ts[i]) >= 1e-5
+          stopTemp = false;
         end
       end
-    end
-    for i in I1
-      if abs(tk[i] - ts[i]) >= 1e-5
-        stopTemp = false;
+      # if there is still room for improvement, calculate the direction of improving λ and π
+      if !stopTemp
+          denomSum = 0;
+          for i in I1
+            denomSum += (ts[i] - tk[i])^2;
+          end
+          for j in JJ
+            for i in I1
+              denomSum += (xs[i,j] - xk1[i,j])^2;
+            end
+          end
+          # obtain the step length according to Held and Karp
+          ν = (zint - zk)/denomSum*μ;
+          # update the lambdas and ppis
+          for i in I1
+              πls[i] += ν*(ts[i] - tk[i]);
+          end
+          for j in JJ
+            for i in I1
+              λls[i,j] += ν*(xs[i,j] - xk1[i,j]);
+            end
+          end
+      else
+        stopBool = true;
       end
-    end
-    # if there is still room for improvement, calculate the direction of improving λ and π
-    if !stopTemp
-        denomSum = 0;
-        for i in I1
-          denomSum += (ts[i] - tk[i])^2;
-        end
-        for j in JJ
-          for i in I1
-            denomSum += (xs[i,j] - xk1[i,j])^2;
-          end
-        end
-        # obtain the step length according to Held and Karp
-        ν = (zint - zk)/denomSum*μ;
-        # update the lambdas and ppis
-        for i in I1
-            πls[i] += ν*(ts[i] - tk[i]);
-        end
-        for j in JJ
-          for i in I1
-            λls[i,j] += ν*(xs[i,j] - xk1[i,j]);
-          end
-        end
     else
-      stopBool = true;
+      # if the Lagrangian relaxation is Unbounded
+      for i in I1
+          πls[i] -= ν*(ts[i] - tk[i]);
+      end
+      for j in JJ
+        for i in I1
+          λls[i,j] -= ν*(xs[i,j] - xk1[i,j]);
+        end
+      end
+      μ = μ/2;
+      denomSum = 0;
+      for i in I1
+        denomSum += (ts[i] - tk[i])^2;
+      end
+      for j in JJ
+        for i in I1
+          denomSum += (xs[i,j] - xk1[i,j])^2;
+        end
+      end
+      # obtain the step length according to Held and Karp
+      ν = (zint - zk)/denomSum*μ;
+      # update the lambdas and ppis
+      for i in I1
+          πls[i] += ν*(ts[i] - tk[i]);
+      end
+      for j in JJ
+        for i in I1
+          λls[i,j] += ν*(xs[i,j] - xk1[i,j]);
+        end
+      end
+      k -= 1;
     end
   end
 

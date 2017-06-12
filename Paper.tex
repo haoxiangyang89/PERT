@@ -119,12 +119,12 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 	\begin{subequations} \label{prob:static}
 		\begin{align}
 			\min \quad & t_N &\\
-			\text{s.t.} \quad & t_k - t_i \geq D_{i}(1 - \sum_{j \in J_i} y_{ij} e_{ij}) & \forall i \in I, (i,k) \in \mathcal{A}\\
+			\text{s.t.} \quad & t_N \geq t_i & \forall i \in I \\
+			& t_k - t_i \geq D_{i}(1 - \sum_{j \in J_i} x_{ij} e_{ij}) & \forall i \in I, (i,k) \in \mathcal{A}\\
+			& \sum_{i \in I} \sum_{j \in J_i} b_{ij}x_{ij} \leq B & \\
+			& \sum_{j \in J_i} x_{ij} \leq 1 & \forall i \in I\\
 			& t_i \geq 0 & \forall i \in I\\
-			& t_N \geq t_i & \forall i \in I \\
-			& \sum_{i \in I} \sum_{j \in J_i} b_{ij}y_{ij} \leq B & \\
-			& \sum_{j \in J_i} y_{ij} \leq 1 & \forall i \in I\\
-			& y_{ij} \in \{0,1\} & \forall i \in I, j \in J_i&
+			& x_{ij} \in \{0,1\} & \forall i \in I, j \in J_i&
 		\end{align}
 	\end{subequations}
 	Based on this formulation, we can derive the stochastic optimization and the robust optimization models with reference to \textcolor{blue}{list the literature of stochastic/robust crashing optimization problems}. We omit these formulations in this paper since our uncertainty model is different from the literature listed above.\\
@@ -160,10 +160,11 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 			\(t_{i}^\omega\) & \(\qquad\) & starting time of activity \(i\) under scenario \(\omega\), \(i \in I, \omega \in \Omega\);&\\
 			\(x_{ij}^\omega\) & \(\qquad\) & indicator whether activity \(i\) is crashed by option \(j\) under scenario \(\omega\), \(i \in I, j \in J_i, \omega \in \Omega \); &\\
 			\(F_i^\omega\) & \(\qquad\) & indicator whether activity \(i\) starts before disruption in realization \(\omega\), \(i \in I, \omega \in \Omega\);&\\
-			\(G_i^\omega\) & \(\qquad\) & indicator whether activity \(i\) starts after disruption in realization \(\omega\), \(i \in I, \omega \in \Omega\).&\\
+			\(G_i^\omega\) & \(\qquad\) & indicator whether activity \(i\) starts after disruption in realization \(\omega\), \(i \in I, \omega \in \Omega\);&\\
+			\(S_{ij}^\omega\) & \(\qquad\) & binary term to linearize the bilinear term \(G_i^\omega x_{ij}^\omega\), \(i \in I, j \in J_{i}, \omega \in \Omega\).&\\
 		\end{tabular}
 	\end{table}
-	\noi The extensive formulation of the two-stage stochastic program is shown as Formulation~(\ref{prob:extensive}). Here \(M\) is a large number to enforce the logic relationships. In this problem, we are minimizing the expected project span by taking the sum of each scenario's project span weighted by the scenario probability. Variables \(F^\omega_i\) and \(G^\omega_i\) are used to identify whether activity \(i\) starts before or after the disruption time (in constraint (\ref{cons:f}) - (\ref{cons:fg})). This is important in our problem setting because the duration of each activity will depend on its temporal relationship to the disruption time, which is reflected in constraint (\ref{cons:duration}). \\
+	\noi The extensive formulation of the two-stage stochastic program is shown as Formulation~(\ref{prob:extensive}). Here \(M\) is a large number to enforce the logic relationships. In this problem, we are minimizing the expected project span by taking the sum of each scenario's project span weighted by the scenario probability. Variables \(F^\omega_i\) and \(G^\omega_i\) are used to identify whether activity \(i\) starts before or after the disruption time (in constraint (\ref{cons:f}) - (\ref{cons:fg})). This is important in our problem setting because the duration of each activity will depend on its temporal relationship to the disruption time, which is reflected in constraint (\ref{cons:duration}). For this duration constraint, the original expression of the duration of activity \(i\) is \((D_i + d_i^\omega G_i^\omega)(1 - \sum_{j \in J_i} e_{ij}x_{ij}^\omega)\). This contains a bilinear term \(G_i^\omega x_{ij}^\omega\), which can be linearized by introducing a binary variable \(S_{ij}^\omega\) and bounding it by constraints (\ref{cons:linearize1}) - (\ref{cons:linearize3}).\\
 	\newline
 	We have to use a set of non-anticipativity constraints (\ref{cons:tf1}) - (\ref{cons:xf2}), different from the one used in a traditional stochastic programming setting, since the first stage decision variables here spans the entire time horizon. These logic constraints ensure the decisions made before the disruption time in each scenario should be the same as the nominal decisions before the same time point, because decisions made with the same amount information should be the same.\\
 	\begin{subequations} \label{prob:extensive}
@@ -178,14 +179,17 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 			& F_i^\omega + G_i^\omega = 1 & \forall i \in I, \omega \in \Omega \label{cons:fg}\\
 			& t_i^\omega + (1 - F_i^\omega)M \geq t_i & \forall i \in I, \omega \in \Omega \label{cons:tf1}\\
 			& t_i^\omega - (1 - F_i^\omega)M \leq t_i & \forall i \in I, \omega \in \Omega \label{cons:tf2}\\
-			& x_{ij}^\omega + (1 - F_i^\omega)M \geq x_{ij} & \forall i \in I, j \in J, \omega \in \Omega \label{cons:xf1}\\
-			& x_{ij}^\omega - (1 - F_i^\omega)M \leq x_{ij} & \forall i \in I, j \in J, \omega \in \Omega \label{cons:xf2}\\
-			& t_k^\omega - t_i^\omega \geq (D_i + d_i^\omega G_i^\omega)(1 - \sum_{j \in J} e_jx_{ij}^\omega) & \forall i \in I, j \in J, \omega \in \Omega \label{cons:duration}\\
-			& \sum_{j \in J} x_{ij}^\omega \leq 1 & \forall i \in I, \omega \in \Omega \label{cons:crashLim}\\
-			& \sum_{i \in I}\sum_{j \in J} b_jx_{ij}^\omega \leq B & \forall \omega \in \Omega \label{cons:budget}\\
-			& x_{ij}^\omega \in \{0,1\} & \forall i \in I, j \in J, \omega \in \Omega\\
+			& x_{ij}^\omega + (1 - F_i^\omega)M \geq x_{ij} & \forall i \in I, j \in J_i, \omega \in \Omega \label{cons:xf1}\\
+			& x_{ij}^\omega - (1 - F_i^\omega)M \leq x_{ij} & \forall i \in I, j \in J_i, \omega \in \Omega \label{cons:xf2}\\
+			& t_k^\omega - t_i^\omega \geq D_i + d_i^\omega G_i^\omega -\sum_{j \in J_i} D_i e_{ij} x_{ij}^\omega - \sum_{j \in J_i} d_i^\omega e_{ij} S_{ij}^\omega & \forall i \in I, j \in J_i, \omega \in \Omega \label{cons:duration}\\
+			& \sum_{j \in J_i} x_{ij}^\omega \leq 1 & \forall i \in I, \omega \in \Omega \label{cons:crashLim}\\
+			& \sum_{i \in I}\sum_{j \in J_i} b_jx_{ij}^\omega \leq B & \forall \omega \in \Omega \label{cons:budget}\\
+			& S_{ij}^\omega \leq G_i^\omega & \forall i \in I, j \in J_i, \omega \in \Omega \label{cons:linearize1}\\
+			& S_{ij}^\omega \leq x_{ij}^\omega & \forall i \in I, j \in J_i, \omega \in \Omega \label{cons:linearize2}\\
+			& S_{ij}^\omega \geq G_i^\omega + x_{ij}^\omega - 1 & \forall i \in I, j \in J_i, \omega \in \Omega \label{cons:linearize3}\\
+			& x_{ij}^\omega \in \{0,1\} & \forall i \in I, j \in J_i, \omega \in \Omega\\
 			& F_i^\omega, G_i^\omega \in \{0,1\} & \forall i \in I, \omega \in \Omega\\
-			& t_{i}^\omega \geq 0 & \forall i \in I, j \in J, \omega \in \Omega
+			& t_{i}^\omega \geq 0 & \forall i \in I, j \in J_i, \omega \in \Omega
 		\end{align}
 	\end{subequations}
 	
@@ -195,11 +199,53 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 		\item Cut generation
 		\item Branch and bound method
 	\end{itemize}
-	Problem (\ref{prob:extensive}) is a two-sage stochastic mixed integer program with both binary and continuous state variables. A state variable here is a variable whose value is passed from the first stage to the second stage. Two-stage stochastic linear program could be solved nicely using Benders decomposition (\textcolor{blue}{cite Benders decomposition}). However, it is difficult to solve a stochastic mixed integer program with integer variables in the recourse problem because the linear cuts generated in the regular Benders decomposition could not characterize the recourse function exactly. \textcolor{blue}{cite literature about the stochastic integer programs}. \\
+	Problem (\ref{prob:extensive}) is a two-sage stochastic mixed integer program with both binary (\(x\)) and continuous (\(t\)) state variables. A state variable here is a variable whose value is passed from the first stage to the second stage. Two-stage stochastic linear program could be solved nicely using Benders decomposition (\textcolor{blue}{cite Benders decomposition}). However, it is difficult to solve a stochastic mixed integer program with integer variables in the recourse problem because the linear cuts generated in the regular Benders decomposition could not characterize the recourse function exactly. \textcolor{blue}{cite literature about the stochastic integer programs}. \\
 	\newline 
 	Recently Zou et al. \cite{zou2016nested} propose to generate Lagrangian cuts in the place of Benders cuts to solve multi-stage stochastic programs with only binary state variables. Their method keeps the structure of Benders decomposition and proves the tightness of Lagrangian cuts. Although this result could not be directly applied in our problem due to the continuous state variable \(t\), it provides a pivotal theoretical basis for our decomposition method.\\
 	\newline
-	First we could separate the extensive formulation (\ref{prob:extensive}) into a master problem and a series of sub-problems. It is difficult to solve the master problem because the function \(f^\omega(x,t)\) is non-convex and it is hard to derive its analytical form.
+	First we could separate the extensive formulation (\ref{prob:extensive}) into a master problem and a series of sub-problems as (\ref{prob:master}) and (\ref{prob:sub}). Notice that it is difficult to directly solve the master problem because the function \(f^\omega\) is non-convex and it is hard to derive its analytical form.
+	\begin{subequations}
+		\label{prob:master}
+		\begin{align}
+		(M) \quad \min \quad & p^0 t_N + \sum_{\omega \in \Omega} p^\omega f^\omega(x,t) & \\
+		\text{s.t.} \quad & t_N \geq t_i & \forall i \in I\\
+		& t_k - t_i \geq D_{i}(1 - \sum_{j \in J_i} x_{ij} e_{ij}) & \forall i \in I, (i,k) \in \mathcal{A}\\
+		& \sum_{i \in I} \sum_{j \in J_i} b_{ij}x_{ij} \leq B & \\
+		& \sum_{j \in J_i} x_{ij} \leq 1 & \forall i \in I\\
+		& t_i \geq 0 & \forall i \in I\\
+		& x_{ij} \in \{0,1\}. & \forall i \in I, j \in J_i&
+		\end{align}
+	\end{subequations}
+	\begin{subequations}
+		\label{prob:sub}
+		\begin{align}
+			(S^\omega) \quad f^\omega(\hat{x},\hat{t}) = \min \quad & t_N & \\
+			\text{s.t.} \quad & t_N \geq t_i & \forall i \in I \\
+			& H^\omega - F_i M \leq t_i & \forall i \in I \\
+			& H^\omega + G_i M \geq t_i & \forall i \in I \\
+			& F_i + G_i = 1 & \forall i \in I \\
+			& t_i + (1-F_i) M \geq \hat{t}_i & \forall i \in I\\
+			& t_i - (1-F_i) M \leq \hat{t}_i & \forall i \in I \\
+			& x_{ij} + (1-F_i) \geq \hat{x}_{ij} & \forall i \in I, j \in J_i \\
+			& x_{ij} - (1-F_i) \leq \hat{x}_{ij} & \forall i \in I, j \in J_i \\
+			& t_k - t_i \geq D_i + d_i^\omega G_i -\sum_{j \in J_i} D_i e_{ij} x_{ij} - \sum_{j \in J_i} d_i^\omega e_{ij} S_{ij} & \forall i \in I, (i,k) \in \mathcal{A}\\
+			&\sum_{i \in I} \sum_{j \in J_i} b_{ij} x_{ij} \leq B &\\
+			& \sum_{j \in J_i} x_{ij} \leq 1 & \forall i \in I\\
+			& S_{ij} \leq G_i & \forall i \in I, j \in J_i \\
+			& S_{ij} \leq x_{ij} & \forall i \in I, j \in J_i\\
+			& S_{ij} \geq G_i + x_{ij} - 1 & \forall i \in I, j \in J_i\\
+			& t_i \geq 0 & \forall i \in I \\
+			& x_{ij} \in \{0,1\}. & \forall i \in I, j \in J_i
+		\end{align}
+	\end{subequations}
+	\textcolor{blue}{Introduce the Lagrangian cut and how it is generated.}
+	Since our state variable contains both continuous variables \(t\) and binary variables \(x\), the Lagrangian cuts will only be a lower bound but the tightness could not be guaranteed. This means that if we carry out a cutting plane scheme using the Lagrangian cuts, we will not solve the problem to the exactness but will only obtain a lower bound. \\
+	\newline
+	One important observation to help with this issue is that if we can determine the temporal relationship between every activity and the disruption, the restricted version of the function \(f^\omega\) will be convex in \(t\), and we could find a tight and valid Lagrangian cut similar to those in \cite{zou2016nested}. This means, for example, if for a specific scenario \(\omega\), \(H^\omega = 5\), and for each activity \(i \in I\) we know whether its starting time \(t_i\) is less than, larger than or equal to \(H^\omega = 5\), then there is a finite set of linear constraints that could be generated to fully characterize \(f^\omega(x,t)\) in formulation~(\ref{prob:master}). This property is true mainly because once we know the temporal relationship between the starting time of each activity and the disruption time, it is always optimal to start the activity at its earliest possible time. We will prove this property as follows. \\
+	\newline
+	\textcolor{blue}{State the Proofs of the tightness/validity of the Lagrangian cuts}\\
+	\newline
+	The temporal relationship could be determined by a branch-and-bound scheme. Although theoretically for each scenario there are exponential number of possible temporal relationships because each activity can either be before the disruption time or after that, there are only a small number of activities, of which the optimal starting time of the deterministic problem (\ref{prob:static}) is close to the disruption time, that really matter. If an activity should be starting much earlier than the disruption time in the deterministic problem, it usually will significantly increase the length of the project span by delaying the start of such activity. If an activity cannot start until a time much later than the disruption time, it is usually not possible to make it start before the disruption time without committing crashing resources heavily on its precedent activities, which may likely lead to an inferior solution.
 
 \section{Computational Results} \label{sec:results}
 

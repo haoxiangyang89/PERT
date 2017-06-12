@@ -55,7 +55,7 @@ while nodeList != []
     end
 
     # for each subproblem, solve the subproblem corresponding to the current node
-    tempUB = p*mpObj;
+    tempUB = mpObj;
     zDiff = Dict();
     zDiffMax = -Inf;
     zDiffMaxIndex = 1;
