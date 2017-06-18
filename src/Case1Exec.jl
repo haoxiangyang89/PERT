@@ -1,6 +1,7 @@
 # this is the collection of executions for case 1: the disruption does not affect the events already started
 
 include("Case1Func.jl");
+include("def.jl");
 # read in data of scenarios and the activity network
 InputAdd = "test_Input_graph_Full.csv";
 D,d,H,b,B,ee,II,JJ,M,SS,GG,dH,dR,p = readIn(InputAdd);
@@ -71,8 +72,8 @@ while nodeList != []
       tempUB += (1-p)*msIObj/(length(SS)-1);
 
       # generate Lagrangian cuts
-      πle,λle,zlagp = solveSub(xSol,tSol,D,dscen[s],H[s],b,B,ee,II,JJ,GG,msIObj);
-      mlag = subLag(xSol,tSol,D,dscen[s],H[s],M,b,B,ee,II,I1,I2,I3,JJ,GG,πle,λle);
+      πle,λle,zlagp = solveSub(xSol,tSol,D,dscen[s],M[s],H[s],b,B,ee,II,JJ,GG,msIObj);
+      mlag = subLag(xSol,tSol,D,dscen[s],H[s],M[s],b,B,ee,II,I1,I2,JJ,GG,πle,λle);
       solve(mlag);
       zlag = getobjectivevalue(mlag);
       zDiff[s] = zlagp - zlag;
@@ -85,7 +86,7 @@ while nodeList != []
       end
 
       # append Lagrangian cuts to the current node
-      cutTemp = generateCut(s,πle,λle,zlag,xSol,tSol,II,JJ);
+      cutTemp = generateCut(s,πle,λle,zlag,xSol,tSol,I1,JJ);
       mpBran = appendLCcuts(mpBran,cutTemp,II,JJ);
     end
     # update the upper bound
@@ -108,11 +109,13 @@ while nodeList != []
         end
       end
       nodeCount += 1;
-      mpBran1 = appendBNBcuts(mpBran,lastEIndex,H[zDiffMaxIndex],1);
+      mpBran1 = copy(mpBran);
+      mpBran1 = appendBNBcuts(mpBran1,lastEIndex,H[zDiffMaxIndex],1);
       node1 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran1);
       push!(nodeList,node1);
       nodeCount += 1;
-      mpBran2 = appendBNBcuts(mpBran,lastEIndex,H[zDiffMaxIndex],2);
+      mpBran2 = copy(mpBran);
+      mpBran2 = appendBNBcuts(mpBran2,lastEIndex,H[zDiffMaxIndex],2);
       node2 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran2);
       push!(nodeList,node2);
     end

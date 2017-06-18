@@ -118,7 +118,7 @@ function readIn(InputAdd)
         for i in II
             d[i,s] = round(rand(disRList[i]),4);
         end
-        M[s] = sum(values(D))*maximum([d[i,s] for i in II]);
+        M[s] = sum(values(D))+sum(max(d[i,s],0) for i in II);
     end
     H[1] = maximum(values(M));
     M[1] = 2*sum(values(D));
@@ -149,8 +149,8 @@ end
 # function to append Lagrangian cuts to the given program
 function appendLCcuts(mp,cI,II,JJ)
   # cI(constraint item) contains πl, λl and constant
-  @constraint(mp,mp.varDict[:θ][cI.s] >= sum(cI.πl[i]*mp.varDict[:t][i] for i in II if i in keys(πl))
-                  + sum(sum(cI.λl[i,j]*mp.varDict[:x][i,j] for j in JJ if (i,j) in keys(λl)) for i in II)
+  @constraint(mp,mp.varDict[:θ][cI.s] >= sum(cI.πl[i]*mp.varDict[:t][i] for i in II if i in keys(cI.πl))
+                  + sum(sum(cI.λl[i,j]*mp.varDict[:x][i,j] for j in JJ if (i,j) in keys(cI.λl)) for i in II)
                   + cI.z);
   return mp;
 end
@@ -229,8 +229,8 @@ function subLag(xs,ts,D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG,πle,λle)
     # τ and z are the actual subproblem variables
     t[i in II] >= 0
     τ[i in II] >= 0
-    z[i in II], Bin
-    0 <= x[i in II] <= 1
+    z[i in II, j in JJ], Bin
+    0 <= x[i in II, j in JJ] <= 1
     F[i in II], Bin
     G[i in II], Bin
     # S is the linearization of the G[i]*z[i,j]
@@ -246,7 +246,7 @@ function subLag(xs,ts,D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG,πle,λle)
   @constraint(spL, zlogic2[i in II, j in JJ], z[i,j] - 1 + F[i] <= x[i,j]);
   @constraint(spL, durationConstr[g in GG], τ[g[2]] - τ[g[1]] >= (D[g[1]] + dscen[g[1]]*G[g[1]]) -
                     sum(D[g[1]]*ee[j]*z[g[1],j] for j in JJ) - sum(dscen[g[1]]*ee[j]*S[g[1],j] for j in JJ));
-  @constraint(spL, xConstr[j in JJ], sum(z[i,j] for j in JJ) <= 1);
+  @constraint(spL, xConstr[i in II], sum(z[i,j] for j in JJ) <= 1);
   @constraint(spL, budgetConstr, sum(sum(b[i,j]*z[i,j] for j in JJ) for i in II) <= B);
   # linearization constraints
   @constraint(spL, Slinear1[i in II, j in JJ], S[i,j] <= G[i]);
@@ -257,9 +257,45 @@ function subLag(xs,ts,D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG,πle,λle)
   return spL;
 end
 
+# function to solve the Lagrangian relaxation with big M
+function subLagI(D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG)
+  spL = Model(solver = CplexSolver());
+  @variables(spL, begin
+    tN >= 0
+    # t and x are the auxiliary variables with the added equality constraints
+    # τ and z are the actual subproblem variables
+    t[i in II] >= 0
+    τ[i in II] >= 0
+    z[i in II, j in JJ], Bin
+    0 <= x[i in II, j in JJ] <= 1
+    F[i in II], Bin
+    G[i in II], Bin
+    # S is the linearization of the G[i]*z[i,j]
+    S[i in II, j in JJ], Bin
+  end);
+  @constraint(spL, tNConstr[i in II], tN >= τ[i]);
+  @constraint(spL, FLogic[i in II], td - F[i]*M <= t[i]);
+  @constraint(spL, GLogic[i in II], td + G[i]*M >= t[i]);
+  @constraint(spL, FGLogic[i in II], F[i] + G[i] == 1);
+  @constraint(spL, τLogic1[i in II], τ[i] + (1 - F[i])*M >= t[i]);
+  @constraint(spL, τLogic2[i in II], τ[i] - (1 - F[i])*M <= t[i]);
+  @constraint(spL, zlogic1[i in II, j in JJ], z[i,j] + 1 - F[i] >= x[i,j]);
+  @constraint(spL, zlogic2[i in II, j in JJ], z[i,j] - 1 + F[i] <= x[i,j]);
+  @constraint(spL, durationConstr[g in GG], τ[g[2]] - τ[g[1]] >= (D[g[1]] + dscen[g[1]]*G[g[1]]) -
+                    sum(D[g[1]]*ee[j]*z[g[1],j] for j in JJ) - sum(dscen[g[1]]*ee[j]*S[g[1],j] for j in JJ));
+  @constraint(spL, xConstr[i in II], sum(z[i,j] for j in JJ) <= 1);
+  @constraint(spL, budgetConstr, sum(sum(b[i,j]*z[i,j] for j in JJ) for i in II) <= B);
+  # linearization constraints
+  @constraint(spL, Slinear1[i in II, j in JJ], S[i,j] <= G[i]);
+  @constraint(spL, Slinear2[i in II, j in JJ], S[i,j] <= z[i,j]);
+  @constraint(spL, Slinear3[i in II, j in JJ], S[i,j] >= G[i] + z[i,j] - 1);
+
+  return spL;
+end
+
 # solve the lagrangian relaxation of the subproblem
 # categorize each activity and build the (relaxed) subproblem
-function solveSub(xs,ts,D,dscen,td,b,B,ee,II,JJ,GG,zint)
+function solveSub(xs,ts,D,dscen,M,td,b,B,ee,II,JJ,GG,zint)
   I1,I2 = obtainIs(xs,ts,td,II);
 
   # iteratively solve the lagrangian multiplier
@@ -279,14 +315,18 @@ function solveSub(xs,ts,D,dscen,td,b,B,ee,II,JJ,GG,zint)
   μ = 2;
   zk = 0;
   counter = 0;
-  mr = subLagP(xs,ts,D,dscen,td,b,B,ee,II,I1,I2,JJ,GG);
+  mr = subLagP(D,dscen,b,B,ee,II,I1,I2,JJ,GG);
+  #mr = subLagI(D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG);
   while (k<=100)&(!stopBool)
     k += 1;
     @objective(mr,Min,mr.varDict[:tN] - sum(πls[i]*(mr.varDict[:t][i] - ts[i]) for i in I1)
                 - sum(sum(λls[i,j]*(mr.varDict[:x1][i,j] - xs[i,j]) for j in JJ) for i in I1));
+    # @objective(mr,Min,mr.varDict[:tN] - sum(πls[i]*(mr.varDict[:t][i] - ts[i]) for i in I1)
+    #             - sum(sum(λls[i,j]*(mr.varDict[:x][i,j] - xs[i,j]) for j in JJ) for i in I1));
     mrStatus = solve(mr);
     if mrStatus != :Unbounded
       xk1 = getvalue(mr.varDict[:x1]);
+      #xk1 = getvalue(mr.varDict[:x]);
       tk = getvalue(mr.varDict[:t]);
       if getobjectivevalue(mr) > zk
           counter = 0;
