@@ -3,7 +3,7 @@
 include("Case1Func.jl");
 include("def.jl");
 # read in data of scenarios and the activity network
-InputAdd = "test_Input_graph_Full.csv";
+InputAdd = "test_Input_graph_Semi1.csv";
 D,d,H,b,B,ee,II,JJ,M,SS,GG,dH,dR,p = readIn(InputAdd);
 
 # prepare the scenario data: each scenario's information with each activity's duration after disruption
@@ -34,8 +34,9 @@ while nodeList != []
   # solve the master problem for t/x
   currentNode = nodeList[1];
   if currentNode.lbCost < totalUB
-    solve(currentNode.mp);
-    mpObj = getobjectivevalue(currentNode.mp);
+    mpi = currentNode.mp;
+    solve(mpi);
+    mpObj = getobjectivevalue(mpi);
 
     # update the node lower bound and the universal lower bound
     if mpObj > currentNode.lbCost
@@ -49,14 +50,14 @@ while nodeList != []
     tSol = Dict();
     xSol = Dict();
     for i in II
-      tSol[i] = getvalue(mp.varDict[:t][i]);
+      tSol[i] = getvalue(mpi.varDict[:t][i]);
       for j in JJ
-        xSol[i,j] = getvalue(mp.varDict[:x][i,j]);
+        xSol[i,j] = getvalue(mpi.varDict[:x][i,j]);
       end
     end
 
     # for each subproblem, solve the subproblem corresponding to the current node
-    tempUB = mpObj;
+    tempUB = p*(getvalue(mpi.varDict[:tN]));
     zDiff = Dict();
     zDiffMax = -Inf;
     zDiffMaxIndex = 1;
