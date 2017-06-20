@@ -3,7 +3,10 @@
 include("Case1Func.jl");
 include("def.jl");
 # read in data of scenarios and the activity network
-InputAdd = "test_Input_graph_Semi1.csv";
+# Semi1 is the one with fixed disruption time
+# Semi2 is the one with fixed disruption magnitude
+# Fixed is the one with both disruption time and disruption magnitude fixed
+InputAdd = "test_Input_graph_Fixed.csv";
 D,d,H,b,B,ee,II,JJ,M,SS,GG,dH,dR,p = readIn(InputAdd);
 
 # prepare the scenario data: each scenario's information with each activity's duration after disruption

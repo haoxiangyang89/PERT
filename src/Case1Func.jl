@@ -425,3 +425,42 @@ function generateCut(s,πg,λg,zlag,xSol,tSol,II,JJ)
   lc = LagCut(s,πg,λg,zlag - sum(πg[i]*tSol[i] for i in II) - sum(sum(λg[i,j]*xSol[i,j] for j in JJ) for i in II));
   return lc;
 end
+
+# function to build the extensive formulation
+function fullExt(D,dscen,H,b,B,ee,II,JJ,M,SS,GG,p)
+  mext = Model(solver = CplexSolver());
+
+  @variable(mext,tN0 >= 0);
+  @variable(mext,tN[s in SS] >= 0);
+  @variable(mext,t[i in II, s in SS] >= 0);
+  @variable(mext,x[i in II, j in JJ, s in SS], Bin);
+  @variable(mext,t0[i in II] >= 0);
+  @variable(mext,x0[i in II, j in JJ], Bin);
+  @variable(mext,F[i in II, s in SS], Bin);
+  @variable(mext,G[i in II, s in SS], Bin);
+  @variable(mext,S[i in II, j in JJ, s in SS], Bin);
+
+  @constraint(mext, tN0Constr[i in II], tN0 >= t0[i]);
+  @constraint(mext, tNConstr[i in II, s in SS], tN[s] >= t[i,s]);
+  @constraint(mext, FConstr[i in II, s in SS], H[s] - F[i,s]*M[s] <= t0[i]);
+  @constraint(mext, GConstr[i in II, s in SS], H[s] + G[i,s]*M[s] >= t0[i]);
+  @constraint(mext, FGConstr[i in II, s in SS], F[i,s] + G[i,s] == 1);
+  @constraint(mext, tConstr1[i in II, s in SS], t[i,s] + (1 - F[i,s])*M[s] >= t0[i]);
+  @constraint(mext, tConstr2[i in II, s in SS], t[i,s] - (1 - F[i,s])*M[s] <= t0[i]);
+  @constraint(mext, xConstr1[i in II, j in JJ, s in SS], x[i,j,s] + (1 - F[i,s]) >= x0[i,j]);
+  @constraint(mext, xConstr2[i in II, j in JJ, s in SS], x[i,j,s] - (1 - F[i,s]) <= x0[i,j]);
+  @constraint(mext, durationConstr1[g in GG, s in SS], t[g[2],s] - t[g[1],s] >= D[g[1]] + dscen[s][g[1]]*G[g[1],s]
+                    - sum(D[g[1]]*ee[j]*x[g[1],j,s] + dscen[s][g[1]]*ee[j]*S[g[1],j,s] for j in JJ));
+  @constraint(mext, durationConstr2[g in GG], t0[g[2]] - t0[g[1]] >= D[g[1]]*(1 - sum(ee[j]*x0[g[1],j] for j in JJ)));
+  @constraint(mext, xConstr[i in II,s in SS], sum(x[i,j,s] for j in JJ) <= 1);
+  @constraint(mext, budgetConstr[s in SS], sum(sum(b[i,j]*x[i,j,s] for j in JJ) for i in II) <= B);
+  @constraint(mext, xConstr0[i in II], sum(x0[i,j] for j in JJ) <= 1);
+  @constraint(mext, budgetConstr0, sum(sum(b[i,j]*x0[i,j] for j in JJ) for i in II) <= B);
+  @constraint(mext, Slinear1[i in II, j in JJ, s in SS], S[i,j,s] <= G[i,s]);
+  @constraint(mext, Slinear2[i in II, j in JJ, s in SS], S[i,j,s] <= x[i,j,s]);
+  @constraint(mext, Slinear3[i in II, j in JJ, s in SS], S[i,j,s] >= G[i,s] + x[i,j,s] - 1);
+
+  @objective(mext, Min, sum((1-p)/length(SS)*tN[s] for s in SS) + p*tN0);
+
+  return mext;
+end
