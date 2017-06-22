@@ -5,6 +5,7 @@ type nodeType
   lbCost :: Float64
   ubCost :: Float64
   mp :: JuMP.Model
+  bSet :: Dict{Any,Any}
 end
 
 type LagCut

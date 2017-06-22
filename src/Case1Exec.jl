@@ -8,6 +8,8 @@ include("def.jl");
 # Fixed is the one with both disruption time and disruption magnitude fixed
 InputAdd = "test_Input_graph_Fixed.csv";
 D,d,H,b,B,ee,II,JJ,M,SS,GG,dH,dR,p = readIn(InputAdd);
+ϵ = 1e-4;
+maxIter = 10;
 
 # prepare the scenario data: each scenario's information with each activity's duration after disruption
 noS = length(SS) - 1;
@@ -26,7 +28,11 @@ nodeList = [];
 # create the master problem
 mp = createMaster(D,d,b,B,ee,II,JJ,SS,GG,p);
 # create the initial node
-iniNode = nodeType(0,0,Inf,mp);
+bSetIni = Dict();
+for s in SS[2:length(SS)]
+  bSetIni[s] = [];
+end
+iniNode = nodeType(0,0,Inf,mp,bSetIni);
 nodeList = [iniNode];
 # the universal lower bound/upper bound
 totalLB = 0;
@@ -38,18 +44,74 @@ while nodeList != []
   currentNode = nodeList[1];
   if currentNode.lbCost < totalUB
     mpi = currentNode.mp;
+    keepIter = true;
+    noImprove = 0;
+    while keepIter
+      pastLB = copy(currentNode.lbCost);
+      pastUB = copy(currentNode.ubCost);
+      solve(mpi);
+      mpObj = getobjectivevalue(mpi);
+      # update the node lower bound
+      if mpObj > currentNode.lbCost
+        currentNode.lbCost = mpObj
+      end
+
+      # collect the solution from the master program
+      tSol = Dict();
+      xSol = Dict();
+      for i in II
+        tSol[i] = getvalue(mpi.varDict[:t][i]);
+        for j in JJ
+          xSol[i,j] = getvalue(mpi.varDict[:x][i,j]);
+        end
+      end
+
+      # for each subproblem, solve the subproblem corresponding to the current node
+      tempUB = p*(getvalue(mpi.varDict[:tN]));
+      for s in SS[2:length(SS)]
+        I1,I2 = obtainIs(xSol,tSol,H[s],II);
+
+        # obtain the upper bound of the this subproblem
+        msI = subInt(xSol,tSol,D,b,B,ee,II,I1,I2,dscen[s],JJ,GG);
+        solve(msI);
+        msIObj = getobjectivevalue(msI);
+        tempUB += (1-p)*msIObj/(length(SS)-1);
+
+        # generate Lagrangian cuts
+        πle,λle,zlagp = solveSub(xSol,tSol,D,dscen[s],M[s],H[s],b,B,ee,II,JJ,GG,msIObj);
+        mlag = subLag(xSol,tSol,D,dscen[s],H[s],M[s],b,B,ee,II,I1,I2,JJ,GG,πle,λle);
+        solve(mlag);
+        zlag = getobjectivevalue(mlag);
+
+        # append Lagrangian cuts to the current node
+        cutTemp = generateCut(s,πle,λle,zlag,xSol,tSol,I1,JJ);
+        mpi = appendLCcuts(mpi,cutTemp,II,JJ);
+      end
+      # update the upper bound
+      if tempUB < currentNode.ubCost
+        currentNode.ubCost = tempUB;
+      end
+      # whether to end generating Lagrangian cuts
+      if currentNode.ubCost - currentNode.lbCost >= ϵ*currentNode.lbCost
+        if (currentNode.ubCost - currentNode.lbCost) < (pastUB - pastLB)
+          noImprove = 0;
+        else
+          noImprove += 1;
+        end
+        if noImprove >= maxIter
+          keepIter = false;
+        end
+      else
+        keepIter = false;
+      end
+    end
+    # update the universal upper bound
+    if currentNode.ubCost < totalUB
+      totalUB = tempUB;
+    end
+
+    # decide which scenario time and which activity to branch on
     solve(mpi);
-    mpObj = getobjectivevalue(mpi);
-
-    # update the node lower bound and the universal lower bound
-    if mpObj > currentNode.lbCost
-      currentNode.lbCost = mpObj;
-    end
-    if mpObj > totalLB
-      totalLB = mpObj;
-    end
-
-    # collect the solution from the master program
     tSol = Dict();
     xSol = Dict();
     for i in II
@@ -58,69 +120,44 @@ while nodeList != []
         xSol[i,j] = getvalue(mpi.varDict[:x][i,j]);
       end
     end
-
-    # for each subproblem, solve the subproblem corresponding to the current node
-    tempUB = p*(getvalue(mpi.varDict[:tN]));
-    zDiff = Dict();
-    zDiffMax = -Inf;
-    zDiffMaxIndex = 1;
-    branchBool = false;
-    mpBran = copy(currentNode.mp);
+    zDiffMax = 0;
     for s in SS[2:length(SS)]
+      θhat = getvalue(mpi.varDict[:θ][s]);
       I1,I2 = obtainIs(xSol,tSol,H[s],II);
 
       # obtain the upper bound of the this subproblem
       msI = subInt(xSol,tSol,D,b,B,ee,II,I1,I2,dscen[s],JJ,GG);
       solve(msI);
-      msIObj = getobjectivevalue(msI);
-      tempUB += (1-p)*msIObj/(length(SS)-1);
-
-      # generate Lagrangian cuts
-      πle,λle,zlagp = solveSub(xSol,tSol,D,dscen[s],M[s],H[s],b,B,ee,II,JJ,GG,msIObj);
-      mlag = subLag(xSol,tSol,D,dscen[s],H[s],M[s],b,B,ee,II,I1,I2,JJ,GG,πle,λle);
-      solve(mlag);
-      zlag = getobjectivevalue(mlag);
-      zDiff[s] = zlagp - zlag;
-      if zDiff[s] > 1e-4
-        branchBool = true;
-      end
-      if zDiff[s] > zDiffMax
-        zDiffMax = zDiff[s];
+      θbar = getobjectivevalue(msI);
+      if zDiffMax < (θbar - θhat)
+        zDiffMax = (θbar - θhat);
         zDiffMaxIndex = s;
       end
-
-      # append Lagrangian cuts to the current node
-      cutTemp = generateCut(s,πle,λle,zlag,xSol,tSol,I1,JJ);
-      mpBran = appendLCcuts(mpBran,cutTemp,II,JJ);
-    end
-    # update the upper bound
-    if tempUB < currentNode.ubCost
-      currentNode.ubCost = tempUB;
-    end
-    if tempUB < totalUB
-      totalUB = tempUB;
     end
 
-    if branchBool
+    if zDiffMax > 0
       # branch into two problems: branch on the last event before the disruption time in scenario zDiffMaxIndex
       # find the last event started before the disruption time
-      lastE = -Inf;
-      lastEIndex = 0;
+      bestE = +Inf;
+      bestEIndex = 0;
       for i in II
-        if (tSol[i] < H[zDiffMaxIndex])&(tSol[i] > lastE)
-          lastE = tSol[i];
-          lastEIndex = i;
+        # if we have not branched on this scenario time on this activity
+        if (abs(tSol[i] - H[zDiffMaxIndex]) < bestE)&(!(i in currentNode.bSet[zDiffMaxIndex]))
+          bestE = abs(tSol[i] - H[zDiffMaxIndex]);
+          bestEIndex = i;
         end
       end
       nodeCount += 1;
+      bSetTemp = copy(currentNode.bSet);
+      push!(bSetTemp[zDiffMaxIndex],bestEIndex);
       mpBran1 = copy(mpBran);
-      mpBran1 = appendBNBcuts(mpBran1,lastEIndex,H[zDiffMaxIndex],1);
-      node1 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran1);
+      mpBran1 = appendBNBcuts(mpBran1,bestEIndex,H[zDiffMaxIndex],1);
+      node1 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran1,bSetTemp);
       push!(nodeList,node1);
       nodeCount += 1;
       mpBran2 = copy(mpBran);
       mpBran2 = appendBNBcuts(mpBran2,lastEIndex,H[zDiffMaxIndex],2);
-      node2 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran2);
+      node2 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran2,bSetTemp);
       push!(nodeList,node2);
     end
   end
