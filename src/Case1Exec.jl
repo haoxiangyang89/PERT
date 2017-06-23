@@ -32,7 +32,7 @@ bSetIni = Dict();
 for s in SS[2:length(SS)]
   bSetIni[s] = [];
 end
-iniNode = nodeType(0,0,Inf,mp,bSetIni);
+iniNode = nodeType(0,0,Inf,mp,bSetIni,bSetIni);
 nodeList = [iniNode];
 # the universal lower bound/upper bound
 totalLB = 0;
@@ -78,8 +78,16 @@ while nodeList != []
         tempUB += (1-p)*msIObj/(length(SS)-1);
 
         # generate Lagrangian cuts
-        πle,λle,zlagp = solveSub(xSol,tSol,D,dscen[s],M[s],H[s],b,B,ee,II,JJ,GG,msIObj);
+        #πle,λle,zlagp = solveSub(xSol,tSol,D,dscen[s],M[s],H[s],b,B,ee,II,JJ,GG,msIObj,currentNode.bSet[s],currentNode.bSignSet[s]);
+        πle,λle,zlagp = solveSubI(xSol,tSol,D,dscen[s],M[s],H[s],b,B,ee,II,JJ,GG,msIObj,currentNode.bSet[s],currentNode.bSignSet[s]);
         mlag = subLag(xSol,tSol,D,dscen[s],H[s],M[s],b,B,ee,II,I1,I2,JJ,GG,πle,λle);
+        for i in 1:length(currentNode.bSet[s])
+          if currentNode.bSignSet[s][i] == 1
+            @constraint(mlag,mlag.varDict[:t][currentNode.bSet[i]] <= H[s] - 1e-4);
+          elseif currentNode.bSignSet[s][i] == 2
+            @constraint(mlag,mlag.varDict[:t][currentNode.bSet[i]] >= H[s]);
+          end
+        end
         solve(mlag);
         zlag = getobjectivevalue(mlag);
 
@@ -107,7 +115,7 @@ while nodeList != []
     end
     # update the universal upper bound
     if currentNode.ubCost < totalUB
-      totalUB = tempUB;
+      totalUB = currentNode.ubCost;
     end
 
     # decide which scenario time and which activity to branch on
@@ -129,7 +137,7 @@ while nodeList != []
       msI = subInt(xSol,tSol,D,b,B,ee,II,I1,I2,dscen[s],JJ,GG);
       solve(msI);
       θbar = getobjectivevalue(msI);
-      if zDiffMax < (θbar - θhat)
+      if zDiffMax < (θbar - θhat) - 1e-5
         zDiffMax = (θbar - θhat);
         zDiffMaxIndex = s;
       end
@@ -149,15 +157,19 @@ while nodeList != []
       end
       nodeCount += 1;
       bSetTemp = copy(currentNode.bSet);
+      bSignSetTemp = copy(currentNode.bSignSet);
       push!(bSetTemp[zDiffMaxIndex],bestEIndex);
-      mpBran1 = copy(mpBran);
+      push!(bSignSetTemp[zDiffMaxIndex],1);
+      mpBran1 = copy(mpi);
       mpBran1 = appendBNBcuts(mpBran1,bestEIndex,H[zDiffMaxIndex],1);
-      node1 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran1,bSetTemp);
+      node1 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran1,bSetTemp,bSignSetTemp);
       push!(nodeList,node1);
       nodeCount += 1;
-      mpBran2 = copy(mpBran);
-      mpBran2 = appendBNBcuts(mpBran2,lastEIndex,H[zDiffMaxIndex],2);
-      node2 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran2,bSetTemp);
+      mpBran2 = copy(mpi);
+      bSignSetTemp = copy(currentNode.bSignSet);
+      push!(bSignSetTemp[zDiffMaxIndex],2);
+      mpBran2 = appendBNBcuts(mpBran2,bestEIndex,H[zDiffMaxIndex],2);
+      node2 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran2,bSetTemp,bSignSetTemp);
       push!(nodeList,node2);
     end
   end

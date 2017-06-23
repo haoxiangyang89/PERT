@@ -295,7 +295,7 @@ end
 
 # solve the lagrangian relaxation of the subproblem
 # categorize each activity and build the (relaxed) subproblem
-function solveSub(xs,ts,D,dscen,M,td,b,B,ee,II,JJ,GG,zint)
+function solveSub(xs,ts,D,dscen,M,td,b,B,ee,II,JJ,GG,zint,bSet,bSignSet)
   I1,I2 = obtainIs(xs,ts,td,II);
 
   # iteratively solve the lagrangian multiplier
@@ -316,6 +316,13 @@ function solveSub(xs,ts,D,dscen,M,td,b,B,ee,II,JJ,GG,zint)
   zk = 0;
   counter = 0;
   mr = subLagP(D,dscen,b,B,ee,II,I1,I2,JJ,GG);
+  for i in 1:length(bSet)
+    if bSignSet[i] == 1
+      @constraint(mr,mr.varDict[:t][bSet[i]] <= td - 1e-4);
+    elseif bSignSet[i] == 2
+      @constraint(mr,mr.varDict[:t][bSet[i]] >= td);
+    end
+  end
   #mr = subLagI(D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG);
   while (k<=100)&(!stopBool)
     k += 1;
@@ -415,6 +422,140 @@ function solveSub(xs,ts,D,dscen,M,td,b,B,ee,II,JJ,GG,zint)
   # now we have a set of Lagrangian coefficients
   @objective(mr,Min,mr.varDict[:tN] - sum(πls[i]*(mr.varDict[:t][i] - ts[i]) for i in I1)
               - sum(sum(λls[i,j]*(mr.varDict[:x1][i,j] - xs[i,j]) for j in JJ) for i in I1));
+  solve(mr);
+  zlags = getobjectivevalue(mr);
+  return πls,λls,zlags;
+end
+
+# solve the lagrangian relaxation of the subproblem
+# categorize each activity and build the (relaxed) subproblem
+function solveSubI(xs,ts,D,dscen,M,td,b,B,ee,II,JJ,GG,zint)
+  I1,I2 = obtainIs(xs,ts,td,II);
+
+  # iteratively solve the lagrangian multiplier
+  # initialization with every Lagrangian multiplier as 0
+  λls = Dict();
+  πls = Dict();
+  for i in I1
+    πls[i] = 0;
+    for j in JJ
+      λls[i,j] = 0;
+    end
+  end
+
+  # start the iteration
+  stopBool = false;
+  k = 0;
+  μ = 2;
+  zk = 0;
+  counter = 0;
+  #mr = subLagP(D,dscen,b,B,ee,II,I1,I2,JJ,GG);
+  mr = subLagI(D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG);
+  for i in 1:length(bSet)
+    if bSignSet[i] == 1
+      @constraint(mr,mr.varDict[:t][bSet[i]] <= td - 1e-4);
+    elseif bSignSet[i] == 2
+      @constraint(mr,mr.varDict[:t][bSet[i]] >= td);
+    end
+  end
+  while (k<=100)&(!stopBool)
+    k += 1;
+    # @objective(mr,Min,mr.varDict[:tN] - sum(πls[i]*(mr.varDict[:t][i] - ts[i]) for i in I1)
+    #             - sum(sum(λls[i,j]*(mr.varDict[:x1][i,j] - xs[i,j]) for j in JJ) for i in I1));
+    @objective(mr,Min,mr.varDict[:tN] - sum(πls[i]*(mr.varDict[:t][i] - ts[i]) for i in I1)
+                - sum(sum(λls[i,j]*(mr.varDict[:x][i,j] - xs[i,j]) for j in JJ) for i in I1));
+    mrStatus = solve(mr);
+    if mrStatus != :Unbounded
+      #xk1 = getvalue(mr.varDict[:x1]);
+      xk1 = getvalue(mr.varDict[:x]);
+      tk = getvalue(mr.varDict[:t]);
+      if getobjectivevalue(mr) > zk
+          counter = 0;
+      else
+          counter += 1;
+      end
+      if counter >= 5
+          μ = μ/2;
+      end
+      zk = getobjectivevalue(mr);
+
+      # check if there is still room for improvement
+      stopTemp = true;
+      for j in JJ
+        for i in I1
+          if abs(xk1[i,j] - xs[i,j]) >= 1e-5
+              stopTemp = false;
+          end
+        end
+      end
+      for i in I1
+        if abs(tk[i] - ts[i]) >= 1e-5
+          stopTemp = false;
+        end
+      end
+      # if there is still room for improvement, calculate the direction of improving λ and π
+      if !stopTemp
+          denomSum = 0;
+          for i in I1
+            denomSum += (ts[i] - tk[i])^2;
+          end
+          for j in JJ
+            for i in I1
+              denomSum += (xs[i,j] - xk1[i,j])^2;
+            end
+          end
+          # obtain the step length according to Held and Karp
+          ν = (zint - zk)/denomSum*μ;
+          # update the lambdas and ppis
+          for i in I1
+              πls[i] += ν*(ts[i] - tk[i]);
+          end
+          for j in JJ
+            for i in I1
+              λls[i,j] += ν*(xs[i,j] - xk1[i,j]);
+            end
+          end
+      else
+        stopBool = true;
+      end
+    else
+      # if the Lagrangian relaxation is Unbounded
+      for i in I1
+          πls[i] -= ν*(ts[i] - tk[i]);
+      end
+      for j in JJ
+        for i in I1
+          λls[i,j] -= ν*(xs[i,j] - xk1[i,j]);
+        end
+      end
+      μ = μ/2;
+      denomSum = 0;
+      for i in I1
+        denomSum += (ts[i] - tk[i])^2;
+      end
+      for j in JJ
+        for i in I1
+          denomSum += (xs[i,j] - xk1[i,j])^2;
+        end
+      end
+      # obtain the step length according to Held and Karp
+      ν = (zint - zk)/denomSum*μ;
+      # update the lambdas and ppis
+      for i in I1
+          πls[i] += ν*(ts[i] - tk[i]);
+      end
+      for j in JJ
+        for i in I1
+          λls[i,j] += ν*(xs[i,j] - xk1[i,j]);
+        end
+      end
+      k -= 1;
+    end
+  end
+
+  # now we have a set of Lagrangian coefficients
+  @objective(mr,Min,mr.varDict[:tN] - sum(πls[i]*(mr.varDict[:t][i] - ts[i]) for i in I1)
+              - sum(sum(λls[i,j]*(mr.varDict[:x][i,j] - xs[i,j]) for j in JJ) for i in I1));
   solve(mr);
   zlags = getobjectivevalue(mr);
   return πls,λls,zlags;
