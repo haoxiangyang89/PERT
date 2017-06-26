@@ -293,6 +293,46 @@ function subLagI(D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG)
   return spL;
 end
 
+# # function to solve the Lagrangian relaxation with big M with the branching information
+# function subLagIB(D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG,bSet,bSign)
+#   spL = Model(solver = CplexSolver());
+#   @variables(spL, begin
+#     tN >= 0
+#     # t and x are the auxiliary variables with the added equality constraints
+#     # τ and z are the actual subproblem variables
+#     t[i in II] >= 0
+#     τ[i in II] >= 0
+#     z[i in II, j in JJ], Bin
+#     0 <= x[i in II, j in JJ] <= 1
+#     F[i in II], Bin
+#     G[i in II], Bin
+#     # S is the linearization of the G[i]*z[i,j]
+#     S[i in II, j in JJ], Bin
+#   end);
+#   @constraint(spL, tNConstr[i in II], tN >= τ[i]);
+#   @constraint(spL, FLogic[i in II;if !(i in bSet)], td - F[i]*M <= t[i]);
+#   @constraint(spL, GLogic[i in II;if !(i in bSet)], td + G[i]*M >= t[i]);
+#   @constraint(spL, FGLogic[i in II;if !(i in bSet)], F[i] + G[i] == 1);
+#   @constraint(spL, τLogic1[i in II;if !(i in bSet)], τ[i] + (1 - F[i])*M >= t[i]);
+#   @constraint(spL, τLogic2[i in II;if !(i in bSet)], τ[i] - (1 - F[i])*M <= t[i]);
+#   @constraint(spL, zlogic1[i in II, j in JJ;if !(i in bSet)], z[i,j] + 1 - F[i] >= x[i,j]);
+#   @constraint(spL, zlogic2[i in II, j in JJ;if !(i in bSet)], z[i,j] - 1 + F[i] <= x[i,j]);
+#   @constraint(spL, durationConstr[g in GG;if !(g[1] in bSet)], τ[g[2]] - τ[g[1]] >= (D[g[1]] + dscen[g[1]]*G[g[1]]) -
+#                     sum(D[g[1]]*ee[j]*z[g[1],j] for j in JJ) - sum(dscen[g[1]]*ee[j]*S[g[1],j] for j in JJ));
+#   @constraint(spL, xConstr[i in II;if !(i in bSet)], sum(z[i,j] for j in JJ) <= 1);
+#   @constraint(spL, budgetConstr, sum(sum(b[i,j]*z[i,j] for j in JJ) for i in II) <= B);
+#   # linearization constraints
+#   @constraint(spL, Slinear1[i in II, j in JJ;if !(i in bSet)], S[i,j] <= G[i]);
+#   @constraint(spL, Slinear2[i in II, j in JJ;if !(i in bSet)], S[i,j] <= z[i,j]);
+#   @constraint(spL, Slinear3[i in II, j in JJ;if !(i in bSet)], S[i,j] >= G[i] + z[i,j] - 1);
+# 
+#   for i in 1:length(bSet)
+#     if bSignSet[i] == 1
+#       # not finished!!!
+#   end
+#
+# end
+
 # solve the lagrangian relaxation of the subproblem
 # categorize each activity and build the (relaxed) subproblem
 function solveSub(xs,ts,D,dscen,M,td,b,B,ee,II,JJ,GG,zint,bSet,bSignSet)
@@ -429,7 +469,7 @@ end
 
 # solve the lagrangian relaxation of the subproblem
 # categorize each activity and build the (relaxed) subproblem
-function solveSubI(xs,ts,D,dscen,M,td,b,B,ee,II,JJ,GG,zint)
+function solveSubI(xs,ts,D,dscen,M,td,b,B,ee,II,JJ,GG,zint,bSet,bSignSet)
   I1,I2 = obtainIs(xs,ts,td,II);
 
   # iteratively solve the lagrangian multiplier
@@ -563,7 +603,11 @@ end
 
 # function to generate a Lagrangian cut
 function generateCut(s,πg,λg,zlag,xSol,tSol,II,JJ)
-  lc = LagCut(s,πg,λg,zlag - sum(πg[i]*tSol[i] for i in II) - sum(sum(λg[i,j]*xSol[i,j] for j in JJ) for i in II));
+  if II != []
+    lc = LagCut(s,πg,λg,zlag - sum(πg[i]*tSol[i] for i in II) - sum(sum(λg[i,j]*xSol[i,j] for j in JJ) for i in II));
+  else
+    lc = LagCut(s,πg,λg,zlag);
+  end
   return lc;
 end
 
@@ -604,4 +648,21 @@ function fullExt(D,dscen,H,b,B,ee,II,JJ,M,SS,GG,p)
   @objective(mext, Min, sum((1-p)/length(SS)*tN[s] for s in SS) + p*tN0);
 
   return mext;
+end
+
+function loadInit(fileAdd)
+  data = load(fileAdd);
+  D = data["D"];
+  d = data["d"];
+  H = data["H"];
+  b = data["b"];
+  B = data["B"];
+  ee = data["ee"];
+  II = data["II"];
+  JJ = data["JJ"];
+  M = data["M"];
+  SS = data["SS"];
+  GG = data["GG"];
+  p = data["p"];
+  return D,d,H,b,B,ee,II,JJ,M,SS,GG,p;
 end

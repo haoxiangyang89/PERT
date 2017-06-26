@@ -6,10 +6,13 @@ include("def.jl");
 # Semi1 is the one with fixed disruption time
 # Semi2 is the one with fixed disruption magnitude
 # Fixed is the one with both disruption time and disruption magnitude fixed
-InputAdd = "test_Input_graph_Fixed.csv";
-D,d,H,b,B,ee,II,JJ,M,SS,GG,dH,dR,p = readIn(InputAdd);
+# InputAdd = "test_Input_graph_Fixed.csv";
+#InputAdd = "test_Input_graph_Semi1.csv";
+#D,d,H,b,B,ee,II,JJ,M,SS,GG,dH,dR,p = readIn(InputAdd);
+jldAdd = "initFile.jld";
+D,d,H,b,B,ee,II,JJ,M,SS,GG,p = loadInit(jldAdd);
 ϵ = 1e-4;
-maxIter = 10;
+maxIter = 2;
 
 # prepare the scenario data: each scenario's information with each activity's duration after disruption
 noS = length(SS) - 1;
@@ -29,10 +32,12 @@ nodeList = [];
 mp = createMaster(D,d,b,B,ee,II,JJ,SS,GG,p);
 # create the initial node
 bSetIni = Dict();
+bSignSetIni = Dict();
 for s in SS[2:length(SS)]
   bSetIni[s] = [];
+  bSignSetIni[s] = [];
 end
-iniNode = nodeType(0,0,Inf,mp,bSetIni,bSetIni);
+iniNode = nodeType(0,0,Inf,mp,bSetIni,bSignSetIni);
 nodeList = [iniNode];
 # the universal lower bound/upper bound
 totalLB = 0;
@@ -53,7 +58,7 @@ while nodeList != []
       mpObj = getobjectivevalue(mpi);
       # update the node lower bound
       if mpObj > currentNode.lbCost
-        currentNode.lbCost = mpObj
+        currentNode.lbCost = mpObj;
       end
 
       # collect the solution from the master program
@@ -83,9 +88,9 @@ while nodeList != []
         mlag = subLag(xSol,tSol,D,dscen[s],H[s],M[s],b,B,ee,II,I1,I2,JJ,GG,πle,λle);
         for i in 1:length(currentNode.bSet[s])
           if currentNode.bSignSet[s][i] == 1
-            @constraint(mlag,mlag.varDict[:t][currentNode.bSet[i]] <= H[s] - 1e-4);
+            @constraint(mlag,mlag.varDict[:t][currentNode.bSet[s][i]] <= H[s] - 1e-4);
           elseif currentNode.bSignSet[s][i] == 2
-            @constraint(mlag,mlag.varDict[:t][currentNode.bSet[i]] >= H[s]);
+            @constraint(mlag,mlag.varDict[:t][currentNode.bSet[s][i]] >= H[s]);
           end
         end
         solve(mlag);
@@ -98,6 +103,8 @@ while nodeList != []
       # update the upper bound
       if tempUB < currentNode.ubCost
         currentNode.ubCost = tempUB;
+        tSolUB = copy(tSol);
+        xSolUB = copy(xSol);
       end
       # whether to end generating Lagrangian cuts
       if currentNode.ubCost - currentNode.lbCost >= ϵ*currentNode.lbCost
@@ -150,26 +157,30 @@ while nodeList != []
       bestEIndex = 0;
       for i in II
         # if we have not branched on this scenario time on this activity
-        if (abs(tSol[i] - H[zDiffMaxIndex]) < bestE)&(!(i in currentNode.bSet[zDiffMaxIndex]))
-          bestE = abs(tSol[i] - H[zDiffMaxIndex]);
+        # if (abs(tSol[i] - H[zDiffMaxIndex]) < bestE)&(!(i in currentNode.bSet[zDiffMaxIndex]))
+        if (abs(tSolUB[i] - H[zDiffMaxIndex]) < bestE)&(!(i in currentNode.bSet[zDiffMaxIndex]))
+          # bestE = abs(tSol[i] - H[zDiffMaxIndex]);
+          bestE = abs(tSolUB[i] - H[zDiffMaxIndex]);
           bestEIndex = i;
         end
       end
       nodeCount += 1;
-      bSetTemp = copy(currentNode.bSet);
-      bSignSetTemp = copy(currentNode.bSignSet);
+      bSetTemp = deepcopy(currentNode.bSet);
+      bSignSetTemp1 = deepcopy(currentNode.bSignSet);
+      bSignSetTemp2 = deepcopy(currentNode.bSignSet);
       push!(bSetTemp[zDiffMaxIndex],bestEIndex);
-      push!(bSignSetTemp[zDiffMaxIndex],1);
+
+      push!(bSignSetTemp1[zDiffMaxIndex],1);
       mpBran1 = copy(mpi);
       mpBran1 = appendBNBcuts(mpBran1,bestEIndex,H[zDiffMaxIndex],1);
-      node1 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran1,bSetTemp,bSignSetTemp);
+      node1 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran1,bSetTemp,bSignSetTemp1);
       push!(nodeList,node1);
+
       nodeCount += 1;
       mpBran2 = copy(mpi);
-      bSignSetTemp = copy(currentNode.bSignSet);
-      push!(bSignSetTemp[zDiffMaxIndex],2);
+      push!(bSignSetTemp2[zDiffMaxIndex],2);
       mpBran2 = appendBNBcuts(mpBran2,bestEIndex,H[zDiffMaxIndex],2);
-      node2 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran2,bSetTemp,bSignSetTemp);
+      node2 = nodeType(nodeCount,currentNode.lbCost,currentNode.ubCost,mpBran2,bSetTemp,bSignSetTemp2);
       push!(nodeList,node2);
     end
   end
