@@ -149,8 +149,8 @@ end
 # function to append Lagrangian cuts to the given program
 function appendLCcuts(mp,cI,II,JJ)
   # cI(constraint item) contains πl, λl and constant
-  @constraint(mp,mp.varDict[:θ][cI.s] >= sum(cI.πl[i]*mp.varDict[:t][i] for i in II if i in keys(cI.πl))
-                  + sum(sum(cI.λl[i,j]*mp.varDict[:x][i,j] for j in JJ if (i,j) in keys(cI.λl)) for i in II)
+  @constraint(mp,mp[:θ][cI.s] >= sum(cI.πl[i]*mp[:t][i] for i in II if i in keys(cI.πl))
+                  + sum(sum(cI.λl[i,j]*mp[:x][i,j] for j in JJ if (i,j) in keys(cI.λl)) for i in II)
                   + cI.z);
   return mp;
 end
@@ -158,9 +158,9 @@ end
 # function to append branch-and-bound cuts to the given program
 function appendBNBcuts(mp,i,td,sign)
   if sign == 1
-    @constraint(mp,mp.varDict[:t][i] <= td - 1e-4);
+    @constraint(mp,mp[:t][i] <= td - 1e-4);
   else
-    @constraint(mp,mp.varDict[:t][i] >= td);
+    @constraint(mp,mp[:t][i] >= td);
   end
   return mp;
 end
@@ -325,7 +325,7 @@ end
 #   @constraint(spL, Slinear1[i in II, j in JJ;if !(i in bSet)], S[i,j] <= G[i]);
 #   @constraint(spL, Slinear2[i in II, j in JJ;if !(i in bSet)], S[i,j] <= z[i,j]);
 #   @constraint(spL, Slinear3[i in II, j in JJ;if !(i in bSet)], S[i,j] >= G[i] + z[i,j] - 1);
-# 
+#
 #   for i in 1:length(bSet)
 #     if bSignSet[i] == 1
 #       # not finished!!!
@@ -358,23 +358,23 @@ function solveSub(xs,ts,D,dscen,M,td,b,B,ee,II,JJ,GG,zint,bSet,bSignSet)
   mr = subLagP(D,dscen,b,B,ee,II,I1,I2,JJ,GG);
   for i in 1:length(bSet)
     if bSignSet[i] == 1
-      @constraint(mr,mr.varDict[:t][bSet[i]] <= td - 1e-4);
+      @constraint(mr,mr[:t][bSet[i]] <= td - 1e-4);
     elseif bSignSet[i] == 2
-      @constraint(mr,mr.varDict[:t][bSet[i]] >= td);
+      @constraint(mr,mr[:t][bSet[i]] >= td);
     end
   end
   #mr = subLagI(D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG);
   while (k<=100)&(!stopBool)
     k += 1;
-    @objective(mr,Min,mr.varDict[:tN] - sum(πls[i]*(mr.varDict[:t][i] - ts[i]) for i in I1)
-                - sum(sum(λls[i,j]*(mr.varDict[:x1][i,j] - xs[i,j]) for j in JJ) for i in I1));
-    # @objective(mr,Min,mr.varDict[:tN] - sum(πls[i]*(mr.varDict[:t][i] - ts[i]) for i in I1)
-    #             - sum(sum(λls[i,j]*(mr.varDict[:x][i,j] - xs[i,j]) for j in JJ) for i in I1));
+    @objective(mr,Min,mr[:tN] - sum(πls[i]*(mr[:t][i] - ts[i]) for i in I1)
+                - sum(sum(λls[i,j]*(mr[:x1][i,j] - xs[i,j]) for j in JJ) for i in I1));
+    # @objective(mr,Min,mr[:tN] - sum(πls[i]*(mr[:t][i] - ts[i]) for i in I1)
+    #             - sum(sum(λls[i,j]*(mr[:x][i,j] - xs[i,j]) for j in JJ) for i in I1));
     mrStatus = solve(mr);
     if mrStatus != :Unbounded
-      xk1 = getvalue(mr.varDict[:x1]);
-      #xk1 = getvalue(mr.varDict[:x]);
-      tk = getvalue(mr.varDict[:t]);
+      xk1 = getvalue(mr[:x1]);
+      #xk1 = getvalue(mr[:x]);
+      tk = getvalue(mr[:t]);
       if getobjectivevalue(mr) > zk
           counter = 0;
       else
@@ -460,8 +460,8 @@ function solveSub(xs,ts,D,dscen,M,td,b,B,ee,II,JJ,GG,zint,bSet,bSignSet)
   end
 
   # now we have a set of Lagrangian coefficients
-  @objective(mr,Min,mr.varDict[:tN] - sum(πls[i]*(mr.varDict[:t][i] - ts[i]) for i in I1)
-              - sum(sum(λls[i,j]*(mr.varDict[:x1][i,j] - xs[i,j]) for j in JJ) for i in I1));
+  @objective(mr,Min,mr[:tN] - sum(πls[i]*(mr[:t][i] - ts[i]) for i in I1)
+              - sum(sum(λls[i,j]*(mr[:x1][i,j] - xs[i,j]) for j in JJ) for i in I1));
   solve(mr);
   zlags = getobjectivevalue(mr);
   return πls,λls,zlags;
@@ -493,22 +493,22 @@ function solveSubI(xs,ts,D,dscen,M,td,b,B,ee,II,JJ,GG,zint,bSet,bSignSet)
   mr = subLagI(D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG);
   for i in 1:length(bSet)
     if bSignSet[i] == 1
-      @constraint(mr,mr.varDict[:t][bSet[i]] <= td - 1e-4);
+      @constraint(mr,mr[:t][bSet[i]] <= td - 1e-4);
     elseif bSignSet[i] == 2
-      @constraint(mr,mr.varDict[:t][bSet[i]] >= td);
+      @constraint(mr,mr[:t][bSet[i]] >= td);
     end
   end
   while (k<=100)&(!stopBool)
     k += 1;
-    # @objective(mr,Min,mr.varDict[:tN] - sum(πls[i]*(mr.varDict[:t][i] - ts[i]) for i in I1)
-    #             - sum(sum(λls[i,j]*(mr.varDict[:x1][i,j] - xs[i,j]) for j in JJ) for i in I1));
-    @objective(mr,Min,mr.varDict[:tN] - sum(πls[i]*(mr.varDict[:t][i] - ts[i]) for i in I1)
-                - sum(sum(λls[i,j]*(mr.varDict[:x][i,j] - xs[i,j]) for j in JJ) for i in I1));
+    # @objective(mr,Min,mr[:tN] - sum(πls[i]*(mr[:t][i] - ts[i]) for i in I1)
+    #             - sum(sum(λls[i,j]*(mr[:x1][i,j] - xs[i,j]) for j in JJ) for i in I1));
+    @objective(mr,Min,mr[:tN] - sum(πls[i]*(mr[:t][i] - ts[i]) for i in I1)
+                - sum(sum(λls[i,j]*(mr[:x][i,j] - xs[i,j]) for j in JJ) for i in I1));
     mrStatus = solve(mr);
     if mrStatus != :Unbounded
-      #xk1 = getvalue(mr.varDict[:x1]);
-      xk1 = getvalue(mr.varDict[:x]);
-      tk = getvalue(mr.varDict[:t]);
+      #xk1 = getvalue(mr[:x1]);
+      xk1 = getvalue(mr[:x]);
+      tk = getvalue(mr[:t]);
       if getobjectivevalue(mr) > zk
           counter = 0;
       else
@@ -594,8 +594,8 @@ function solveSubI(xs,ts,D,dscen,M,td,b,B,ee,II,JJ,GG,zint,bSet,bSignSet)
   end
 
   # now we have a set of Lagrangian coefficients
-  @objective(mr,Min,mr.varDict[:tN] - sum(πls[i]*(mr.varDict[:t][i] - ts[i]) for i in I1)
-              - sum(sum(λls[i,j]*(mr.varDict[:x][i,j] - xs[i,j]) for j in JJ) for i in I1));
+  @objective(mr,Min,mr[:tN] - sum(πls[i]*(mr[:t][i] - ts[i]) for i in I1)
+              - sum(sum(λls[i,j]*(mr[:x][i,j] - xs[i,j]) for j in JJ) for i in I1));
   solve(mr);
   zlags = getobjectivevalue(mr);
   return πls,λls,zlags;

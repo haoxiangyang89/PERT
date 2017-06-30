@@ -7,8 +7,8 @@ D,r,H,b,B,ee,II,JJ,M,SS,GG,dH,dR,p = readIn(InputAdd);
 #mf = fullExt(D,r,H,b,B,ee,II,JJ,SS,GG,dH,dR,p,M);
 #solve(mf);
 #mfObj = getobjectivevalue(mf);
-#mfX = getvalue(mf.varDict[:x])[:,:,1];
-#mft = getvalue(mf.varDict[:t])[:,1];
+#mfX = getvalue(mf[:x])[:,:,1];
+#mft = getvalue(mf[:t])[:,1];
 
 # intialize with the solutions
 mi = makeMaster(D,r,H,b,B,ee,II,JJ,SS,GG,dH,dR,p);
@@ -46,9 +46,9 @@ while keepIter
     # obtain the current master solutions
     solve(mi);
     miObj = getobjectivevalue(mi);
-    miX = getvalue(mi.varDict[:x])[:,:];
+    miX = getvalue(mi[:x])[:,:];
     push!(xrec,miX);
-    mit = getvalue(mi.varDict[:t])[:];
+    mit = getvalue(mi[:t])[:];
     push!(trec,mit);
     cumuF = p*maximum(mit);
 
@@ -77,15 +77,15 @@ while keepIter
         if abs(zlagp - zlag) < ϵ
             ztight += 1;
         end
-      #  xreal1 = getvalue(mlag.varDict[:xre1]);
-      #  xreal2 = getvalue(mlag.varDict[:xre2]);
-      #  xreal3 = getvalue(mlag.varDict[:xre3]);
+      #  xreal1 = getvalue(mlag[:xre1]);
+      #  xreal2 = getvalue(mlag[:xre2]);
+      #  xreal3 = getvalue(mlag[:xre3]);
       #  ppit,lambda1t,lambda2t,lambdat,zlag = solveSub2(miX,mit,D,rscen[s],H[s],b,B,ee,II,JJ,GG,cumS[s],M);
         l[s] += 1;
 
         # append Lagrangian cuts to the master program
-        cuts[s,l[s]] = @constraint(mi,mi.varDict[:θ][s] >= sum{ppi[i]*(mi.varDict[:t][i] - mit[i]),i in II;i in keys(ppi)}
-            + sum{lambda[i,j]*(mi.varDict[:x][i,j] - miX[i,j]), i in II, j in JJ;(i,j) in keys(lambda)} + zlag);
+        cuts[s,l[s]] = @constraint(mi,mi[:θ][s] >= sum{ppi[i]*(mi[:t][i] - mit[i]),i in II;i in keys(ppi)}
+            + sum{lambda[i,j]*(mi[:x][i,j] - miX[i,j]), i in II, j in JJ;(i,j) in keys(lambda)} + zlag);
     end
 
     # obtain the upper bound

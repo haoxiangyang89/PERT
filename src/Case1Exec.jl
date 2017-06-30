@@ -65,14 +65,14 @@ while nodeList != []
       tSol = Dict();
       xSol = Dict();
       for i in II
-        tSol[i] = getvalue(mpi.varDict[:t][i]);
+        tSol[i] = getvalue(mpi[:t][i]);
         for j in JJ
-          xSol[i,j] = getvalue(mpi.varDict[:x][i,j]);
+          xSol[i,j] = getvalue(mpi[:x][i,j]);
         end
       end
 
       # for each subproblem, solve the subproblem corresponding to the current node
-      tempUB = p*(getvalue(mpi.varDict[:tN]));
+      tempUB = p*(getvalue(mpi[:tN]));
       for s in SS[2:length(SS)]
         I1,I2 = obtainIs(xSol,tSol,H[s],II);
 
@@ -88,9 +88,9 @@ while nodeList != []
         mlag = subLag(xSol,tSol,D,dscen[s],H[s],M[s],b,B,ee,II,I1,I2,JJ,GG,πle,λle);
         for i in 1:length(currentNode.bSet[s])
           if currentNode.bSignSet[s][i] == 1
-            @constraint(mlag,mlag.varDict[:t][currentNode.bSet[s][i]] <= H[s] - 1e-4);
+            @constraint(mlag,mlag[:t][currentNode.bSet[s][i]] <= H[s] - 1e-4);
           elseif currentNode.bSignSet[s][i] == 2
-            @constraint(mlag,mlag.varDict[:t][currentNode.bSet[s][i]] >= H[s]);
+            @constraint(mlag,mlag[:t][currentNode.bSet[s][i]] >= H[s]);
           end
         end
         solve(mlag);
@@ -130,14 +130,14 @@ while nodeList != []
     tSol = Dict();
     xSol = Dict();
     for i in II
-      tSol[i] = getvalue(mpi.varDict[:t][i]);
+      tSol[i] = getvalue(mpi[:t][i]);
       for j in JJ
-        xSol[i,j] = getvalue(mpi.varDict[:x][i,j]);
+        xSol[i,j] = getvalue(mpi[:x][i,j]);
       end
     end
     zDiffMax = 0;
     for s in SS[2:length(SS)]
-      θhat = getvalue(mpi.varDict[:θ][s]);
+      θhat = getvalue(mpi[:θ][s]);
       I1,I2 = obtainIs(xSol,tSol,H[s],II);
 
       # obtain the upper bound of the this subproblem

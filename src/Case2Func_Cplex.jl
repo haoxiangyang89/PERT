@@ -397,13 +397,13 @@ function solveSub(xmaster,tmaster,D,rsub,Hsub,b,B,ee,II,JJ,GG,zint)
     solver = CplexSolver(CPXPARAM_Threads = 3, CPXPARAM_ScreenOutput = 0);
     while (k<=50)&&(!stopBool)
         k += 1;
-        @objective(mr,Min,mr.varDict[:tNr]+sum{lambda1[i,j]*(xmaster[i,j] - mr.varDict[:xr1][i,j]),i in I1,j in JJ}
-            +sum{lambda2[i,j]*(xmaster[i,j]-mr.varDict[:xr2][i,j]),i in I2,j in JJ}
-            +sum{ppi[i]*(tmaster[i]-mr.varDict[:ter][i]),i in I1}+sum{ppi[i]*(tmaster[i]-mr.varDict[:ter][i]),i in I2});
+        @objective(mr,Min,mr[:tNr]+sum{lambda1[i,j]*(xmaster[i,j] - mr[:xr1][i,j]),i in I1,j in JJ}
+            +sum{lambda2[i,j]*(xmaster[i,j]-mr[:xr2][i,j]),i in I2,j in JJ}
+            +sum{ppi[i]*(tmaster[i]-mr[:ter][i]),i in I1}+sum{ppi[i]*(tmaster[i]-mr[:ter][i]),i in I2});
         solve(mr);
-        xk1 = getvalue(mr.varDict[:xr1]);
-        xk2 = getvalue(mr.varDict[:xr2]);
-        tk = getvalue(mr.varDict[:ter]);
+        xk1 = getvalue(mr[:xr1]);
+        xk2 = getvalue(mr[:xr2]);
+        tk = getvalue(mr[:ter]);
         if getobjectivevalue(mr) > zk
             counter = 0;
         else
@@ -508,13 +508,13 @@ function solveSub2(xmaster,tmaster,D,rsub,Hsub,b,B,ee,II,JJ,GG,zint,M)
     mr = subLag(xmaster,tmaster,D,rsub,Hsub,M[s],b,B,ee,II,I1,I2,I3,JJ,GG,lambda1,lambda2,ppi);
     while (k<=50)&&(!stopBool)
         k += 1;
-        @objective(mr,Min,mr.varDict[:tNre]+sum{lambda1[i,j]*(xmaster[i,j] - mr.varDict[:xre1][i,j]),i in I1,j in JJ}
-            +sum{lambda2[i,j]*(xmaster[i,j]-mr.varDict[:xre2][i,j]),i in I2,j in JJ}
-            +sum{ppi[i]*(tmaster[i]-mr.varDict[:tere][i]),i in I1}+sum{ppi[i]*(tmaster[i]-mr.varDict[:tere][i]),i in I2});
+        @objective(mr,Min,mr[:tNre]+sum{lambda1[i,j]*(xmaster[i,j] - mr[:xre1][i,j]),i in I1,j in JJ}
+            +sum{lambda2[i,j]*(xmaster[i,j]-mr[:xre2][i,j]),i in I2,j in JJ}
+            +sum{ppi[i]*(tmaster[i]-mr[:tere][i]),i in I1}+sum{ppi[i]*(tmaster[i]-mr[:tere][i]),i in I2});
         solve(mr);
-        xk1 = getvalue(mr.varDict[:xre1]);
-        xk2 = getvalue(mr.varDict[:xre2]);
-        tk = getvalue(mr.varDict[:tere]);
+        xk1 = getvalue(mr[:xre1]);
+        xk2 = getvalue(mr[:xre2]);
+        tk = getvalue(mr[:tere]);
         if getobjectivevalue(mr) > zk
             counter = 0;
         else
