@@ -1,5 +1,5 @@
 # This is a collections of all functions
-using JuMP,Distributions,CPLEX;
+using JuMP,Distributions,Gurobi,HDF5,JLD;
 
 function readIn(InputAdd)
     # no of activities
@@ -130,7 +130,7 @@ end
 
 # function to create the basic version of the master program
 function createMaster(D,d,b,B,ee,II,JJ,SS,GG,p)
-  mp = Model(solver = CplexSolver());
+  mp = Model(solver = GurobiSolver());
   @variables(mp, begin
     θ[s in SS;s >= 2] >= 0
     x[i in II,j in JJ], Bin
@@ -182,7 +182,7 @@ end
 
 # function to build the MIP sub problem
 function subInt(xs,ts,D,b,B,ee,II,I1,I2,dscen,JJ,GG)
-  sip = Model(solver = CplexSolver());
+  sip = Model(solver = GurobiSolver());
   @variables(sip, begin
     x[i in II,j in JJ], Bin
     t[i in II] >= 0
@@ -203,7 +203,7 @@ end
 # function to solve for the coefficents used in Lagrangian cuts
 # the easier version of the sub problem: without big M
 function subLagP(D,dscen,b,B,ee,II,I1,I2,JJ,GG)
-  spLp = Model(solver = CplexSolver());
+  spLp = Model(solver = GurobiSolver());
   @variables(spLp, begin
     tN >= 0
     t[i in II] >= 0
@@ -222,7 +222,7 @@ end
 
 # function to solve the Lagrangian relaxation with big M
 function subLag(xs,ts,D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG,πle,λle)
-  spL = Model(solver = CplexSolver());
+  spL = Model(solver = GurobiSolver());
   @variables(spL, begin
     tN >= 0
     # t and x are the auxiliary variables with the added equality constraints
@@ -259,7 +259,7 @@ end
 
 # function to solve the Lagrangian relaxation with big M
 function subLagI(D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG)
-  spL = Model(solver = CplexSolver());
+  spL = Model(solver = GurobiSolver());
   @variables(spL, begin
     tN >= 0
     # t and x are the auxiliary variables with the added equality constraints
@@ -274,8 +274,8 @@ function subLagI(D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG)
     S[i in II, j in JJ], Bin
   end);
   @constraint(spL, tNConstr[i in II], tN >= τ[i]);
-  @constraint(spL, FLogic[i in II], td - F[i]*M <= t[i]);
-  @constraint(spL, GLogic[i in II], td + G[i]*M >= t[i]);
+  @constraint(spL, FLogic[i in II], td - F[i]*M <= τ[i]);
+  @constraint(spL, GLogic[i in II], td + G[i]*M >= τ[i]);
   @constraint(spL, FGLogic[i in II], F[i] + G[i] == 1);
   @constraint(spL, τLogic1[i in II], τ[i] + (1 - F[i])*M >= t[i]);
   @constraint(spL, τLogic2[i in II], τ[i] - (1 - F[i])*M <= t[i]);
@@ -295,7 +295,7 @@ end
 
 # # function to solve the Lagrangian relaxation with big M with the branching information
 # function subLagIB(D,dscen,td,M,b,B,ee,II,I1,I2,JJ,GG,bSet,bSign)
-#   spL = Model(solver = CplexSolver());
+#   spL = Model(solver = GurobiSolver());
 #   @variables(spL, begin
 #     tN >= 0
 #     # t and x are the auxiliary variables with the added equality constraints
@@ -613,7 +613,7 @@ end
 
 # function to build the extensive formulation
 function fullExt(D,dscen,H,b,B,ee,II,JJ,M,SS,GG,p)
-  mext = Model(solver = CplexSolver());
+  mext = Model(solver = GurobiSolver());
 
   @variable(mext,tN0 >= 0);
   @variable(mext,tN[s in SS] >= 0);

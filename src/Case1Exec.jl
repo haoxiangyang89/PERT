@@ -12,7 +12,7 @@ include("def.jl");
 jldAdd = "initFile.jld";
 D,d,H,b,B,ee,II,JJ,M,SS,GG,p = loadInit(jldAdd);
 ϵ = 1e-4;
-maxIter = 2;
+maxIter = 10;
 
 # prepare the scenario data: each scenario's information with each activity's duration after disruption
 noS = length(SS) - 1;
@@ -43,6 +43,8 @@ nodeList = [iniNode];
 totalLB = 0;
 totalUB = Inf;
 nodeCount = 0;
+tSolUB = Dict();
+xSolUB = Dict();
 
 while nodeList != []
   # solve the master problem for t/x
@@ -136,6 +138,7 @@ while nodeList != []
       end
     end
     zDiffMax = 0;
+    zDiffMaxIndex = 0;
     for s in SS[2:length(SS)]
       θhat = getvalue(mpi[:θ][s]);
       I1,I2 = obtainIs(xSol,tSol,H[s],II);
