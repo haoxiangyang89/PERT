@@ -209,7 +209,7 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 		& t_k - t_i \geq D_{i}(1 - \sum_{j \in J_i} x_{ij} e_{ij}) & \forall i \in I, (i,k) \in \mathcal{A}\\
 		& \sum_{i \in I} \sum_{j \in J_i} b_{ij}x_{ij} \leq B & \\
 		& \sum_{j \in J_i} x_{ij} \leq 1 & \forall i \in I\\
-		& \theta^\omega \geq \sum_{i \in I} \pi_i^{\omega,k^\omega} t_i + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,k^\omega} x_{ij} + v^{\omega,k^\omega} x_{ij} & \forall \omega \in \Omega, k^\omega = 1,2, \dots \label{cons:linearCuts}\\
+		& \theta^\omega \geq \sum_{i \in I} \pi_i^{\omega,k^\omega} t_i + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,k^\omega} x_{ij} + v^{\omega,k^\omega} & \forall \omega \in \Omega, k^\omega = 1,2, \dots \label{cons:linearCuts}\\
 		& t_i \geq 0 & \forall i \in I\\
 		& x_{ij} \in \{0,1\}. & \forall i \in I, j \in J_i&
 		\end{align}
@@ -272,11 +272,18 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 	\end{subequations}
 	The result from \cite{zou2016nested} could not be directly applied in our problem since our state variable contains both continuous variables \(t\) and binary variables \(x\). The Lagrangian cuts will only be a lower bound but the tightness could not be guaranteed. This means that if we carry out a cutting plane scheme using the Lagrangian cuts, solving the master problem (\ref{prob:master}) will only obtain a lower bound. \\
 	\newline
-	One important observation to help with this issue is that if we can determine the temporal relationship between every activity and the disruption, the restricted version of the function \(f^\omega\) will be convex in \(t\), and we could find a tight and valid Lagrangian cut similar to those in \cite{zou2016nested}. This means, for example, if for a specific scenario \(\omega\), \(H^\omega = 5\), and for each activity \(i \in I\) we know whether its starting time \(t_i\) is less than, larger than or equal to \(H^\omega = 5\), then there is a finite set of linear constraints that could be generated to fully characterize \(f^\omega(x,t)\) in formulation~(\ref{prob:master}). This property is true mainly because once we know the temporal relationship between the starting time of each activity and the disruption time, it is always optimal to start the activity at its earliest possible time. We will prove this property as follows. \\
-	\newline
-	\textcolor{blue}{State the Proofs of the tightness/validity of the Lagrangian cuts}\\
-	\newline
-	The temporal relationship could be determined by a branch-and-bound scheme. Although theoretically for each scenario there are exponential number of possible temporal relationships because each activity can either be before the disruption time or after that, there are only a small number of activities, of which the optimal starting time of the deterministic problem (\ref{prob:static}) is close to the disruption time, that really matter. If an activity should be starting much earlier than the disruption time in the deterministic problem, it usually will significantly increase the length of the project span by delaying the start of such activity. If an activity cannot start until a time much later than the disruption time, it is usually not possible to make it start before the disruption time without committing crashing resources heavily on its precedent activities, which may likely lead to an inferior solution.
+	One important observation to help with this issue is that if we can determine the temporal relationship between every activity and the disruption, the restricted version of the function \(f^\omega\) will be convex in \(t\), and we could find a tight and valid Lagrangian cut similar to those in \cite{zou2016nested}. This means, for example, if for a specific scenario \(\omega\), \(H^\omega = 5\), and for each activity \(i \in I\) we know whether its starting time \(t_i\) is less than, larger than or equal to \(H^\omega = 5\), then there is a finite set of linear constraints that could be generated to fully characterize \(f^\omega(x,t)\) in formulation~(\ref{prob:master}). This property is true mainly because once we know the temporal relationship between the starting time of each activity and the disruption time, it is always optimal to start the activity at its earliest possible time. We will prove this property as follows. 
+	\begin{theorem}
+		For a specific scenario \(\omega\), let \(\pi^*\) and \(\lambda^*\) be an optimal solution and \(v^*\) be the optimal objective value to the Lagrangian dual problem (\(R^\omega\)) in (\ref{prob:LagDual}). The cut \(\theta^\omega \geq \sum_{i \in I} \pi_i^* (t_i - \hat{t}_i) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^* (x_{ij} - \hat{x}_{ij}) + v^*\) is a valid and tight cut if whether \(t_i \geq H^\omega\) is known for all \(i \in I\). According to Definition 2 in \cite{zou2016nested}, the cut is
+		\begin{itemize}
+			\item valid, if \(f^\omega(x,t) \geq \sum_{i \in I} \pi_i^* (t_i - \hat{t}_i) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^* (x_{ij} - \hat{x}_{ij}) + v^*,\ \forall t_i \geq 0, x_{ij} \in \{0,1\}\);
+			\item tight, if \(f^\omega(\hat{x},\hat{t}) = v^*\).
+		\end{itemize} 
+	\end{theorem}
+	\begin{proof}
+		\textcolor{blue}{To be added.}
+	\end{proof}
+	\noi The temporal relationship could be determined by a branch-and-bound scheme. Although theoretically for each scenario there are exponential number of possible temporal relationships because each activity can either be before the disruption time or after that, there are only a small number of activities, of which the optimal starting time of the deterministic problem (\ref{prob:static}) is close to the disruption time, that really matter. If an activity should be starting much earlier than the disruption time in the deterministic problem, it usually will significantly increase the length of the project span by delaying the start of such activity. If an activity cannot start until a time much later than the disruption time, it is usually not possible to make it start before the disruption time without committing crashing resources heavily on its precedent activities, which may likely lead to an inferior solution.
 
 \section{Computational Results} \label{sec:results}
 
