@@ -137,6 +137,7 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 			\multicolumn{4}{l}{Indices and index sets} \\
 			\\
 			\(I\) & \(\qquad\) & the set of activities;&\\
+			\(I_i\) & \(\qquad\) & the set of activities which directly lead to activity \(i\); &\\
 			\(J_i\) & \(\qquad\) & the set of crashing options for activity \(i\), \(i \in I\);&\\
 			\(\Omega\) & \(\qquad\) & the set of possible realizations of disruption;&\\
 			\(\mathcal{A}\) &\(\qquad\) & set of arcs which represents the precedence relationship;&\\
@@ -266,25 +267,74 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 	\begin{subequations}
 		\label{prob:LagDual}
 		\begin{align}
-		(R^\omega) \quad \max_{\pi,\lambda} \min_{t,\tau,x,z} \quad & t_N - \sum_{i \in I} \pi_i(\tau_{i} - \hat{t}_i) - \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}(z_{ij} - \hat{x}_{ij}) & \\
-		\text{s.t.} \quad & (\ref{cons:tN}) - (\ref{cons:s3})\text{ and } (\ref{cons:tPos}) - (\ref{cons:zRange})
+		(R^\omega) \quad \max_{\pi,\lambda} \min_{t,\tau,x,z} \quad & t_N + \sum_{i \in I} \pi_i(\tau_{i} - \hat{t}_i) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}(z_{ij} - \hat{x}_{ij}) & \\
+		\text{s.t.} \quad & (\ref{cons:tN}) - (\ref{cons:s3})\text{ and } (\ref{cons:tPos}) - (\ref{cons:zRange}) \label{cons:X}
 		\end{align}
 	\end{subequations}
 	The result from \cite{zou2016nested} could not be directly applied in our problem since our state variable contains both continuous variables \(t\) and binary variables \(x\). The Lagrangian cuts will only be a lower bound but the tightness could not be guaranteed. This means that if we carry out a cutting plane scheme using the Lagrangian cuts, solving the master problem (\ref{prob:master}) will only obtain a lower bound. \\
 	\newline
-	One important observation to help with this issue is that if we can determine the temporal relationship between every activity and the disruption, the restricted version of the function \(f^\omega\) will be convex in \(t\), and we could find a tight and valid Lagrangian cut similar to those in \cite{zou2016nested}. This means, for example, if for a specific scenario \(\omega\), \(H^\omega = 5\), and for each activity \(i \in I\) we know whether its starting time \(t_i\) is less than, larger than or equal to \(H^\omega = 5\), then there is a finite set of linear constraints that could be generated to fully characterize \(f^\omega(x,t)\) in formulation~(\ref{prob:master}). This property is true mainly because once we know the temporal relationship between the starting time of each activity and the disruption time, it is always optimal to start the activity at its earliest possible time. We will prove this property as follows. 
-	\begin{theorem}
-		For a specific scenario \(\omega\), let \(\pi^*\) and \(\lambda^*\) be an optimal solution and \(v^*\) be the optimal objective value to the Lagrangian dual problem (\(R^\omega\)) in (\ref{prob:LagDual}). The cut \(\theta^\omega \geq \sum_{i \in I} \pi_i^* (t_i - \hat{t}_i) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^* (x_{ij} - \hat{x}_{ij}) + v^*\) is a valid and tight cut if whether \(t_i \geq H^\omega\) is known for all \(i \in I\). According to Definition 2 in \cite{zou2016nested}, the cut is
+	One important observation to help with this issue is that if we can determine the temporal relationship between every activity and the disruption, it is always optimal to start the activity at its earliest possible time. For a feasible solution \((\hat{t},\hat{x})\), we define the shifted solution \((\tilde{t},\tilde{x})\) of \((\hat{t},\hat{x})\) as:
+	\begin{definition}
+		Shifted solution of a feasible solution \((\hat{t},\hat{x})\):
 		\begin{itemize}
-			\item valid, if \(f^\omega(x,t) \geq \sum_{i \in I} \pi_i^* (t_i - \hat{t}_i) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^* (x_{ij} - \hat{x}_{ij}) + v^*,\ \forall t_i \geq 0, x_{ij} \in \{0,1\}\);
-			\item tight, if \(f^\omega(\hat{x},\hat{t}) = v^*\).
+			\item \(\tilde{x}_{ij} = \hat{x}_{ij}\)
+			\item For all activities which do not have a predecessor,\\
+				\(\tilde{t}_i = 
+				\begin{cases}
+					H^\omega & \text{if temporal relationship information specifies } t_i \geq H^\omega\\
+					0 & \text{otherwise.}
+				\end{cases}
+				\)
+			\item For all other activities, \\
+				\(\tilde{t}_i = 
+				\begin{cases}
+				\max \{H^\omega, \max_{i' \in I, i' \in I_i} \{\tilde{t}_{i'} + D_{i'}(1 - \sum_{j \in J_{i'}} e_{i'j}\tilde{x}_{i'j})\} \} & \text{if the temporal relationship}\\
+				& \text{information specifies } t_i \geq H^\omega\\
+				\max_{i' \in I, i' \in I_i} \{\tilde{t}_{i'} + D_{i'}(1 - \sum_{j \in J_{i'}} e_{i'j}\tilde{x}_{i'j})\} & \text{otherwise.}
+				\end{cases}
+				\)
+		\end{itemize}
+	\end{definition}
+	\noi We should notice that the temporal relationship should match the feasible solution. This is a natural result from solving problem~\ref{prob:subLocal} with temporal relationship information given. \\
+	\newline
+	It is obvious to see the following statement is true because delaying an activity as soon as possible when the crashing decision is decided and temporal relationship information is revealed will not bring any benefit.
+	\begin{corollary}
+		For an optimal solution \((t^*,x^*)\) with correct temporal relationship information given for all activities, its shifted solution is also optimal.
+	\end{corollary}
+	\noi Now we will prove that the Lagrangian cuts generated by \cite{zou2016nested} is tight and valid at any shifted solution if temporal relationship information is given for all activities. This statement is very important because it provides an accurate evaluation at the optimal solution, which will lead to an algorithm which is able to solve problem~\ref{prob:extensive} to the exactness.
+	\begin{proposition} \label{prop:convex}
+		Suppose the set defined by constraint (\ref{cons:X}) is denoted by \(X\). For any shifted solution \((\tilde{t},\tilde{x})\) with temporal relationship information given for all \( i \in I\), 
+		\[conv(X) \cap \{(\tau,z) \mid \tau_i = \tilde{t}_i, z_{ij} = \tilde{x}_{ij}, \tau_i, z_{ij} \in \mathbb{R}, \forall i \in I, j \in J_i \}  = \]
+		\[conv(X \cap \{(\tau,z) \mid \tau_i = \tilde{t}_i, z_{ij} = \tilde{x}_{ij}, \tau_i, z_{ij} \in \mathbb{R}, \forall i \in I, j \in J_i \} )\]
+	\end{proposition}
+	\begin{proof}
+		Suppose \((t^0, \tau^0, x^0, z^0) \in  conv(X) \cap \{(\tau,z) \mid \tau_i = \tilde{t}_i, z_{ij} = \tilde{x}_{ij}, \tau_i, z_{ij} \in \mathbb{R}, \forall i \in I, j \in J_i \} \). Then there exist a set of points in \(X\) indexed by \(k \in \mathcal{K}\) where \((t^0, \tau^0, x^0, z^0) = \sum_{k \in \mathcal{K}}\rho_{k} (t^k, \tau^k, x^k, z^k) \) and \(\rho_{k} \geq, \sum_{k \in \mathcal{K}} \rho_{k} = 1\). Since \(\tilde{x}_{ij} \in \{0,1\}, z_{ij}^k \in [0,1], \forall k \in \mathcal{K}\) and we have \(\sum_{k \in \mathcal{K}} \rho_{k} z^k_{ij} = z^0_{ij} = \tilde{x}_{ij}\), every \(z^k_{ij}\) can only take the same value as \(\tilde{x}_{ij} , \forall k \in \mathcal{K}\), which is an end point of \([0,1]\).\\
+		\newline
+		\(z^k_{ij} = \tilde{x}_{ij}\) and temporal relationship information is given for all \(i \in I\), this means that the shifted solution \(\tilde{t}_i\) is the earliest possible starting time for activity \(i\), so \(\tau_i^k \geq \tilde{t}_i\). Similar to the previous statement about the relationship between \(z^k\) and \(\tilde{x}\), as \(\tilde{t}_i\) is taking an end point of the feasible set of \(\tau_i^k\) and \(\sum_{k \in \mathcal{K}} \rho_{k} \tau_i^k = \tilde{t}_i \), we have \(\tau_i^k = \tilde{t}_i,\ \forall k \in \mathcal{K}\). Combining the results above, 
+		\[conv(X) \cap \{(\tau,z) \mid \tau_i = \tilde{t}_i, z_{ij} = \tilde{x}_{ij}, \tau_i, z_{ij} \in \mathbb{R}, \forall i \in I, j \in J_i \}  \subseteq \]
+		\[conv(X \cap \{(\tau,z) \mid \tau_i = \tilde{t}_i, z_{ij} = \tilde{x}_{ij}, \tau_i, z_{ij} \in \mathbb{R}, \forall i \in I, j \in J_i \} )\]
+		On the other hand, 
+		\[conv(X) \cap \{(\tau,z) \mid \tau_i = \tilde{t}_i, z_{ij} = \tilde{x}_{ij}, \tau_i, z_{ij} \in \mathbb{R}, \forall i \in I, j \in J_i \}  \supseteq \]
+		\[conv(X \cap \{(\tau,z) \mid \tau_i = \tilde{t}_i, z_{ij} = \tilde{x}_{ij}, \tau_i, z_{ij} \in \mathbb{R}, \forall i \in I, j \in J_i \} )\]
+		is also true. Suppose a point \((t^0, \tau^0, x^0, z^0) \in conv(X \cap \{(\tau,z) \mid \tau_i = \tilde{t}_i, z_{ij} = \tilde{x}_{ij}, \tau_i, z_{ij} \in \mathbb{R}, \forall i \in I, j \in J_i \} )\), then we can find a set of points indexed by \(\mathcal{K}\) in \(X \cap \{(\tau,z) \mid \tau_i = \tilde{t}_i, z_{ij} = \tilde{x}_{ij}, \tau_i, z_{ij} \in \mathbb{R}, \forall i \in I, j \in J_i \} \) such that \((t^0, \tau^0, x^0, z^0) \) is the convex combination of them. For each \(k \in \mathcal{K}\), \(\tau_i^k = \tilde{t}_i\) and \(z_{ij}^k = \tilde{x}_{ij}\). Therefore, \(\tau^0 = \tilde{t}_i\) and \(z_{ij}^0 = \tilde{x}_{ij}\). Plus, each \((t^k, \tau^k, x^k, z^k) \in X \). Since \((t^0, \tau^0, x^0, z^0)\) is the convex combination of \((t^k, \tau^k, x^k, z^k)\), \((t^0, \tau^0, x^0, z^0) \in conv(X)\). Thus \((t^0, \tau^0, x^0, z^0) \in conv(X) \cap \{(\tau,z) \mid \tau_i = \tilde{t}_i, z_{ij} = \tilde{x}_{ij}, \tau_i, z_{ij} \in \mathbb{R}, \forall i \in I, j \in J_i \}  \).
+	\end{proof}
+	%the restricted version of the function \(f^\omega\) will be convex in \(t\), and we could find a tight and valid Lagrangian cut similar to those in \cite{zou2016nested}. This means, for example, if for a specific scenario \(\omega\), \(H^\omega = 5\), and for each activity \(i \in I\) we know whether its starting time \(t_i\) is less than, larger than or equal to \(H^\omega = 5\), then there is a finite set of linear constraints that could be generated to fully characterize \(f^\omega(x,t)\) in formulation~(\ref{prob:master}). This property is true mainly because once we know the temporal relationship between the starting time of each activity and the disruption time, it is always optimal to start the activity at its earliest possible time. We will prove this property as follows. 
+	\noi With this property, the Lagrangian cuts derived in \cite{zou2016nested} are valid and tight at shifted solutions when temporal relationship information is given for all activities.
+	\begin{theorem}
+		For a specific scenario \(\omega\), let \(\theta^*\) be the objective value and \(\pi^*\) and \(\lambda^*\) be an optimal solution to the Lagrangian dual problem (\(R^\omega\)) in (\ref{prob:LagDual}), where the first stage solution is a shifted solution \((\tilde{t},\tilde{x})\) with temporal relationship information given for all \(i \in I\). The cut \(\theta^\omega \geq \sum_{i \in I} \pi_i^* (t_i - \tilde{t}_i) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^* (x_{ij} - \tilde{x}_{ij}) + t_N^*\) is a valid and tight cut, where being valid and tight means:
+		\begin{itemize}
+			\item valid, \(f^\omega(x,t) \geq \sum_{i \in I} \pi_i^* (t_i - \tilde{t}_i) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^* (x_{ij} - \tilde{x}_{ij}) + t_N^*,\ \forall t_i \geq 0, x_{ij} \in \{0,1\}\);
+			\item tight, \(f^\omega(\tilde{x},\tilde{t}) = \theta^*\).
 		\end{itemize} 
 	\end{theorem}
 	\begin{proof}
-		\textcolor{blue}{To be added.}
+		The Lagrangian cut is a lower bound at any solution because of it is a relaxation of problem~(\ref{prob:subLocal}), which means it is always valid. See Proposition 6.1 in \cite{nemhauser1988integer} for the detailed proof.\\
+		\newline
+		From Proposition~\ref{prop:convex} and Corollary 6.5 from \cite{nemhauser1988integer}, we know the objective value of the Lagrangian dual problem equals to the objective value of the original integer programming problem.
 	\end{proof}
-	\noi The temporal relationship could be determined by a branch-and-bound scheme. Although theoretically for each scenario there are exponential number of possible temporal relationships because each activity can either be before the disruption time or after that, there are only a small number of activities, of which the optimal starting time of the deterministic problem (\ref{prob:static}) is close to the disruption time, that really matter. If an activity should be starting much earlier than the disruption time in the deterministic problem, it usually will significantly increase the length of the project span by delaying the start of such activity. If an activity cannot start until a time much later than the disruption time, it is usually not possible to make it start before the disruption time without committing crashing resources heavily on its precedent activities, which may likely lead to an inferior solution.
-
+	\noi The temporal relationship could be determined by a branch-and-bound scheme. Although theoretically for each scenario there are exponential number of possible temporal relationships because each activity can either be before the disruption time or after that, there are only a small number of activities, of which the optimal starting time of the deterministic problem (\ref{prob:static}) is close to the disruption time, that really matter. If an activity should be starting much earlier than the disruption time in the deterministic problem, it usually will significantly increase the length of the project span by delaying the start of such activity. If an activity cannot start until a time much later than the disruption time, it is usually not possible to make it start before the disruption time without committing crashing resources heavily on its precedent activities, which may likely lead to an inferior solution.\\
+	\newline
+	\textcolor{blue}{Algorithm of branch and cut.}
 \section{Computational Results} \label{sec:results}
 
 \section{Conclusions} \label{sec:conclusions}
