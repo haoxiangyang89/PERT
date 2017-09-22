@@ -1,20 +1,41 @@
+# This is the parameter definition code
 # define the customized variable format
 
-type nodeType
-  nodeID :: Int64
-  lbCost :: Float64
-  ubCost :: Float64
-  mp :: JuMP.Model
-  bSet :: Dict{Any,Any}
-  bSignSet :: Dict{Any,Any}
+# define the project information
+type pInfo
+  II :: Array{Any,1}
+  Ji :: Dict{Any,Any}
+  D :: Dict{Any,Any}
+  b :: Dict{Any,Any}
+  eff :: Dict{Any,Any}
+  B :: Float64
+  p0 :: Float64
+
+  K :: Array{Any,1}
+  Pre :: Dict{Any,Any}
+  Succ :: Dict{Any,Any}
 end
 
-type LagCut
-  s :: Int64
+# define the disruption information
+type disInfo
+  H :: Float64
+  d :: Dict{Any,Any}
+  prDis :: Float64
+end
+
+# define the node type within the B&C tree
+type nodeType
+  lbCost :: Float64
+  mp :: JuMP.Model
+  brInfo :: Array{Any,2}
+end
+
+# define the cut type for B&C
+type cutType
   # coefficients for t
-  πl :: Dict{Any,Any}
+  π :: Dict{Any,Any}
   # coefficients for t
-  λl :: Dict{Any,Any}
+  λ :: Dict{Any,Any}
   # constant term
-  z :: Float64
+  v :: Float64
 end

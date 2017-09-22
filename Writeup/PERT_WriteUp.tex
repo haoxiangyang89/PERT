@@ -69,7 +69,7 @@
 \newcommand{\mc}{\multicolumn}
 \newcommand{\cP}{{\cal P}}
 \newcommand{\underv}{\mbox{$\underbar{$v$}$}}
-%\allowdisplaybreaks 
+\allowdisplaybreaks 
 
 \renewcommand{\P}{{\mathbb P}}
 \newcommand{\E}{{\mathbb E}}
@@ -95,33 +95,24 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 \end{center}
 
 \section{Introduction} \label{sec:intro}
-	\begin{itemize}
-		\item Literature review: PERT set up, applications.
-		\item Literature review: stochastic disruptions.
-		\item Paper structure.
-	\end{itemize}
-	\textcolor{blue}{One sentence background/history on project management.} A project could be viewed as a collection of activities, each of which will consume some time and resources. There will be precedence relationships between activities due to logical or technological considerations. The objective is to find the smallest amount of time needed to finish all activities. The project could be represented as an activity network where the length of each link shows the duration of an activity, and the direction of it shows the precedence relationship. An activity cannot start until all its predecessors are completed. Two dummy nodes \((S,T)\) are created in the network to represent the start and the end of the project. In the network setting with no uncertainty, finding the shortest project span is equivalent to finding the longest path from \(S\) to \(T\). Since the activity network is usually acyclic, it is easy to use shortest path algorithms to find a longest path in polynomial time. Multiple projects can be processed at the same time without a upper limit, as long as the precedence requirement is satisfied. More details about the activity network are discussed in \cite{Elmaghraby77}.\\
+	Project management has been a topic studied by many operations researchers using ``engineering science and optimization theory" \cite{soderlund2004building}. In order to derive an abstract model, a project could be viewed as a collection of activities, each of which will consume some time and resources. There will be precedence relationships between activities due to logical or technological considerations. The objective is to find the smallest amount of time needed to finish all activities. The project could be represented as an activity network where the length of each link shows the duration of an activity, and the direction of it shows the precedence relationship. An activity cannot start until all its predecessors are completed. Two dummy nodes \((S,T)\) are created in the network to represent the start and the end of the project. In the network setting with no uncertainty, finding the shortest project span is equivalent to finding the longest path from \(S\) to \(T\). Since the activity network is usually acyclic, it is easy to use shortest path algorithms to find a longest path in polynomial time. Multiple projects can be processed at the same time without a upper limit, as long as the precedence requirement is satisfied. More details about the activity network are discussed in \cite{Elmaghraby77}.\\
 	\newline 
-	In the planning stage of a project, decisions can be made to crash a certain set of activities in order to achieve the shortest project span. Here crashing an activity means accelerating its progress or compress its duration. In this paper, a discrete set of crashing options will be given to the decision makers, each with a fractional number which equals to the crashed duration divided by the original duration. One project can only be crashed once with one specific option. Each option will incur a certain cost as well and the total cost of crashing could not exceed the budget. Static crashing optimization problem is first researched in \cite{fulkerson1961network, kelley1961criticalpath}. If we assume a finite set of crashing options, the problem could be modeled as a mixed integer program. \textcolor{blue}{list the original crashing problem literature} The static model can be extended to incorporate uncertainty of activity durations. Monte Carlo simulation methods are used to estimate the expected project span given distributions of activity lengths, since it is really possible to provide an analytical expression of the true expected project span. \textcolor{blue}{list the literature of stochastic crashing optimization problems.} Another approach to handle the uncertainty is the robust optimization method. In the robust optimization setting, the objective is to minimize the worst case project span within the uncertainty set. \textcolor{blue}{list the literature of robust crashing optimization problems}\\
+	In the planning stage of a project, decisions can be made to crash a certain set of activities in order to achieve the shortest project span. Here crashing an activity means accelerating its progress or compress its duration. In this paper, a discrete set of crashing options will be given to the decision makers, each with a fractional number which equals to the crashed duration divided by the original duration. One project can only be crashed once with one specific option. Each option will incur a certain cost as well and the total cost of crashing could not exceed the budget. Static crashing optimization problem is first researched in \cite{fulkerson1961network, kelley1961criticalpath}. If we assume a finite set of crashing options, the problem could be modeled as a mixed integer program. The static model can be extended to incorporate uncertainty of activity durations. Monte Carlo simulation methods are used to estimate the expected project span given distributions of activity lengths, since it is not really possible to provide an analytical expression of the true expected project span \cite{burt1971conditional,van1963letter}. Heuristics and simulation-based algorithms have been developed to solve the stochastic project crashing problem \cite{aghaie2009ant,ke2014genetic,kim2007heuristic}. Another approach to handle the uncertainty is the robust optimization method. In the robust optimization setting, the objective is to minimize the worst case project span within the uncertainty set. \textcolor{blue}{select a few papers about robust project crashing and describe what they did.}\\
 	\newline
-	The uncertainty in our paper lies in the timing and the magnitude of the stochastic disruption, which is modeled in a different way from the random variable distribution in the stochastic programming setting, or from the uncertainty set in the robust optimization setting. A stochastic disruption is an event that may occur any time in the time horizon and change the system parameters significantly. Yu and Qi \cite{yu2004disruptionmgt} introduced scenario-based optimization models and applied it to solve airline scheduling problems. Morton et al. \cite{morton2009sealift} introduced the modeling of a sealift scheduling problem under finite number of stochastic disruptions within a stochastic programming structure. This structure ``falls between standard two-stage and multi-stage stochastic programs for a multi-period problem" and reduces the size of the problem to a quadratic growth in the number of time periods. Our setting inherits the philosophy of \cite{morton2009sealift} but enhances the model by allowing continuous disruption time instead of the fixed stages. \textcolor{blue}{list the past papers about the (lacked) work in the stochastic disruption}.\\
+	The uncertainty in our paper lies in the timing and the magnitude of the stochastic disruption, which is modeled in a different way from the random variable distribution in the stochastic programming setting, or from the uncertainty set in the robust optimization setting. A stochastic disruption is an event that may occur any time in the time horizon and change the system parameters significantly. There have been a few papers in applying this idea when the disruption could only occur in a set of specified time periods. Yu and Qi \cite{yu2004disruptionmgt} introduced scenario-based optimization models and applied it to solve airline scheduling problems. Morton et al. \cite{morton2009sealift} introduced the modeling of a sealift scheduling problem under finite number of stochastic disruptions within a stochastic programming structure. This structure ``falls between standard two-stage and multi-stage stochastic programs for a multi-period problem" and reduces the size of the problem to a quadratic growth in the number of time periods. Our setting inherits the philosophy of \cite{morton2009sealift} but enhances the model by allowing continuous disruption time instead of fixed time periods.\\
 	\newline
-	Since it is a new model of uncertainty, we first formally describe the crashing optimization problem with disruptions. Given the limited number of disruption occurrence, the problem can be formulated as a stochastic mixed integer program and we will present the extensive formulation in Section~\ref{sec:formulation}. The large scale and the discrete non-convex nature of the extended formulation means it may not be solved efficiently to desirable tolerance level. In Section~\ref{sec:decomposition}, a branch-and-bound method based on Benders decomposition is developed to solve the crashing optimization problem with a disruption. We show such a decomposition method will solve the integer program to the exactness within finite number of iterations. \\
+	We first formally describe the crashing optimization problem under stochastic disruptions. Given the limited number of disruption occurrence, the problem can be formulated as a stochastic mixed integer program and we will present the extensive formulation in Section~\ref{sec:formulation}. The large scale and the discrete non-convex nature of the extended formulation means it may not be solved efficiently to desirable tolerance level. In Section~\ref{sec:decomposition}, a branch-and-cut method based on Benders decomposition is developed to solve the crashing optimization problem with a disruption. We show such a decomposition method will solve the integer program to the exactness within finite number of iterations.\\
 	\newline
-	The experiment results are presented in Section~\ref{sec:results}, including the comparison between the quality of our solution and the static solution obtained by solving the crashing optimization, and the time improvement by using the decomposition method in Section~\ref{sec:decomposition} compared to solving the extensive formulation. The experiment result shows \textcolor{blue}{append summary of the experiment results here.} We will conclude our paper with remarks on potential extensions of this model in Section~\ref{sec:conclusions}.
+	The experiment results are presented in Section~\ref{sec:results}, including the comparison between the quality of our solution and the solution obtained by solving a  crashing optimization problem with a deterministic disruption, and the computational performance of the decomposition method in Section~\ref{sec:decomposition}, compared to that of solving the extensive formulation. The experiment result shows \textcolor{blue}{(append summary of the experiment results here.)} We will conclude our paper with remarks on potential extensions of this model in Section~\ref{sec:conclusions}.
 	
 \section{Problem Formulation} \label{sec:formulation}
-	\begin{itemize}
-		\item Static PERT problem formulation/ Stochastic PERT literature review: simulation optimization/ Distributionally robust: Natarajan
-		\item Assumptions: not affected by the disruption once started.
-	\end{itemize}
-	The deterministic project crashing optimization problem is widely researched since 1960s \cite{fulkerson1961network, kelley1961criticalpath}. Suppose the activity network is represented by a directed graph \(\mathcal{G} = (I,\mathcal{A})\), where the set of activities is denoted by \(I\) and their precedence relationship is characterized by \(\mathcal{A}\). The budget limit \(B\) and the nominal length of each activity \(D_i\) are given. For each activity \(i \in I\), there is a finite set of crashing options \(j \in J_i\) and each of them will incur a cost of \(b_{ij}\) while cutting down the nominal activity length to \(1 - e_{ij}\) of the nominal length.  We assume each activity could be crashed at most once and the problem could be formulated as follows. 
+	The deterministic project crashing optimization problem is widely researched since 1960s \cite{fulkerson1961network, kelley1961criticalpath}. Suppose the activity network is represented by a directed graph \(\mathcal{G} = (I,\mathcal{A})\), where the set of activities is denoted by \(I\) and their precedence relationship is characterized by \(\mathcal{A}\). Each element in set \(\mathcal{A}\) is a two dimensional vector \((i,k)\), which indicates that we have to finish activity \(i\) before starting activity \(k\), \(i,k \in I\).  The nominal length of each activity \(D_i\) is given, which means if there is no disruption, activity \(i\) will require \(D_i\) amount of time to finish. For each activity \(i \in I\), there is a finite set of crashing options \(j \in J_i\) and each of them will incur a cost of \(b_{ij}\). Applying crashing option \(j\) will decrease the activity length to \(1 - e_{ij}\) of its non-crashed length. We assume each activity can be crashed at most once and the total crashing cost could not be over a given budget \(B\). The deterministic project crashing problem could be formulated as follows:
 	\begin{subequations} \label{prob:static}
 		\begin{align}
 			\min \quad & t_N &\\
-			\text{s.t.} \quad & t_N \geq t_i & \forall i \in I \\
-			& t_k - t_i \geq D_{i}(1 - \sum_{j \in J_i} x_{ij} e_{ij}) & \forall i \in I, (i,k) \in \mathcal{A}\\
-			& \sum_{i \in I} \sum_{j \in J_i} b_{ij}x_{ij} \leq B & \\
+			\text{s.t.} \quad & t_N \geq t_i & \forall i \in I \label{cons:dotN}\\
+			& t_k - t_i \geq D_{i}(1 - \sum_{j \in J_i} x_{ij} e_{ij}) & \forall i \in I, (i,k) \in \mathcal{A} \label{cons:dott}\\
+			& \sum_{i \in I} \sum_{j \in J_i} b_{ij}x_{ij} \leq B & \label{cons:doBudget}\\
 			& \sum_{j \in J_i} x_{ij} \leq 1 & \forall i \in I\\
 			& t_i \geq 0 & \forall i \in I\\
 			& x_{ij} \in \{0,1\} & \forall i \in I, j \in J_i&
@@ -165,23 +156,23 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 			\(S_{ij}^\omega\) & \(\qquad\) & binary term to linearize the bilinear term \(G_i^\omega x_{ij}^\omega\), \(i \in I, j \in J_{i}, \omega \in \Omega\).&\\
 		\end{tabular}
 	\end{table}
-	\noi The extensive formulation of the two-stage stochastic program is shown as Formulation~(\ref{prob:extensive}). Here \(M\) is a large number to enforce the logic relationships. In this problem, we are minimizing the expected project span by taking the sum of each scenario's project span weighted by the scenario probability. Variables \(F^\omega_i\) and \(G^\omega_i\) are used to identify whether activity \(i\) starts before or after the disruption time (in constraint (\ref{cons:f}) - (\ref{cons:fg})). This is important in our problem setting because the duration of each activity will depend on its temporal relationship to the disruption time, which is reflected in constraint (\ref{cons:duration}). For this duration constraint, the original expression of the duration of activity \(i\) is \((D_i + d_i^\omega G_i^\omega)(1 - \sum_{j \in J_i} e_{ij}x_{ij}^\omega)\). This contains a bilinear term \(G_i^\omega x_{ij}^\omega\), which can be linearized by introducing a binary variable \(S_{ij}^\omega\) and bounding it by constraints (\ref{cons:linearize1}) - (\ref{cons:linearize3}).\\
+	\noi The extensive formulation of the two-stage stochastic program is shown as Formulation~(\ref{prob:extensive}). Here \(M\) is a large number to enforce the logic relationships. In this problem, we are minimizing the expected project span by taking the sum of each scenario's project span weighted by the scenario probability. Variables \(F^\omega_i\) and \(G^\omega_i\) are used to identify whether activity \(i\) starts before or after the disruption time (in constraint (\ref{cons:F}) - (\ref{cons:FG})). This is important in our problem setting because the duration of each activity will depend on its temporal relationship to the disruption time, which is reflected in constraint (\ref{cons:duration}). For this duration constraint, the original expression of the duration of activity \(i\) is \((D_i + d_i^\omega G_i^\omega)(1 - \sum_{j \in J_i} e_{ij}x_{ij}^\omega)\). This contains a bilinear term \(G_i^\omega x_{ij}^\omega\), which can be linearized by introducing a binary variable \(S_{ij}^\omega\) and bounding it by constraints (\ref{cons:linearize1}) - (\ref{cons:linearize3}).\\
 	\newline
 	We have to use a set of non-anticipativity constraints (\ref{cons:tf1}) - (\ref{cons:xf2}), different from the one used in a traditional stochastic programming setting, since the first stage decision variables here spans the entire time horizon. These logic constraints ensure the decisions made before the disruption time in each scenario should be the same as the nominal decisions before the same time point, because decisions made with the same amount information should be the same.\\
 	\begin{subequations} \label{prob:extensive}
 		\begin{align}
 			\min \quad & \sum_{\omega \in \Omega} p^\omega t_N^\omega + p^0 t_N& \\
 			\text{s.t.} \quad & t_N^\omega \geq t_i^\omega & \forall i \in I, \omega \in \Omega \\
-			& t_N \geq t_i & \\
+			& t_N \geq t_i & \label{cons:tN}\\
 			& t_i^\omega \geq 0 & \forall i \in I, \omega \in \Omega\\
 			& t_i \geq 0 & \forall i \in I\\
-			& H^\omega - F_i^\omega M \leq t_i & \forall i \in I, \omega \in \Omega \label{cons:f}\\
-			& H^\omega + G_i^\omega M \geq t_i & \forall i \in I, \omega \in \Omega \label{cons:g}\\
-			& F_i^\omega + G_i^\omega = 1 & \forall i \in I, \omega \in \Omega \label{cons:fg}\\
-			& t_i^\omega + (1 - F_i^\omega)M \geq t_i & \forall i \in I, \omega \in \Omega \label{cons:tf1}\\
-			& t_i^\omega - (1 - F_i^\omega)M \leq t_i & \forall i \in I, \omega \in \Omega \label{cons:tf2}\\
-			& x_{ij}^\omega + (1 - F_i^\omega)M \geq x_{ij} & \forall i \in I, j \in J_i, \omega \in \Omega \label{cons:xf1}\\
-			& x_{ij}^\omega - (1 - F_i^\omega)M \leq x_{ij} & \forall i \in I, j \in J_i, \omega \in \Omega \label{cons:xf2}\\
+			& H^\omega - F_i^\omega M \leq t_i & \forall i \in I, \omega \in \Omega \label{cons:F}\\
+			& H^\omega + G_i^\omega M \geq t_i & \forall i \in I, \omega \in \Omega \label{cons:G}\\
+			& F_i^\omega + G_i^\omega = 1 & \forall i \in I, \omega \in \Omega \label{cons:FG}\\
+			& t_i^\omega + (1 - F_i^\omega)M \geq t_i & \forall i \in I, \omega \in \Omega \label{cons:tF1}\\
+			& t_i^\omega - (1 - F_i^\omega)M \leq t_i & \forall i \in I, \omega \in \Omega \label{cons:tF2}\\
+			& x_{ij}^\omega + (1 - F_i^\omega)M \geq x_{ij} & \forall i \in I, j \in J_i, \omega \in \Omega \label{cons:xF1}\\
+			& x_{ij}^\omega - (1 - F_i^\omega)M \leq x_{ij} & \forall i \in I, j \in J_i, \omega \in \Omega \label{cons:xF2}\\
 			& t_k^\omega - t_i^\omega \geq D_i + d_i^\omega G_i^\omega -\sum_{j \in J_i} D_i e_{ij} x_{ij}^\omega - \sum_{j \in J_i} d_i^\omega e_{ij} S_{ij}^\omega & \forall i \in I, j \in J_i, \omega \in \Omega \label{cons:duration}\\
 			& \sum_{j \in J_i} x_{ij}^\omega \leq 1 & \forall i \in I, \omega \in \Omega \label{cons:crashLim}\\
 			& \sum_{i \in I}\sum_{j \in J_i} b_jx_{ij}^\omega \leq B & \forall \omega \in \Omega \label{cons:budget}\\
@@ -242,7 +233,7 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 		\label{prob:subLocal}
 		\begin{align}
 		(S^\omega_L) \quad \min \quad & t_N & \\
-		\text{s.t.} \quad & t_N \geq t_i & \forall i \in I \label{cons:tN}\\
+		\text{s.t.} \quad & t_N \geq t_i & \forall i \in I \label{cons:stN}\\
 		& H^\omega - F_i M \leq t_i & \forall i \in I \\
 		& H^\omega + G_i M \geq t_i & \forall i \in I \\
 		& F_i + G_i = 1 & \forall i \in I \\
@@ -268,7 +259,7 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 		\label{prob:LagDual}
 		\begin{align}
 		(R^\omega) \quad \max_{\pi,\lambda} \min_{t,\tau,x,z} \quad & t_N + \sum_{i \in I} \pi_i(\tau_{i} - \hat{t}_i) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}(z_{ij} - \hat{x}_{ij}) & \\
-		\text{s.t.} \quad & (\ref{cons:tN}) - (\ref{cons:s3})\text{ and } (\ref{cons:tPos}) - (\ref{cons:zRange}) \label{cons:X}
+		\text{s.t.} \quad & (\ref{cons:stN}) - (\ref{cons:s3})\text{ and } (\ref{cons:tPos}) - (\ref{cons:zRange}) \label{cons:X}
 		\end{align}
 	\end{subequations}
 	The result from \cite{zou2016nested} could not be directly applied in our problem since our state variable contains both continuous variables \(t\) and binary variables \(x\). The Lagrangian cuts will only be a lower bound but the tightness could not be guaranteed. This means that if we carry out a cutting plane scheme using the Lagrangian cuts, solving the master problem (\ref{prob:master}) will only obtain a lower bound. \\
@@ -334,8 +325,78 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 	\end{proof}
 	\noi The temporal relationship could be determined by a branch-and-bound scheme. Although theoretically for each scenario there are exponential number of possible temporal relationships because each activity can either be before the disruption time or after that, there are only a small number of activities, of which the optimal starting time of the deterministic problem (\ref{prob:static}) is close to the disruption time, that really matter. If an activity should be starting much earlier than the disruption time in the deterministic problem, it usually will significantly increase the length of the project span by delaying the start of such activity. If an activity cannot start until a time much later than the disruption time, it is usually not possible to make it start before the disruption time without committing crashing resources heavily on its precedent activities, which may likely lead to an inferior solution.\\
 	\newline
-	\textcolor{blue}{Algorithm of branch and cut.}
+	We now present a branch-and-cut algorithm that generates both Lagrangian cuts and shifted cuts:
+	\begin{algorithm}[H]
+		\caption{Branch-and-cut procedure for the project crashing problem with one stochastic disruption}
+		\label{alg:Cut}
+		\begin{algorithmic}[1]
+			\State Initialize with an empty node list. Create a node \(0\) and append it to the node list. Let \(LB = -\infty\) and \(UB = +\infty\) denote the lower bound and upper bound of the entire branching tree.
+			\State At node \(0\), initialize with a master problem \((M)\) and a set of sub problems \((S^\omega)\). Let \(k = 0\) be the index of nodes. Let \(c_m\) denote the number of iterations that the lower bound \(LB\) has not been improved.
+			\While{\(LB < UB\) and \(c_m \leq m\)}
+			\For{\(\omega \in \Omega\)}
+				\State aaa
+			\EndFor{\textbf{end for}}
+			
+			\EndWhile{\textbf{end while}}
+			
+			\State Plug \(\hat{s}^{p,k}, \hat{s}^{q,k}\) in the sub problem \(SDI\) and solve the sub problem. Record solution \(\lambda^{p,k}, \lambda^{q,k}\) and optimal objective value \(z_{feas}^k\);
+			\While{\(z_{feas}^k > \epsilon\)} 
+			\State Generate the feasibility cut as \(z_{feas}^k -\lambda^{p,k}(s^p - \hat{s}^{p,k}) - \lambda^{q,k} (s^q - \hat{s}^{q,k}) \leq 0\);
+			\State Append the feasibility cut to the master problem and obtain the updated master problem as \((M^{k+1})\);
+			\State \(k := k+1\);
+			\State Solve the master problem \((M^k+1)\); \\
+			\State Record solution \(\hat{s}^{p,k}, \hat{s}^{q,k}\) and optimal objective value \(LB = v^*(M^k)\); 
+			\State Plug \(\hat{s}^{p,k}, \hat{s}^{q,k}\) in the sub problem \(SDI\) and solve the sub problem; \\
+			\State Record solution \(\lambda^{p,k}, \lambda^{q,k}\) and optimal objective value \(z_{feas}^k\);
+			\EndWhile{\textbf{end while}}
+			\State Output \(LB\) as the lower bound of the robust ACOPF problem and \(\hat{s}^{p,k}, \hat{s}^{q,k}\) as the \(\epsilon\)-feasible solution.
+		\end{algorithmic}
+	\end{algorithm}
+	\noi We prove that when this algorithm terminates, the solution obtained will be optimal because of the tightness property described before in this section.
+	\begin{theorem}
+		Algorithm~\ref{alg:Cut} will terminate with an optimal solution to model~\eqref{prob:extensive}.
+	\end{theorem}
+	\begin{proof}
+		aaa
+	\end{proof}
 \section{Computational Results} \label{sec:results}
+	\subsection{Computational Performance}
+		With the implementation of Algorithm~\ref{alg:Cut}, we aim to test the computational performance of the algorithm with a group of test data, where the following performance measures will be specifically checked:
+		\begin{itemize}
+			\item How many nodes does the algorithm explore?
+			\item How many cuts does the algorithm generate before reaching optimality?
+			\item How fast do the upper bound and the lower bound converge?
+		\end{itemize}
+		\textcolor{blue}{Include the test results here.}
+	\subsection{Benchmark Test against Deterministic Project Crashing Problem}
+		We will also compare the result of our model and a deterministic project crashing problem with a known disruption time and a known disruption magnitude as the benchmark, in order to justify the value of our model. We suppose the random variable for the timing of the stochastic disruption is denoted by \(H\) and the random variable for the duration of each activity \(i \in I\) after the disruption is denoted by \(\tilde{D}_i\). We also suppose that the mean values of those random variables are known as \(\E[H]\) and \(\E[\tilde{D}_i],\ i \in I\). A deterministic, moderate-sized mixed integer program can be established as follows: 
+		\begin{subequations}
+			\label{prob:dextensive}
+			\begin{align}
+			\min \quad & t_N &\\
+			\text{s.t.} \quad & t_N \geq t_i & \forall i \in I \label{cons:dtN}\\
+			& \E[H] - F_i M \leq t_i & \forall i \in I \label{cons:dFt}\\
+			& \E[H] + G_i M \geq t_i & \forall i \in I \label{cons:dGt}\\
+			& F_i + G_i = 1 & \forall i \in I \label{cons:dFG}\\
+			& t_k - t_i \geq D_i F_i + \E[\tilde{D}_i] G_i - \sum_{j \in J_i} D_i e_{ij} x^F_{ij} - \sum_{j \in J_i} \E[\tilde{D}_i] e_{ij} x^G_{ij} & \forall i \in I, (i,k) \in \mathcal{A} \label{cons:dtt}\\
+			& x_{ij} \geq x_{ij}^F & \forall i \in I,\ j \in J_i \label{cons:dxF1}\\
+			& F_i \geq x_{ij}^F & \forall i \in I,\ j \in J_i \label{cons:dxF2}\\
+			& x_{ij} + F_i - 1 \leq x_{ij}^F & \forall i \in I, \ j \in J_i \label{cons:dxF3}\\
+			& x_{ij} \geq x_{ij}^G & \forall i \in I,\ j \in J_i \label{cons:dxG1}\\
+			& G_i \geq x_{ij}^G & \forall i \in I,\ j \in J_i \label{cons:dxG2}\\
+			& x_{ij} + G_i - 1 \leq x_{ij}^G & \forall i \in I, \ j \in J_i \label{cons:dxG3}\\
+			& \sum_{i \in I} \sum_{j \in J_i} b_{ij} x_{ij} \leq B & \label{cons:dBudget}\\
+			& \sum_{j \in J_i} x_{ij}\leq 1 & \forall i \in I \label{cons:dOneCrash}\\ 
+			& t_i \geq 0 & \forall i \in I\\
+			& F_i, G_i \in \{0,1\} & \forall i \in I \\
+			& x_{ij}, x_{ij}^F, x_{ij}^G \in \{0,1\} & \forall i \in I.
+			\end{align}
+		\end{subequations}
+		The objective of this model is to minimize the total project span, assuming that the disruption happens at the expected time \(\E[H]\) and the disruption magnitude will take its mean value. Constraints~\eqref{cons:dtN} - \eqref{cons:dFG} replicate constraints~\eqref{cons:tN} - \eqref{cons:FG}. Constraint~\eqref{cons:dtt} determines whether the duration of each activity \(i \in I\) takes its nominal value \(D_i\) or its after-disruption value \(\E[\tilde{D}_i]\). Constraints~\eqref{cons:dxF1} - \eqref{cons:dxG3} linearize bilinear terms \(x_{ij} F_i\) and \(x_{ij}G_i\). The budget constraint~\eqref{cons:dBudget} and the constraint of only one crashing per activity~\eqref{cons:dOneCrash} are inherited as well. \\
+		\newline 
+		Apparently this is a simplified version of our disruption model because both the timing and the magnitude of the disruption is assumed deterministic in this case. If the gap between the objective value of model~\eqref{prob:dextensive} and that of model~\eqref{prob:extensive} is large, we can conclude that our model adds a significant value by including the stochastic disruption. We can also fix only the timing or the magnitude of the disruption and run similar tests. This way we will be able to tell which factor, timing or magnitude, is more important to be modeled as a random variable.\\
+		\newline
+		\textcolor{blue}{Include the test results here.}
 
 \section{Conclusions} \label{sec:conclusions}
 	\begin{itemize}
