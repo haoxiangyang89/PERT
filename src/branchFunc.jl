@@ -29,29 +29,30 @@ function branchSimple(pData,disData,Ω,node,that,ωSeq)
     # add the constraints of node1 and node2
     mp1 = copy(node.mp);
     if brInfo1 != []
-        for i in pData.II
-            for ω in Ω
-                if brInfo1[findin(pData.II,i)[1],findin(Ω,ω)[1]] == -1
-                    @constraint(mp1,mp1[:t][i] <= disData[ω].H - 1e-6);
-                elseif brInfo1[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 1
-                    @constraint(mp1,mp1[:t][i] >= disData[ω].H);
-                end
-            end
-        end
+        # add the branching constraint at each iteration
+        # for i in pData.II
+        #     for ω in Ω
+        #         if brInfo1[findin(pData.II,i)[1],findin(Ω,ω)[1]] == -1
+        #             @constraint(mp1,mp1[:t][i] <= disData[ω].H - 1e-6);
+        #         elseif brInfo1[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 1
+        #             @constraint(mp1,mp1[:t][i] >= disData[ω].H);
+        #         end
+        #     end
+        # end
         # inherit the lbCost of the branched node
         node1 = nodeType(node.lbCost,mp1,brInfo1);
     end
     mp2 = copy(node.mp);
     if brInfo2 != []
-        for i in pData.II
-            for ω in Ω
-                if brInfo2[findin(pData.II,i)[1],findin(Ω,ω)[1]] == -1
-                    @constraint(mp2,mp2[:t][i] <= disData[ω].H - 1e-6);
-                elseif brInfo2[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 1
-                    @constraint(mp2,mp2[:t][i] >= disData[ω].H);
-                end
-            end
-        end
+        # for i in pData.II
+        #     for ω in Ω
+        #         if brInfo2[findin(pData.II,i)[1],findin(Ω,ω)[1]] == -1
+        #             @constraint(mp2,mp2[:t][i] <= disData[ω].H - 1e-6);
+        #         elseif brInfo2[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 1
+        #             @constraint(mp2,mp2[:t][i] >= disData[ω].H);
+        #         end
+        #     end
+        # end
         # inherit the lbCost of the branched node
         node2 = nodeType(node.lbCost,mp2,brInfo1);
     end
@@ -71,4 +72,19 @@ function branchTest(pData,disData,Ω,node,ubCost,ϵ)
         end
     end
     return contB;
+end
+
+# this is a function that will add the unadded branching information to the master
+function branchAdd(pData,disData,Ω,mp,brInfo)
+    # for each non-zero item in the
+    for i in pData.II
+        for ω in Ω
+            if brInfo1[findin(pData.II,i)[1],findin(Ω,ω)[1]] == -1
+                @constraint(mp,mp[:t][i] <= disData[ω].H - 1e-6);
+            elseif brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 1
+                @constraint(mp,mp[:t][i] >= disData[ω].H);
+            end
+        end
+    end
+    return mp;
 end

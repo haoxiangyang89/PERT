@@ -4,7 +4,7 @@ function createMaster(pData,disData,Ω)
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
-      t[i in pData.II] >= 0
+      0 <= t[i in pData.II] <= 115
     end);
     @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
@@ -55,19 +55,19 @@ function bGenbuild(pData,dDω,xhat,that,brInfo)
     solve(sp);
     vk = getobjectivevalue(sp);
     # the cut generated is θ >= v - λ(x - xhat) - π(t - that)
-    λ = Dict();             # dual for x
-    π = Dict();             # dual for t
+    λdict = Dict();             # dual for x
+    πdict = Dict();             # dual for t
     for i in pData.II
         if brInfo[findin(pData.II,i)[1]] == 0
-            π[i] = -(getdual(sp[:FCons])[i] + getdual(sp[:GCons])[i] + getdual(sp[:tFnAnt1])[i] + getdual(sp[:tFnAnt2])[i]);
+            πdict[i] = -(getdual(sp[:FCons])[i] + getdual(sp[:GCons])[i] + getdual(sp[:tFnAnt1])[i] + getdual(sp[:tFnAnt2])[i]);
         else
-            π[i] = -(getdual(sp[:tFnAnt1])[i] + getdual(sp[:tFnAnt2])[i]);
+            πdict[i] = -(getdual(sp[:tFnAnt1])[i] + getdual(sp[:tFnAnt2])[i]);
         end
         for j in pData.Ji[i]
-            λ[i,j] = -(getdual(sp[:xFnAnt1])[i,j] + getdual(sp[:xFnAnt2])[i,j]);
+            λdict[i,j] = -(getdual(sp[:xFnAnt1])[i,j] + getdual(sp[:xFnAnt2])[i,j]);
         end
     end
-    cutGen = cutType(π,λ,vk);
+    cutGen = cutType(πdict,λdict,vk);
     return cutGen;
 end
 

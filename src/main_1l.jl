@@ -22,11 +22,12 @@ function cutProc_Benders(pData,disData,Ω,ϵ = 1e-4)
         # Adding other rules of node selection later !!!!!!!!!!!
         nCurrent = nodeList[1];
         # generate Benders cuts until it converges
-        solve(nCurrent.mp);
+        mpc = branchAdd(pData,disData,Ω,nCurrent.mp,nCurrent.brInfo);
+        solve(mpc);
         # if the current lower bound is larger than the upper bound, then prune the node
         if !(getobjectivevalue(nCurrent.mp) >= ubCost - ϵ)
-            xhat = getvalue(nCurrent.mp[:x]);
-            that = getvalue(nCurrent.mp[:t]);
+            xhat = getvalue(mpc[:x]);
+            that = getvalue(mpc[:t]);
             # update the upper bound
             ubTemp = ubCal(pData,disData,Ω,xhat,that);
             if ubTemp < ubCost
@@ -40,9 +41,9 @@ function cutProc_Benders(pData,disData,Ω,ϵ = 1e-4)
             end
 
             # update the lower bound
-            if nCurrent.lbCost < getobjectivevalue(nCurrent.mp)
+            if nCurrent.lbCost < getobjectivevalue(mpc)
                 lbPrev = nCurrent.lbCost;
-                nCurrent.lbCost = getobjectivevalue(nCurrent.mp);
+                nCurrent.lbCost = getobjectivevalue(mpc);
             else
                 lbPrev = nCurrent.lbCost;
             end
@@ -56,13 +57,15 @@ function cutProc_Benders(pData,disData,Ω,ϵ = 1e-4)
                     # append the cut to the master program
                     @constraint(nCurrent.mp, nCurrent.mp[:θ][ω] >= spCut.v + sum(spCut.π[i]*(nCurrent.mp[:t][i] - that[i])
                         + sum(spCut.λ[i,j]*(nCurrent.mp[:x][i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II));
+                    @constraint(mpc, mpc[:θ][ω] >= spCut.v + sum(spCut.π[i]*(mpc[:t][i] - that[i])
+                        + sum(spCut.λ[i,j]*(mpc[:x][i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II));
                     noC += 1;
                 end
 
                 # re-solve the master problem
-                solve(nCurrent.mp);
-                xhat = getvalue(nCurrent.mp[:x]);
-                that = getvalue(nCurrent.mp[:t]);
+                solve(mpc);
+                xhat = getvalue(mpc[:x]);
+                that = getvalue(mpc[:t]);
                 # update the upper bound
                 ubTemp = ubCal(pData,disData,Ω,xhat,that);
                 if ubTemp < ubCost
@@ -76,9 +79,9 @@ function cutProc_Benders(pData,disData,Ω,ϵ = 1e-4)
                 end
 
                 # update the lower bound
-                if nCurrent.lbCost < getobjectivevalue(nCurrent.mp)
+                if nCurrent.lbCost < getobjectivevalue(mpc)
                     lbPrev = nCurrent.lbCost;
-                    nCurrent.lbCost = getobjectivevalue(nCurrent.mp);
+                    nCurrent.lbCost = getobjectivevalue(mpc);
                 else
                     lbPrev = nCurrent.lbCost;
                 end
