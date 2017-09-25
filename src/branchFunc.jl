@@ -19,11 +19,11 @@ function branchSimple(pData,disData,Ω,node,that,ωSeq)
     end
     # if we find an activity-disruption pair
     if (minI != -1)&(minω != -1)
-        brInfo1 = deepcopy(node.brInfo);
+        brInfo1 = copy(node.brInfo);
         brInfo1[findin(pData.II,minI)[1],findin(Ω,minω)[1]] = -1;
         brInfo1 = brInfoExt(pData,disData,Ω,brInfo1,ωSeq);
-        brInfo2 = deepcopy(node.brInfo);
-        brInfo2[findin(pData.II,minI),findin(Ω,minω)] = 1;
+        brInfo2 = copy(node.brInfo);
+        brInfo2[findin(pData.II,minI)[1],findin(Ω,minω)[1]] = 1;
         brInfo2 = brInfoExt(pData,disData,Ω,brInfo2,ωSeq);
     end
     # add the constraints of node1 and node2
@@ -54,7 +54,7 @@ function branchSimple(pData,disData,Ω,node,that,ωSeq)
         #     end
         # end
         # inherit the lbCost of the branched node
-        node2 = nodeType(node.lbCost,mp2,brInfo1);
+        node2 = nodeType(node.lbCost,mp2,brInfo2);
     end
     return node1,node2;
 end
@@ -79,7 +79,7 @@ function branchAdd(pData,disData,Ω,mp,brInfo)
     # for each non-zero item in the
     for i in pData.II
         for ω in Ω
-            if brInfo1[findin(pData.II,i)[1],findin(Ω,ω)[1]] == -1
+            if brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == -1
                 @constraint(mp,mp[:t][i] <= disData[ω].H - 1e-6);
             elseif brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 1
                 @constraint(mp,mp[:t][i] >= disData[ω].H);

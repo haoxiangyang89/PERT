@@ -22,7 +22,8 @@ function cutProc_Benders(pData,disData,Ω,ϵ = 1e-4)
         # Adding other rules of node selection later !!!!!!!!!!!
         nCurrent = nodeList[1];
         # generate Benders cuts until it converges
-        mpc = branchAdd(pData,disData,Ω,nCurrent.mp,nCurrent.brInfo);
+        mpc = copy(nCurrent.mp);
+        mpc = branchAdd(pData,disData,Ω,mpc,nCurrent.brInfo);
         solve(mpc);
         # if the current lower bound is larger than the upper bound, then prune the node
         if !(getobjectivevalue(nCurrent.mp) >= ubCost - ϵ)

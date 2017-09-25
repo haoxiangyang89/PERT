@@ -7,7 +7,7 @@ function extForm(pData,disData,Ω)
         M[ω] = sum(max(pData.D[i],pData.D[i]+disData[ω].d[i]) for i in pData.II if i != 0);
     end
 
-    mp = Model(solver = GurobiSolver());
+    mp = Model(solver = GurobiSolver(Method = 0, OutputFlag = 0));
     @variable(mp,t0[i in pData.II] >= 0);
     @variable(mp,0 <= x0[i in pData.II, j in pData.Ji[i]] <= 1);
     @variable(mp,t[i in pData.II, ω in Ω] >= 0);
@@ -17,7 +17,7 @@ function extForm(pData,disData,Ω)
     @variable(mp,0 <= s[i in pData.II, j in pData.Ji[i], ω in Ω] <= 1);
 
     @constraint(mp, FConstr[i in pData.II, ω in Ω], disData[ω].H - F[i,ω]*M[ω] <= t0[i]);
-    @constraint(mp, GConstr[i in pData.II, ω in Ω], disData[ω].H + G[i,ω]*M[ω] >= t0[i]);
+    @constraint(mp, GConstr[i in pData.II, ω in Ω], disData[ω].H - 1e-6 + G[i,ω]*M[ω] >= t0[i]);
     @constraint(mp, FGConstr[i in pData.II, ω in Ω], F[i,ω] + G[i,ω] == 1);
     @constraint(mp, tConstr1[i in pData.II, ω in Ω], t[i,ω] + (1 - F[i,ω])*M[ω] >= t0[i]);
     @constraint(mp, tConstr2[i in pData.II, ω in Ω], t[i,ω] - (1 - F[i,ω])*M[ω] <= t0[i]);
@@ -36,4 +36,6 @@ function extForm(pData,disData,Ω)
     @constraint(mp, Slinear3[i in pData.II, j in pData.Ji[i], ω in Ω], s[i,j,ω] >= x[i,j,ω] - 1 + G[i,ω]);
 
     @objective(mp,Min,pData.p0*t0[0] + sum(disData[ω].prDis*t[0,ω] for ω in Ω));
+
+    return mp;
 end
