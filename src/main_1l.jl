@@ -17,54 +17,20 @@ function cutProc_Benders(pData,disData,Ω,ϵ = 1e-4)
     ωSeq = getOmegaSeq(disData);
 
     # while the nodeList is not empty
-    while nodeList != []
+    while (nodeList != [])&(noI <= 28)
         # simply test the nodes according to the sequence they are added to the list
         # Adding other rules of node selection later !!!!!!!!!!!
+        noI += 1;
+        println("-------------------- Node $(noI) --------------------");
         nCurrent = nodeList[1];
+        println("Lower Bound: $(nCurrent.lbCost), Upper Bound: $(ubCost)");
         # generate Benders cuts until it converges
         mpc = copy(nCurrent.mp);
         mpc = branchAdd(pData,disData,Ω,mpc,nCurrent.brInfo);
-        solve(mpc);
-        # if the current lower bound is larger than the upper bound, then prune the node
-        if !(getobjectivevalue(nCurrent.mp) >= ubCost - ϵ)
-            xhat = getvalue(mpc[:x]);
-            that = getvalue(mpc[:t]);
-            # update the upper bound
-            ubTemp = ubCal(pData,disData,Ω,xhat,that);
-            if ubTemp < ubCost
-                ubCost = ubTemp;
-                for i in pData.II
-                    tbest[i] = that[i];
-                    for j in pData.Ji[i]
-                        xbest[i,j] = xhat[i,j];
-                    end
-                end
-            end
-
-            # update the lower bound
-            if nCurrent.lbCost < getobjectivevalue(mpc)
-                lbPrev = nCurrent.lbCost;
-                nCurrent.lbCost = getobjectivevalue(mpc);
-            else
-                lbPrev = nCurrent.lbCost;
-            end
-
-            # stop when not improving
-            while lbPrev < nCurrent.lbCost
-                # plug in the xhat and that to generate a Benders cut
-                for ω in Ω
-                    dDω = disData[ω];
-                    spCut = bGenbuild(pData,dDω,xhat,that,nCurrent.brInfo[:,findin(Ω,ω)[1]]);
-                    # append the cut to the master program
-                    @constraint(nCurrent.mp, nCurrent.mp[:θ][ω] >= spCut.v + sum(spCut.π[i]*(nCurrent.mp[:t][i] - that[i])
-                        + sum(spCut.λ[i,j]*(nCurrent.mp[:x][i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II));
-                    @constraint(mpc, mpc[:θ][ω] >= spCut.v + sum(spCut.π[i]*(mpc[:t][i] - that[i])
-                        + sum(spCut.λ[i,j]*(mpc[:x][i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II));
-                    noC += 1;
-                end
-
-                # re-solve the master problem
-                solve(mpc);
+        mpcstatus = solve(mpc);
+        if mpcstatus == :Optimal
+            # if the current lower bound is larger than the upper bound, then prune the node
+            if !(getobjectivevalue(mpc) >= ubCost - ϵ)
                 xhat = getvalue(mpc[:x]);
                 that = getvalue(mpc[:t]);
                 # update the upper bound
@@ -86,18 +52,63 @@ function cutProc_Benders(pData,disData,Ω,ϵ = 1e-4)
                 else
                     lbPrev = nCurrent.lbCost;
                 end
-            end
 
-            # the current node is solved to the best extent
-            if branchTest(pData,disData,Ω,nCurrent,ubCost,ϵ)
-                # branch the current node if it can still be branched
-                # add other branching rules later !!!!!!!!!!!
-                node1,node2 = branchSimple(pData,disData,Ω,nCurrent,that,ωSeq);
-                if node1.brInfo != []
-                    push!(nodeList,node1);
+                # stop when not improving
+                contBool = true;
+                while lbPrev < nCurrent.lbCost
+                    # plug in the xhat and that to generate a Benders cut
+                    for ω in Ω
+                        dDω = disData[ω];
+                        spCut = bGenbuild(pData,dDω,xhat,that,nCurrent.brInfo[:,findin(Ω,ω)[1]]);
+                        # append the cut to the master program
+                        @constraint(nCurrent.mp, nCurrent.mp[:θ][ω] >= spCut.v + sum(spCut.π[i]*(nCurrent.mp[:t][i] - that[i])
+                            + sum(spCut.λ[i,j]*(nCurrent.mp[:x][i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II));
+                        @constraint(mpc, mpc[:θ][ω] >= spCut.v + sum(spCut.π[i]*(mpc[:t][i] - that[i])
+                            + sum(spCut.λ[i,j]*(mpc[:x][i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II));
+                        noC += 1;
+                    end
+
+                    # re-solve the master problem
+                    mpcstatus = solve(mpc);
+                    if mpcstatus == :Optimal
+                        xhat = getvalue(mpc[:x]);
+                        that = getvalue(mpc[:t]);
+                        # update the upper bound
+                        ubTemp = ubCal(pData,disData,Ω,xhat,that);
+                        if ubTemp < ubCost
+                            ubCost = ubTemp;
+                            for i in pData.II
+                                tbest[i] = that[i];
+                                for j in pData.Ji[i]
+                                    xbest[i,j] = xhat[i,j];
+                                end
+                            end
+                        end
+
+                        # update the lower bound
+                        if nCurrent.lbCost < getobjectivevalue(mpc)
+                            lbPrev = nCurrent.lbCost;
+                            nCurrent.lbCost = getobjectivevalue(mpc);
+                        else
+                            lbPrev = nCurrent.lbCost;
+                        end
+                    else
+                        break;
+                        contBool = false;
+                    end
                 end
-                if node2.brInfo != []
-                    push!(nodeList,node2);
+
+                # the current node is solved to the best extent
+                if (branchTest(pData,disData,Ω,nCurrent,ubCost,ϵ))&(contBool)
+                    # branch the current node if it can still be branched
+                    # add other branching rules later !!!!!!!!!!!
+                    node1,node2 = branchSimple(pData,disData,Ω,nCurrent,that,ωSeq);
+                    if node1.brInfo != []
+                        push!(nodeList,node1);
+                    end
+                    if node2.brInfo != []
+                        push!(nodeList,node2);
+                    end
                 end
             end
         end

@@ -1,9 +1,20 @@
 # This is the function to find valid inequalities given temporal relationships
+# added the feature that multiple disruption could be at the same time
 function getOmegaSeq(disData)
     sortedDis = sort(collect(disData),by = x->x[2].H);
     ωSeq = [];
+    currentTime = 0;
     for item in sortedDis
-        push!(ωSeq,item[1]);
+        if item[2].H > currentTime
+            push!(ωSeq,item[1]);
+        else
+            if typeof(ωSeq[length(ωSeq)]) == Int64
+                ωSeq[length(ωSeq)] = [ωSeq[length(ωSeq)],item[1]];
+            else
+                push!(ωSeq[length(ωSeq)],item[1]);
+            end
+        end
+        currentTime = item[2].H;
     end
     return ωSeq;
 end
@@ -15,11 +26,22 @@ function findWrongI(i,brInfo,ωSeq)
     oneRight = -1;
     negoneLeft = length(ωSeq) + 1;
     for j in 1:length(ωSeq)
-        if brInfo[findin(pData.II,i)[1],ωSeq[j]] == -1
-            negoneLeft = min(j,negoneLeft);
-        end
-        if brInfo[findin(pData.II,i)[1],ωSeq[j]] == 1
-            oneRight = max(j,oneRight);
+        if typeof(ωSeq[j]) == Int64
+            if brInfo[findin(pData.II,i)[1],findin(Ω,ωSeq[j])[1]] == -1
+                negoneLeft = min(j,negoneLeft);
+            end
+            if brInfo[findin(pData.II,i)[1],findin(Ω,ωSeq[j])[1]] == 1
+                oneRight = max(j,oneRight);
+            end
+        else
+            for jitem in ωSeq[j]
+                if brInfo[findin(pData.II,i)[1],findin(Ω,jitem)[1]] == -1
+                    negoneLeft = min(j,negoneLeft);
+                end
+                if brInfo[findin(pData.II,i)[1],findin(Ω,jitem)[1]] == 1
+                    oneRight = max(j,oneRight);
+                end
+            end
         end
     end
     if oneRight > negoneLeft
@@ -41,10 +63,22 @@ function brInfoExt(pData,disData,Ω,brInfo,ωSeq)
         if correctBool
             # if there is no inconsistency, then change the brInfo
             for j in 1:oneRight[i]
-                brInfo[findin(pData.II,i)[1],findin(Ω,ωSeq[j])[1]] = 1;
+                if typeof(ωSeq[j]) == Int64
+                    brInfo[findin(pData.II,i)[1],findin(Ω,ωSeq[j])[1]] = 1;
+                else
+                    for itemj in ωSeq[j]
+                        brInfo[findin(pData.II,i)[1],findin(Ω,itemj)[1]] = 1;
+                    end
+                end
             end
-            for j in negoneLeft[i]:length(Ω)
-                brInfo[findin(pData.II,i)[1],findin(Ω,ωSeq[j])[1]] = -1;
+            for j in negoneLeft[i]:length(ωSeq)
+                if typeof(ωSeq[j]) == Int64
+                    brInfo[findin(pData.II,i)[1],findin(Ω,ωSeq[j])[1]] = -1;
+                else
+                    for itemj in ωSeq[j]
+                        brInfo[findin(pData.II,i)[1],findin(Ω,itemj)[1]] = -1;
+                    end
+                end
             end
         else
             # if there is an inconsistency, then return [] for brInfo
@@ -95,6 +129,40 @@ function brInfoExt(pData,disData,Ω,brInfo,ωSeq)
                                 brInfo = [];
                                 inconBool = false;
                                 break;
+                            end
+                        end
+                    end
+                end
+            end
+            # for the scenarios bundled together make them consistent
+            for i in pData.II
+                for j in 1:length(ωSeq)
+                    # if it is a bundle
+                    if typeof(ωSeq[j]) != Int64
+                        posBool = false;
+                        negBool = false;
+                        for jitem in j
+                            if brInfo[findin(pData.II,i)[1],findin(Ω,jitem)[1]] == 1
+                                posBool = true;
+                            end
+                            if brInfo[findin(pData.II,i)[1],findin(Ω,jitem)[1]] == -1
+                                negBool = true;
+                            end
+                        end
+                        if (posBool)&(negBool)
+                            brInfo = [];
+                            inconBool = false;
+                            break;
+                        else
+                            if posBool
+                                for jitem in j
+                                    brInfo[findin(pData.II,i)[1],findin(Ω,jitem)[1]] = 1;
+                                end
+                            end
+                            if negBool
+                                for jitem in j
+                                    brInfo[findin(pData.II,i)[1],findin(Ω,jitem)[1]] = -1;
+                                end
                             end
                         end
                     end
