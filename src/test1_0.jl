@@ -8,9 +8,9 @@
 @everywhere include("tightenGen_1l.jl");
 @everywhere include("branchFunc.jl");
 
-pInputAdd = "test_full_P.csv";
-kInputAdd = "test_full_K.csv";
-ΩInputAdd = "test_full_Omega.csv";
+pInputAdd = "test_Full_P.csv";
+kInputAdd = "test_Full_K.csv";
+ΩInputAdd = "test_Full_Omega.csv";
 
 pData = readInP(pInputAdd,kInputAdd);
 disData,Ω = readInDis(ΩInputAdd);
