@@ -17,7 +17,7 @@ function cutProc_Benders(pData,disData,Ω,ϵ = 1e-4)
     ωSeq = getOmegaSeq(disData);
 
     # while the nodeList is not empty
-    while (nodeList != [])&(noI <= 28)
+    while (nodeList != [])
         # simply test the nodes according to the sequence they are added to the list
         # Adding other rules of node selection later !!!!!!!!!!!
         noI += 1;
