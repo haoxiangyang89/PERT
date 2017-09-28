@@ -50,7 +50,7 @@ function cutProc_Benders(pData,disData,Ω,ϵ = 1e-4)
                     lbPrev = nCurrent.lbCost;
                     nCurrent.lbCost = getobjectivevalue(mpc);
                 else
-                    lbPrev = nCurrent.lbCost;
+                    lbPrev = 0;
                 end
 
                 # stop when not improving
