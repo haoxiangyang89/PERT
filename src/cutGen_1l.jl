@@ -151,9 +151,9 @@ function subInt(pData,dDω,xhat,that)
     @variable(sp, t[i in pData.II] >= 0);
 
     # add the basic sub problem constraints
-    @constraint(sp, fixT[i in pData.II; that[i] < dDω.H], t[i] == that[i]);
-    @constraint(sp, boundT[i in pData.II; that[i] >= dDω.H], t[i] >= dDω.H);
-    @constraint(sp, fixX[i in pData.II,j in pData.Ji[i]; that[i] < dDω.H], x[i,j] == xhat[i,j]);
+    @constraint(sp, fixT[i in pData.II; that[i] <= dDω.H - 1e-6], t[i] == that[i]);
+    @constraint(sp, boundT[i in pData.II; that[i] > dDω.H - 1e-6], t[i] >= dDω.H);
+    @constraint(sp, fixX[i in pData.II,j in pData.Ji[i]; that[i] < dDω.H - 1e-6], x[i,j] == xhat[i,j]);
 
     @constraint(sp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(sp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
