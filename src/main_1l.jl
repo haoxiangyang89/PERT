@@ -4,7 +4,7 @@ function cutProc_Benders(pData,disData,Ω,ϵ = 1e-4)
     # initialize the first node
     nodeList = [];
     mp = createMaster(pData,disData,Ω);
-    brInfo = zeros(length(pData.II),length(Ω));
+    brInfo = precludeRel(pData,disData,Ω);
     nIni = nodeType(0,mp,brInfo);
     ubCost = Inf;
     noI = 0;

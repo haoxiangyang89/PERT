@@ -1,5 +1,7 @@
 # This is the function to find valid inequalities given temporal relationships
 # added the feature that multiple disruption could be at the same time
+# added the feature that preclude some branching options
+
 function getOmegaSeq(disData)
     sortedDis = sort(collect(disData),by = x->x[2].H);
     ωSeq = [];
@@ -17,6 +19,22 @@ function getOmegaSeq(disData)
         currentTime = item[2].H;
     end
     return ωSeq;
+end
+
+function precludeRel(pData,disData,Ω)
+    # solve |II| number of LP to obtain each activity's earliest starting time
+    # initialize the brInfo
+    brInfo = zeros(length(pData.II),length(Ω));
+    for i in pData.II
+        tearly = iSolve(pData,disData,i);
+        for ω in Ω
+            if tearly >= disData[ω].H
+                brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] = 1;
+            end
+        end
+    end
+
+    return brInfo;
 end
 
 # detect the inconsistency within the same activity
