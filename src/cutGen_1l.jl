@@ -32,6 +32,10 @@ function bGenbuild(pData,dDω,xhat,that,brInfo)
     @constraint(sp, GFixed[i in pData.II; brInfo[findin(pData.II,i)[1]] == 1],G[i] == 1);
     @constraint(sp, FGCons[i in pData.II],F[i] + G[i] == 1);
 
+    # add the predecessors and the successors logic constraints
+    @constraint(sp, FPredecessors[i in pData.II, k in pData.Pre[i]], F[i] <= F[k]);
+    @constraint(sp, GSuccessors[i in pData.II, k in pData.Succ[i]], G[i] <= G[k]);
+
     # add the basic sub problem constraints
     @constraint(sp, tGbound[i in pData.II],t[i] >= dDω.H*G[i]);
     @constraint(sp, tFnAnt1[i in pData.II],t[i] + (1 - F[i])*M >= that[i]);
@@ -87,6 +91,10 @@ function bGenbuild_New(pData,dDω,xhat,that,brInfo)
     @constraint(sp, FCons[i in pData.II; brInfo[findin(pData.II,i)[1]] == 0],dDω.H - F[i]*M <= that[i]);
     @constraint(sp, GCons[i in pData.II; brInfo[findin(pData.II,i)[1]] == 0],dDω.H - 1e-6 + G[i]*M >= that[i]);
     @constraint(sp, FGCons[i in pData.II; brInfo[findin(pData.II,i)[1]] == 0],F[i] + G[i] == 1);
+
+    # add the predecessors and the successors logic constraints
+    @constraint(sp, FPredecessors[i in pData.II, k in pData.Pre[i]; (brInfo[findin(pData.II,i)[1]] == 0)&(brInfo[findin(pData.II,k)[1]] == 0)], F[i] <= F[k]);
+    @constraint(sp, GSuccessors[i in pData.II, k in pData.Succ[i]; (brInfo[findin(pData.II,i)[1]] == 0)&(brInfo[findin(pData.II,k)[1]] == 0)], G[i] <= G[k]);
 
     # add the basic sub problem constraints for the undecided activities
     @constraint(sp, tGbound1[i in pData.II; brInfo[findin(pData.II,i)[1]] == 0],t[i] >= dDω.H*G[i]);
