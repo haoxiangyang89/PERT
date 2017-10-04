@@ -37,5 +37,9 @@ function extForm(pData,disData,Ω)
 
     @objective(mp,Min,pData.p0*t0[0] + sum(disData[ω].prDis*t[0,ω] for ω in Ω));
 
-    return mp;
+    solve(mp);
+    text = getvalue(mp[:t0]);
+    xext = getvalue(mp[:x0]);
+    fext = getobjectivevalue(mp);
+    return text,xext,fext,mp;
 end
