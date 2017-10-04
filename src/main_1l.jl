@@ -61,10 +61,17 @@ function cutProc_Benders(pData,disData,Ω,ϵ = 1e-4)
                         dDω = disData[ω];
                         spCut = bGenbuild(pData,dDω,xhat,that,nCurrent.brInfo[:,findin(Ω,ω)[1]]);
                         # append the cut to the master program
+
                         @constraint(nCurrent.mp, nCurrent.mp[:θ][ω] >= spCut.v + sum(spCut.π[i]*(nCurrent.mp[:t][i] - that[i])
                             + sum(spCut.λ[i,j]*(nCurrent.mp[:x][i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II));
                         @constraint(mpc, mpc[:θ][ω] >= spCut.v + sum(spCut.π[i]*(mpc[:t][i] - that[i])
                             + sum(spCut.λ[i,j]*(mpc[:x][i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II));
+
+                        # adjusted with rounding
+                        # @constraint(nCurrent.mp, nCurrent.mp[:θ][ω] >= floor(spCut.v,8) + sum(round(spCut.π[i],8)*(nCurrent.mp[:t][i] - round(that[i],8))
+                        #     + sum(round(spCut.λ[i,j],8)*(nCurrent.mp[:x][i,j] - round(xhat[i,j],8)) for j in pData.Ji[i]) for i in pData.II));
+                        # @constraint(mpc, mpc[:θ][ω] >= floor(spCut.v,8) + sum(round(spCut.π[i],8)*(mpc[:t][i] - round(that[i],8))
+                        #     + sum(round(spCut.λ[i,j],8)*(mpc[:x][i,j] - round(xhat[i,j],8)) for j in pData.Ji[i]) for i in pData.II));
                         noC += 1;
                     end
 

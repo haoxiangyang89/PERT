@@ -1,5 +1,5 @@
 # This is the script to load the data and solve the problem
-@everywhere using JuMP,Gurobi;
+@everywhere using JuMP,Gurobi,Cbc,Clp;
 
 @everywhere include("def.jl");
 @everywhere include("readIn.jl");

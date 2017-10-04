@@ -1,6 +1,7 @@
 # This is the script with all cut generation
 function createMaster(pData,disData,Ω)
-    mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    # mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    mp = Model(solver = ClpSolver());
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -17,7 +18,8 @@ end
 function bGenbuild(pData,dDω,xhat,that,brInfo)
     M = sum(max(pData.D[i],pData.D[i]+dDω.d[i]) for i in pData.II if i != 0);
 
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    # sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    sp = Model(solver = ClpSolver());
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     # relax the logic binary variables
@@ -79,7 +81,8 @@ function bGenbuild_New(pData,dDω,xhat,that,brInfo)
     # imbed the logic in the program
     M = sum(max(pData.D[i],pData.D[i]+dDω.d[i]) for i in pData.II if i != 0);
 
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    # sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    sp = Model(solver = ClpSolver());
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     # relax the logic binary variables
@@ -154,7 +157,8 @@ function subInt(pData,dDω,xhat,that)
     # solve the MIP recourse problem
     M = sum(max(pData.D[i],pData.D[i]+dDω.d[i]) for i in pData.II if i != 0);
 
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    # sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    sp = Model(solver = ClpSolver());
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
 
@@ -195,7 +199,8 @@ end
 
 # build the LP to obtain the earliest possible starting time of an activity
 function iSolve(pData,disData,iTarget)
-    mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    # mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    mp = Model(solver = ClpSolver());
     @variable(mp, t[i in pData.II] >= 0);
     @variable(mp, 0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);
 

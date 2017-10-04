@@ -2,7 +2,8 @@
 
 function detBuild(pData)
     # build the deterministic crashing optimization problem
-    mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    # mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    mp = Model(solver = ClpSolver());
 
     @variable(mp, t[i in pData.II] >= 0);
     @variable(mp, 0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);
@@ -38,7 +39,8 @@ function expBuild(pData,disData,Ω)
     M = sum(max(pData.D[i],pData.D[i]+expd[i]) for i in pData.II if i != 0);
 
     # set up the expected crashing optimization problem
-    mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    # mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    mp = Model(solver = ClpSolver());
     @variable(mp, t[i in pData.II] >= 0);
     @variable(mp, t1[i in pData.II] >= 0);
     @variable(mp, 0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);
