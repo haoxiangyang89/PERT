@@ -103,8 +103,8 @@ function readInUnc(ϕInputAdd)
 end
 
 # automatically uncertainty data generation
-function autoUGen(nameH :: String, Hparams :: Array{Any,1}, nameD :: String, dparams :: Array{Any,1}, Ωn)
-    disData = [];
+function autoUGen(nameH, Hparams, nameD, dparams, Ωn)
+    disData = Dict();
     Ω = 1:Ωn;
 
     if nameH == "Exponential"
@@ -113,7 +113,7 @@ function autoUGen(nameH :: String, Hparams :: Array{Any,1}, nameD :: String, dpa
     elseif nameH == "LogNormal"
         μ = Hparams[1];
         σ = Hparams[2];
-        distrH = Normal(μ,σ);
+        distrH = LogNormal(μ,σ);
     elseif nameH == "Gamma"
         α = Hparams[1];
         θ = Hparams[2];
@@ -127,19 +127,19 @@ function autoUGen(nameH :: String, Hparams :: Array{Any,1}, nameD :: String, dpa
     distrD = Dict();
     for i in keys(dparams)
         if nameD == "Exponential"
-            μ = Hparams[1];
+            μ = dparams[i][1];
             distrD[i] = Exponential(μ);
         elseif nameD == "LogNormal"
-            μ = Hparams[1];
-            σ = Hparams[2];
-            distrD[i] = Normal(μ,σ);
+            μ = dparams[i][1];
+            σ = dparams[i][2];
+            distrD[i] = LogNormal(μ,σ);
         elseif nameD == "Gamma"
-            α = Hparams[1];
-            θ = Hparams[2];
+            α = dparams[i][1];
+            θ = dparams[i][2];
             distrD[i] = Gamma(α,θ);
         elseif nameD == "Uniform"
-            la = Hparams[1];
-            ub = Hparams[2];
+            la = dparams[i][1];
+            ub = dparams[i][2];
             distrD[i] = Uniform(la,ub+1e-10);
         end
     end
@@ -153,5 +153,5 @@ function autoUGen(nameH :: String, Hparams :: Array{Any,1}, nameD :: String, dpa
         pω = 1/Ωn;
         disData[ω] = disInfo(H,d,pω);
     end
-    return disData;
+    return disData,Ω;
 end

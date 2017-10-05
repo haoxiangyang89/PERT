@@ -13,6 +13,7 @@
 pInputAdd = "test_Full_P_3.csv";
 kInputAdd = "test_Full_K.csv";
 ΩInputAdd = "test_Full_Omega_3.csv";
+ϕInputAdd = "test_Full_Phi.csv";
 
 pData = readInP(pInputAdd,kInputAdd);
 disData,Ω = readInDis(ΩInputAdd);
