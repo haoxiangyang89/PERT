@@ -100,8 +100,8 @@ function cutProc_Benders(pData,disData,Ω,ϵ = 1e-4)
                             lbPrev = nCurrent.lbCost;
                         end
                     else
-                        break;
                         contBool = false;
+                        break;
                     end
                 end
 
