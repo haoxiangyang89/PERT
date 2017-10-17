@@ -7,8 +7,8 @@ function extForm(pData,disData,Ω)
         M[ω] = sum(max(pData.D[i],pData.D[i]+disData[ω].d[i]) for i in pData.II if i != 0);
     end
 
-    # mp = Model(solver = GurobiSolver(Method = 0, OutputFlag = 0));
-    mp = Model(solver = CbcSolver());
+    mp = Model(solver = GurobiSolver(Method = 0, OutputFlag = 0));
+    # mp = Model(solver = CbcSolver());
     @variable(mp,t0[i in pData.II] >= 0);
     @variable(mp,0 <= x0[i in pData.II, j in pData.Ji[i]] <= 1);
     @variable(mp,t[i in pData.II, ω in Ω] >= 0);
