@@ -62,3 +62,6 @@ for i in 1:10
     push!(xext4List,xext4);
     push!(xext4List,fext4);
 end
+
+# deterministic
+tdet,xdet,fdet = detBuild(pData);
