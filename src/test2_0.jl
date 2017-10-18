@@ -29,7 +29,7 @@ for i in 1:10
     text1,xext1,fext1,mext1 = extForm(pData,disData1,Ω1);
     push!(text1List,text1);
     push!(xext1List,xext1);
-    push!(xext1List,fext1);
+    push!(fext1List,fext1);
 end
 
 # only time changes
@@ -42,7 +42,7 @@ for i in 1:10
     text2,xext2,fext2,mext2 = extForm(pData,disData2,Ω2);
     push!(text2List,text2);
     push!(xext2List,xext2);
-    push!(xext2List,fext2);
+    push!(fext2List,fext2);
 end
 
 # fixed
@@ -60,7 +60,7 @@ for i in 1:10
     text4,xext4,fext4,mext4 = extForm(pData,disData4,Ω4);
     push!(text4List,text4);
     push!(xext4List,xext4);
-    push!(xext4List,fext4);
+    push!(fext4List,fext4);
 end
 
 # deterministic
