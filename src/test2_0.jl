@@ -1,5 +1,5 @@
 # test the variance of the recourse function with the deterministic solution
-@everywhere using JuMP,Gurobi,Cbc,Clp;
+@everywhere using JuMP,Gurobi,Cbc,Clp,HDF5,JLD;
 
 @everywhere include("def.jl");
 @everywhere include("readIn.jl");
@@ -19,6 +19,8 @@ kInputAdd = "test_Full_K.csv";
 
 pData = readInP(pInputAdd,kInputAdd);
 
+dDict = Dict();
+
 # only magnitude changes
 nameD1,dparams1 = readInUnc(ϕInputAdd_1);
 text1List = [];
@@ -31,6 +33,7 @@ for i in 1:10
     push!(xext1List,xext1);
     push!(fext1List,fext1);
 end
+dDict[1] = (text1List,xext1List,fext1List);
 
 # only time changes
 nameD2,dparams2 = readInUnc(ϕInputAdd_2);
@@ -44,11 +47,13 @@ for i in 1:10
     push!(xext2List,xext2);
     push!(fext2List,fext2);
 end
+dDict[2] = (text1List,xext1List,fext1List);
 
 # fixed
 nameD3,dparams3 = readInUnc(ϕInputAdd_3);
 disData3,Ω3 = autoUGen("Uniform",[35.125,35.125],nameD3,dparams3,1);
 text3,xext3,fext3,mext3 = extForm(pData,disData3,Ω3);
+dDict[3] = (text3,xext3,fext3);
 
 # both
 nameD4,dparams4 = readInUnc(ϕInputAdd_4);
@@ -62,6 +67,9 @@ for i in 1:10
     push!(xext4List,xext4);
     push!(fext4List,fext4);
 end
+dDict[4] = (text4List,xext4List,fext4List);
 
 # deterministic
 tdet,xdet,fdet = detBuild(pData);
+dDict[5] = (tdet,xdet,fdet);
+save("test2.jld","dDict",dDict);

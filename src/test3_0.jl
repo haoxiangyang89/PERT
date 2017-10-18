@@ -23,6 +23,8 @@ pData = readInP(pInputAdd,kInputAdd);
 # deterministic
 tdet,xdet,fdet = detBuild(pData);
 
+dDict = Dict();
+
 nameD1,dparams1 = readInUnc(ϕInputAdd_1);
 f1List = [];
 disData1,Ω1 = autoUGen("Uniform",[35.125,35.125],nameD1,dparams1,1000);
@@ -30,6 +32,7 @@ for ω in Ω1
     cω = subInt(pData,disData1[ω],xdet,tdet);
     push!(f1List,cω);
 end
+dDict[1] = f1List;
 
 nameD2,dparams2 = readInUnc(ϕInputAdd_2);
 f2List = [];
@@ -38,6 +41,7 @@ for ω in Ω2
     cω = subInt(pData,disData2[ω],xdet,tdet);
     push!(f2List,cω);
 end
+dDict[2] = f2List;
 
 nameD4,dparams4 = readInUnc(ϕInputAdd_4);
 f4List = [];
@@ -46,3 +50,6 @@ for ω in Ω4
     cω = subInt(pData,disData4[ω],xdet,tdet);
     push!(f4List,cω);
 end
+dDict[4] = f4List;
+
+save("test3.jld","dDict",dDict);
