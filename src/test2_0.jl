@@ -22,6 +22,7 @@ nameD1,dparams1 = readInUnc(ϕInputAdd_1);
 nameD2,dparams2 = readInUnc(ϕInputAdd_2);
 nameD3,dparams3 = readInUnc(ϕInputAdd_3);
 nameD4,dparams4 = readInUnc(ϕInputAdd_4);
+println("------------- Finished Input Process -------------");
 
 dDict = Dict();
 

@@ -17,10 +17,15 @@ kInputAdd = "test_14_K.csv";
 ϕInputAdd_3 = "test_14_Phi_fixed.csv";
 ϕInputAdd_4 = "test_14_Phi_full.csv";
 
-nameDF,dparamsF = readInUnc(ϕInputAdd_4);
-disDataF,ΩF = autoUGen("LogNormal",[log(35),0.5],nameDF,dparamsF,10000);
-
 pData = readInP(pInputAdd,kInputAdd);
+nameDF,dparamsF = readInUnc(ϕInputAdd_4);
+nameD1,dparams1 = readInUnc(ϕInputAdd_1);
+nameD2,dparams2 = readInUnc(ϕInputAdd_2);
+nameD3,dparams3 = readInUnc(ϕInputAdd_3);
+nameD4,dparams4 = readInUnc(ϕInputAdd_4);
+println("------------- Finished Input Process -------------");
+
+disDataF,ΩF = autoUGen("LogNormal",[log(35),0.5],nameDF,dparamsF,10000);
 
 # deterministic
 tdet,xdet,fdet = detBuild(pData);
@@ -39,7 +44,6 @@ for ω in ΩF
 end
 println("-------------- det Solved --------------")
 # dOnly
-nameD1,dparams1 = readInUnc(ϕInputAdd_1);
 disData1,Ω1 = autoUGen("Uniform",[35.125,35.125],nameD1,dparams1,200);
 text1,xext1,fext1,mext1 = extForm(pData,disData1,Ω1);
 text1O = Dict();
@@ -57,7 +61,6 @@ for ω in ΩF
 end
 println("-------------- dOnly Solved --------------");
 # HOnly
-nameD2,dparams2 = readInUnc(ϕInputAdd_2);
 disData2,Ω2 = autoUGen("LogNormal",[log(35),0.5],nameD2,dparams2,200);
 text2,xext2,fext2,mext2 = extForm(pData,disData2,Ω2);
 text2O = Dict();
@@ -75,7 +78,6 @@ for ω in ΩF
 end
 println("-------------- HOnly Solved --------------");
 # Fixed
-nameD3,dparams3 = readInUnc(ϕInputAdd_3);
 disData3,Ω3 = autoUGen("Uniform",[35.125,35.125],nameD3,dparams3,1);
 text3,xext3,fext3,mext3 = extForm(pData,disData3,Ω3);
 text3O = Dict();
@@ -93,7 +95,6 @@ for ω in ΩF
 end
 println("-------------- Fixed Solved --------------");
 # Full
-nameD4,dparams4 = readInUnc(ϕInputAdd_4);
 disData4,Ω4 = autoUGen("LogNormal",[log(35),0.5],nameD4,dparams4,200);
 text4,xext4,fext4,mext4 = extForm(pData,disData4,Ω4);
 text4O = Dict();

@@ -19,13 +19,17 @@ kInputAdd = "test_14_K.csv";
 ϕInputAdd_4 = "test_14_Phi_full.csv";
 
 pData = readInP(pInputAdd,kInputAdd);
+nameD1,dparams1 = readInUnc(ϕInputAdd_1);
+nameD2,dparams2 = readInUnc(ϕInputAdd_2);
+nameD3,dparams3 = readInUnc(ϕInputAdd_3);
+nameD4,dparams4 = readInUnc(ϕInputAdd_4);
+println("------------- Finished Input Process -------------");
 
 # deterministic
 tdet,xdet,fdet = detBuild(pData);
 
 dDict = Dict();
 
-nameD1,dparams1 = readInUnc(ϕInputAdd_1);
 f1List = [];
 disData1,Ω1 = autoUGen("Uniform",[35.125,35.125],nameD1,dparams1,1000);
 for ω in Ω1
@@ -34,7 +38,6 @@ for ω in Ω1
 end
 dDict[1] = f1List;
 
-nameD2,dparams2 = readInUnc(ϕInputAdd_2);
 f2List = [];
 disData2,Ω2 = autoUGen("LogNormal",[log(35),0.5],nameD2,dparams2,1000);
 for ω in Ω2
@@ -43,7 +46,6 @@ for ω in Ω2
 end
 dDict[2] = f2List;
 
-nameD4,dparams4 = readInUnc(ϕInputAdd_4);
 f4List = [];
 disData4,Ω4 = autoUGen("LogNormal",[log(35),0.5],nameD4,dparams4,1000);
 for ω in Ω4
