@@ -122,6 +122,10 @@ function autoUGen(nameH, Hparams, nameD, dparams, Ωn)
         la = Hparams[1];
         ub = Hparams[2];
         distrH = Uniform(la,ub+1e-10);
+    elseif nameH == "Normal"
+        μ = Hparams[1];
+        σ = Hparams[2];
+        distrH = Normal(μ,σ);
     end
 
     distrD = Dict();
@@ -141,6 +145,10 @@ function autoUGen(nameH, Hparams, nameD, dparams, Ωn)
             la = dparams[i][1];
             ub = dparams[i][2];
             distrD[i] = Uniform(la,ub+1e-10);
+        elseif nameD == "Normal"
+            μ = dparams[i][1];
+            σ = dparams[i][2];
+            distrD[i] = Normal(μ,σ);
         end
     end
 
