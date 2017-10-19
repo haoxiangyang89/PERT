@@ -27,11 +27,12 @@ text1List = [];
 xext1List = [];
 fext1List = [];
 for i in 1:10
-    disData1,Ω1 = autoUGen("Uniform",[35.125,35.125],nameD1,dparams1,1000);
+    disData1,Ω1 = autoUGen("Uniform",[35.125,35.125],nameD1,dparams1,200);
     text1,xext1,fext1,mext1 = extForm(pData,disData1,Ω1);
     push!(text1List,text1);
     push!(xext1List,xext1);
     push!(fext1List,fext1);
+    println("------------- dOnly No. $(i) finished -------------");
 end
 dDict[1] = (text1List,xext1List,fext1List);
 
@@ -41,11 +42,12 @@ text2List = [];
 xext2List = [];
 fext2List = [];
 for i in 1:10
-    disData2,Ω2 = autoUGen("LogNormal",[log(35),0.5],nameD2,dparams2,1000);
+    disData2,Ω2 = autoUGen("LogNormal",[log(35),0.5],nameD2,dparams2,200);
     text2,xext2,fext2,mext2 = extForm(pData,disData2,Ω2);
     push!(text2List,text2);
     push!(xext2List,xext2);
     push!(fext2List,fext2);
+    println("------------- HOnly No. $(i) finished -------------");
 end
 dDict[2] = (text1List,xext1List,fext1List);
 
@@ -61,11 +63,12 @@ text4List = [];
 xext4List = [];
 fext4List = [];
 for i in 1:10
-    disData4,Ω4 = autoUGen("LogNormal",[log(35),0.5],nameD4,dparams4,1000);
+    disData4,Ω4 = autoUGen("LogNormal",[log(35),0.5],nameD4,dparams4,200);
     text4,xext4,fext4,mext4 = extForm(pData,disData4,Ω4);
     push!(text4List,text4);
     push!(xext4List,xext4);
     push!(fext4List,fext4);
+    println("------------- Full No. $(i) finished -------------");
 end
 dDict[4] = (text4List,xext4List,fext4List);
 
