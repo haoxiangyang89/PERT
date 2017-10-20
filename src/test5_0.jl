@@ -68,7 +68,7 @@ disData1 = copy(disDataF);
 for ω in ΩF
     disData1[ω].H = meanH;
 end
-tdonly,xdonly,fdonly,mdonly = extForm(pData,disData1,Ω1);
+tdonly,xdonly,fdonly,mdonly = extForm(pData,disData1,ΩF);
 tdonlyO = Dict();
 xdonlyO = Dict();
 for i in pData.II
