@@ -16,7 +16,7 @@ kInputAdd = "test_14_K.csv";
 pData = readInP(pInputAdd,kInputAdd);
 nameDF,dparamsF = readInUnc(ϕInputAdd_4);
 
-disDataF,ΩF = autoUGen("LogNormal",[log(35),0.5],nameDF,dparamsF,10);
+disDataF,ΩF = autoUGen("LogNormal",[log(35),0.5],nameDF,dparamsF,200);
 
 tdet,xdet,fdet = detBuild(pData);
 tdetO = Dict();
