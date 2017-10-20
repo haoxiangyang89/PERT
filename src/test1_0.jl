@@ -10,10 +10,10 @@
 @everywhere include("detFunc_1l.jl");
 @everywhere include("extForm_1l.jl");
 
-pInputAdd = "test_Full_P.csv";
-kInputAdd = "test_Full_K.csv";
-ΩInputAdd = "test_Full_Omega.csv";
-ϕInputAdd = "test_Full_Phi.csv";
+pInputAdd = "test_14_P.csv";
+kInputAdd = "test_14_K.csv";
+ΩInputAdd = "test_14_Omega_full.csv";
+ϕInputAdd = "test_14_Phi.csv";
 
 pData = readInP(pInputAdd,kInputAdd);
 #disData,Ω = readInDis(ΩInputAdd);
