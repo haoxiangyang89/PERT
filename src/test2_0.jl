@@ -107,5 +107,13 @@ dDict[4] = (text4List,xext4List,fext4List);
 
 # deterministic
 tdet,xdet,fdet = detBuild(pData);
-dDict[5] = (tdet,xdet,fdet);
+tdetO = Dict();
+xdetO = Dict();
+for i in pData.II
+    tdetO[i] = tdet[i];
+    for j in pData.Ji[i]
+        xdetO[i,j] = xdet[i,j];
+    end
+end
+dDict[5] = (tdetO,xdetO,fdet);
 save("test2.jld","dDict",dDict);
