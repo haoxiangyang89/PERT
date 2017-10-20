@@ -16,7 +16,7 @@ kInputAdd = "test_14_K.csv";
 pData = readInP(pInputAdd,kInputAdd);
 nameDF,dparamsF = readInUnc(ϕInputAdd_4);
 
-disDataF,ΩF = autoUGen("LogNormal",[log(35),0.5],nameDF,dparamsF,200);
+disDataF,ΩF = autoUGen("LogNormal",[log(35),0.5],nameDF,dparamsF,10);
 
 tdet,xdet,fdet = detBuild(pData);
 tdetO = Dict();
@@ -64,7 +64,7 @@ for i in pData.II
 end
 
 
-disData1 = copy(disDataF);
+disData1 = deepcopy(disDataF);
 for ω in ΩF
     disData1[ω].H = meanH;
 end
@@ -80,7 +80,7 @@ end
 fdonlyU = ubCal(pData,disDataF,ΩF,xdonly,tdonly);
 println("-------------- dOnly Solved --------------");
 
-disData2 = copy(disDataF);
+disData2 = deepcopy(disDataF);
 for ω in ΩF
     disData2[ω].d = meand;
 end
@@ -96,7 +96,7 @@ end
 fHonlyU = ubCal(pData,disDataF,ΩF,xHonly,tHonly);
 println("-------------- HOnly Solved --------------");
 
-disData3 = copy(disData2);
+disData3 = deepcopy(disData2);
 for ω in ΩF
     disData3[ω].H = meanH;
 end
