@@ -49,7 +49,7 @@ function floyd(pData,xhat)
     that = Dict();
     mp = Model(solver = GurobiSolver(OutputFlag = 0));
     @variable(mp, t[i in pData.II] >= 0);
-    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1 - sum(pData.eff[k[1]][j]*xhat[k[1],j] for j in pData.Ji[i])));
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1 - sum(pData.eff[k[1]][j]*xhat[k[1],j] for j in pData.Ji[k[1]])));
     @objective(mp, Min, t[0]);
     solve(mp);
     that0 = getvalue(mp[:t]);
