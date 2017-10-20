@@ -27,7 +27,7 @@ println("------------- Finished Input Process -------------");
 
 # deterministic
 tdet,xdet,fdet = detBuild(pData);
-detO = Dict();
+tdetO = Dict();
 xdetO = Dict();
 for i in pData.II
     tdetO[i] = tdet[i];
