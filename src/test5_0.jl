@@ -13,6 +13,7 @@
 pInputAdd = "test_14_P.csv";
 kInputAdd = "test_14_K.csv";
 ϕInputAdd_4 = "test_14_Phi_full.csv";
+nameDF,dparamsF = readInUnc(ϕInputAdd_4);
 disDataF,ΩF = autoUGen("LogNormal",[log(35),0.5],nameDF,dparamsF,200);
 
 tdet,xdet,fdet = detBuild(pData);
