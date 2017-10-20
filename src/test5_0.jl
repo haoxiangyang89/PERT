@@ -44,17 +44,23 @@ println("-------------- Full Solved --------------");
 meanH = 0;
 meand = Dict();
 for i in pData.II
-    meand[i] = 0;
+    if i != 0
+        meand[i] = 0;
+    end
 end
 for ω in ΩF
     meanH += disDataF[ω].H;
     for i in pData.II
-        meand[i] += disDataF[ω].d[i];
+        if i != 0
+            meand[i] += disDataF[ω].d[i];
+        end
     end
 end
 meanH = meanH/length(ΩF);
 for i in pData.II
-    meand[i] = meand[i]/length(ΩF);
+    if i != 0
+        meand[i] = meand[i]/length(ΩF);
+    end
 end
 
 
