@@ -1,5 +1,5 @@
 # test 4: test the solution of each model
-@everywhere using JuMP,Gurobi,Cbc,Clp;
+@everywhere using JuMP,Gurobi,CPLEX,Cbc,Clp;
 
 @everywhere include("def.jl");
 @everywhere include("readIn.jl");

@@ -1,5 +1,5 @@
 # test the discrete distribution with everything up to change, compare the results
-@everywhere using JuMP,Gurobi,Cbc,Clp;
+@everywhere using JuMP,Gurobi,CPLEX,Cbc,Clp;
 
 @everywhere include("def.jl");
 @everywhere include("readIn.jl");

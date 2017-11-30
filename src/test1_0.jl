@@ -1,5 +1,5 @@
 # This is the script to load the data and solve the problem
-@everywhere using JuMP,Gurobi,Cbc,Clp;
+@everywhere using JuMP,Gurobi,CPLEX,Cbc,Clp;
 
 @everywhere include("def.jl");
 @everywhere include("readIn.jl");
@@ -13,7 +13,7 @@
 pInputAdd = "test_14_P.csv";
 kInputAdd = "test_14_K.csv";
 ΩInputAdd = "test_14_Omega_full.csv";
-ϕInputAdd = "test_14_Phi.csv";
+ϕInputAdd = "test_14_Phi_full.csv";
 
 pData = readInP(pInputAdd,kInputAdd);
 #disData,Ω = readInDis(ΩInputAdd);
