@@ -4,6 +4,7 @@
 @everywhere include("def.jl");
 @everywhere include("readIn.jl");
 @everywhere include("main_1l.jl");
+@everywhere include("main_pull.jl");
 @everywhere include("cutGen_1l.jl");
 @everywhere include("tightenGen_1l.jl");
 @everywhere include("branchFunc.jl");
@@ -18,10 +19,10 @@ kInputAdd = "test_14_K.csv";
 pData = readInP(pInputAdd,kInputAdd);
 #disData,Ω = readInDis(ΩInputAdd);
 nameD,dparams = readInUnc(ϕInputAdd);
-disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,100);
+disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500);
 
 @time tbest,xbest,fbest = cutProc_Benders(pData,disData,Ω);
-@time text,xext,fext,mext = extForm(pData,disData,Ω);
+@time text,xext,fext,mext = extForm_cheat(pData,disData,Ω);
 
 # small test for consistency
 # ezn = 0;

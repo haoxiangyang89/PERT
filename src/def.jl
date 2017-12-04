@@ -30,6 +30,15 @@ type nodeType
   brInfo :: Array{Any,2}
 end
 
+type nodeTypeP
+  lbCost :: Float64
+  brInfo :: Array{Any,2}
+  tmaxD :: Dict{Any,Any}
+  tminD :: Dict{Any,Any}
+  cutSet :: Array{Any,1}
+  state :: Bool
+end
+
 # define the cut type for B&C
 type cutType
   # coefficients for t
