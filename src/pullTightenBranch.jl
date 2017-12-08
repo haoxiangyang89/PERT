@@ -1,7 +1,7 @@
 # pull binary variables to front and manage a branch and bound tree
 
-function branchPull(pData,disData,Ω,node,that,lb,ub)
-    ωSeq = getOmegaSeq(disData);
+function branchPull(pData,disData,Ω,node,lb,ub)
+    ωSeq,ωDict = getOmegaSeq(disData);
     # obtain the number of zeros in brInfo for each activity
     # select which activity is branched on
     noZeros = Dict();

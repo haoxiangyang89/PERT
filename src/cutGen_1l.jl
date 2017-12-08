@@ -198,7 +198,7 @@ function ubCalP(pData,disData,Ω,xhat,that)
 end
 
 # build the LP to obtain the earliest possible starting time of an activity
-function iSolve(pData,disData,iTarget)
+function iSolve(pData,iTarget)
     # mp = Model(solver = GurobiSolver(OutputFlag = 0));
     mp = Model(solver = ClpSolver());
     @variable(mp, t[i in pData.II] >= 0);

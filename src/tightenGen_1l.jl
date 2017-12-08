@@ -5,20 +5,27 @@
 function getOmegaSeq(disData)
     sortedDis = sort(collect(disData),by = x->x[2].H);
     ωSeq = [];
+    ωDict = Dict();
     currentTime = 0;
+    Hω = [];
     for item in sortedDis
         if item[2].H > currentTime
             push!(ωSeq,item[1]);
+            push!(Hω,disData[item[1]].H);
+            ωDict[item[1]] = length(ωSeq);
         else
             if typeof(ωSeq[length(ωSeq)]) == Int64
                 ωSeq[length(ωSeq)] = [ωSeq[length(ωSeq)],item[1]];
+                ωDict[item[1]] = length(ωSeq);
             else
                 push!(ωSeq[length(ωSeq)],item[1]);
+                ωDict[item[1]] = length(ωSeq);
             end
         end
         currentTime = item[2].H;
     end
-    return ωSeq;
+    Ωt = 1:length(Hω);
+    return ωSeq,ωDict,Hω,Ωt;
 end
 
 function precludeRel(pData,disData,Ω)
@@ -26,10 +33,26 @@ function precludeRel(pData,disData,Ω)
     # initialize the brInfo
     brInfo = zeros(length(pData.II),length(Ω));
     for i in pData.II
-        tearly = iSolve(pData,disData,i);
+        tearly = iSolve(pData,i);
         for ω in Ω
             if tearly >= disData[ω].H
                 brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] = 1;
+            end
+        end
+    end
+
+    return brInfo;
+end
+
+function precludeRelStrata(pData,Hω,Ωt)
+    # solve |II| number of LP to obtain each activity's earliest starting time
+    # initialize the brInfo
+    brInfo = zeros(length(pData.II),length(Ωt));
+    for i in pData.II
+        tearly = iSolve(pData,i);
+        for ω in Ωt
+            if tearly >= Hω[ω]
+                brInfo[findin(pData.II,i)[1],ω] = 1;
             end
         end
     end

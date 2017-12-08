@@ -1,3 +1,5 @@
+include("pullTightenBranch.jl");
+
 # build the LP to obtain the longest path to each activity without crashing
 function lpSolve(pData,iTarget)
     mp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0, CPX_PARAM_SIMDISPLAY = 0,CPX_PARAM_MIPDISPLAY = 0));
@@ -48,6 +50,7 @@ function buildTighten(pData,disData,Ω,cutSet,ub,lb,tmax,tmin,brInfo)
         for j in pData.Ji[k[1]])));
     @constraint(bp, GFixed[i in pData.II,ω in Ω; brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 1],G[i,ω] == 1);
     @constraint(bp, FFixed[i in pData.II,ω in Ω; brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == -1],F[i,ω] == 1);
+    @constraint(bp, GPre[k in pData.K,ω in Ω], G[k[2],ω] >= G[k[1],ω]);
     @constraint(bp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
     @constraint(bp, budgetConstr, sum(sum(x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(bp, tGnAnt[i in pData.II, ω in Ω; brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 0], t[i] <= disData[ω].H + G[i,ω]*min(tmaxD[i] - disData[ω].H,M[i]));
@@ -72,7 +75,7 @@ function cutProc_Pull(pData,disData,Ω,TOL = 1e-6)
     UB = 999999;
 
     TOL = 1e-6;
-    mIter = 100;
+    mIter = 500;
 
     tmaxD = Dict();
     tminD = Dict();
@@ -92,10 +95,10 @@ function cutProc_Pull(pData,disData,Ω,TOL = 1e-6)
     bestUB = 999999;
     tbest = Dict();
     xbest = Dict();
-    ωSeq = getOmegaSeq(disData);
+    ωSeq,ωDict = getOmegaSeq(disData);
 
 # start the iteration
-    while ((UB - nCurrent.lbCost)/(nCurrent.lbCost) > TOL)&(termCond)
+    while ((bestUB - nCurrent.lbCost)/(nCurrent.lbCost) > TOL)&(termCond)
         noI += 1;
         # calculate the big M's for master/sub construction
         Mω1 = Dict();
@@ -121,20 +124,21 @@ function cutProc_Pull(pData,disData,Ω,TOL = 1e-6)
 
         @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
 
-        @constraint(mp, objUB, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) <= UB);
+        @constraint(mp, objUB, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) <= bestUB);
         @constraint(mp, objLB, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) >= nCurrent.lbCost);
 
         @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1 - sum(pData.eff[k[1]][j]*x[k[1],j]
             for j in pData.Ji[k[1]])));
         @constraint(mp, GFixed1[i in pData.II,ω in Ω; nCurrent.brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 1],G[i,ω] == 1);
         @constraint(mp, GFixed2[i in pData.II,ω in Ω; nCurrent.brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == -1],F[i,ω] == 1);
+        @constraint(mp, GPre[k in pData.K,ω in Ω], G[k[2],ω] >= G[k[1],ω]);
         @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
         @constraint(mp, budgetConstr, sum(sum(x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
         @constraint(mp, tGnAnt[i in pData.II, ω in Ω; nCurrent.brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 0], t[i] <= disData[ω].H + G[i,ω]*min(nCurrent.tmaxD[i] - disData[ω].H,M[i]));
         @constraint(mp, tFnAnt[i in pData.II, ω in Ω; nCurrent.brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 0], t[i] >= disData[ω].H - F[i,ω]*(disData[ω].H - nCurrent.tminD[i]));
         @constraint(mp, FGnAnt[i in pData.II, ω in Ω], F[i,ω] + G[i,ω] == 1);
         @constraint(mp, cuts[l in 1:length(nCurrent.cutSet),ω in Ω], θ[ω] >= nCurrent.cutSet[l][7][ω] + sum(nCurrent.cutSet[l][1][ω][i]*(t[i] - nCurrent.cutSet[l][4][i]) + nCurrent.cutSet[l][3][ω][i]*(G[i,ω] - nCurrent.cutSet[l][6][i,ω]) +
-            sum(nCurrent.cutSet[l][2][ω][i,j]*(x[i,j] -nCurrent.cutSet[l][5][i,j]) for j in pData.Ji[i]) for i in pData.II));
+            sum(nCurrent.cutSet[l][2][ω][i,j]*(x[i,j] - nCurrent.cutSet[l][5][i,j]) for j in pData.Ji[i]) for i in pData.II));
 
         xhatList = [];
         thatList = [];
@@ -262,6 +266,7 @@ function cutProc_Pull(pData,disData,Ω,TOL = 1e-6)
 
         function getInfo(cb)
             LB = MathProgBase.cbgetbestbound(cb);
+            push!(LBList,LB);
             statusCb = MathProgBase.cbgetstate(cb);
             UB = MathProgBase.cbgetobj(cb);
             noExplored = MathProgBase.cbgetexplorednodes(cb);
@@ -347,12 +352,14 @@ function cutProc_Pull(pData,disData,Ω,TOL = 1e-6)
         addcutcallback(mp,getInfo);
         mpStatus = solve(mp);
         if mpStatus != :Infeasible
-            tstar = getvalue(mp[:t]);
-            xstar = getvalue(mp[:x]);
             # update the lower bound
             if LBList[length(LBList)] > nCurrent.lbCost
                 nCurrent.lbCost = LBList[length(LBList)];
             end
+
+            # if there is no solution it is okay and the process will still proceed
+            tstar = getvalue(mp[:t]);
+            xstar = getvalue(mp[:x]);
             UB = getobjectivevalue(mp);
             if bestUB > UB
                 bestUB = UB;
@@ -367,9 +374,9 @@ function cutProc_Pull(pData,disData,Ω,TOL = 1e-6)
             println("Lower Bound: $(nCurrent.lbCost), Upper Bound: $(bestUB)");
 
             # branch to two nodes and update the nodeList
-            if mpStatus == :UserLimit
+            if (mpStatus == :UserLimit)&(bestUB > nCurrent.lbCost)
                 # branch if the problem is not solved to exact
-                node1,node2 = branchPull(pData,disData,Ω,nCurrent,tstar,nCurrent.lbCost,bestUB);
+                node1,node2 = branchPull(pData,disData,Ω,nCurrent,nCurrent.lbCost,bestUB);
                 if node1.state
                     push!(nodeList,node1);
                 end
@@ -386,6 +393,7 @@ function cutProc_Pull(pData,disData,Ω,TOL = 1e-6)
         else
             nCurrent = nodeList[1];
         end
+
     end
 
     # output the best solution and the best upper bound

@@ -14,7 +14,7 @@ function cutProc_Benders(pData,disData,Ω,ϵ = 1e-4)
 
     # append the first node to the nodeList
     push!(nodeList,nIni);
-    ωSeq = getOmegaSeq(disData);
+    ωSeq,ωDict = getOmegaSeq(disData);
 
     # while the nodeList is not empty
     while (nodeList != [])
