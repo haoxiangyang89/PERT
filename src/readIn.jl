@@ -229,3 +229,73 @@ function autoUGenStrata(nameH, Hparams, nameD, dparams, Ωt, Ωd)
     end
     return disData,Ω;
 end
+
+# automatically uncertainty data generation: stratified
+function autoUGenStrata2(nameH, Hparams, nameD, dparams, Ωt, Ωd)
+    disData = Dict();
+
+    if nameH == "Exponential"
+        μ = Hparams[1];
+        distrH = Exponential(μ);
+    elseif nameH == "LogNormal"
+        μ = Hparams[1];
+        σ = Hparams[2];
+        distrH = LogNormal(μ,σ);
+    elseif nameH == "Gamma"
+        α = Hparams[1];
+        θ = Hparams[2];
+        distrH = Gamma(α,θ);
+    elseif nameH == "Uniform"
+        la = Hparams[1];
+        ub = Hparams[2];
+        distrH = Uniform(la,ub+1e-10);
+    elseif nameH == "Normal"
+        μ = Hparams[1];
+        σ = Hparams[2];
+        distrH = Normal(μ,σ);
+    end
+
+    distrD = Dict();
+    for i in keys(dparams)
+        if nameD == "Exponential"
+            μ = dparams[i][1];
+            distrD[i] = Exponential(μ);
+        elseif nameD == "LogNormal"
+            μ = dparams[i][1];
+            σ = dparams[i][2];
+            distrD[i] = LogNormal(μ,σ);
+        elseif nameD == "Gamma"
+            α = dparams[i][1];
+            θ = dparams[i][2];
+            distrD[i] = Gamma(α,θ);
+        elseif nameD == "Uniform"
+            la = dparams[i][1];
+            ub = dparams[i][2];
+            distrD[i] = Uniform(la,ub+1e-10);
+        elseif nameD == "Normal"
+            μ = dparams[i][1];
+            σ = dparams[i][2];
+            distrD[i] = Normal(μ,σ);
+        end
+    end
+
+    ω = 0;
+    Ω = 1:(Ωt*Ωd);
+    dDict = Dict();
+    for ωd in 1:Ωd
+        d = Dict();
+        for i in keys(dparams)
+            d[i] = round(rand(distrD[i]),4);
+        end
+        dDict[ωd] = d;
+    end
+    for ωt in 1:Ωt
+        H = round(rand(distrH),4);
+        for ωd in 1:Ωd
+            ω += 1;
+            pω = 1/(Ωt*Ωd);
+            disData[ω] = disInfo(H,dDict[ωd],pω);
+        end
+    end
+    return disData,Ω;
+end

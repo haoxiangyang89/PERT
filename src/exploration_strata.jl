@@ -211,3 +211,22 @@ end
 addlazycallback(mp,innerCut);
 addcutcallback(mp,MIPNodeSol);
 mpStatus = solve(mp);
+
+########################################################################
+# compare the stratified sampling results and the MC results
+# sample 50 each, stratified with 10 H * 5 d
+
+vList1 = [];
+vList2 = [];
+for i in 1:1000
+    disData,Ω = autoUGenStrata("LogNormal",[log(35),0.5],nameD,dparams,10,5);
+    ωSeq,ωDict,Hω,Ωt = getOmegaSeq(disData);
+    text,xext,fext,mext = extForm_cheat(pData,disData,Ω);
+    push!(vList1,fext);
+
+    disData,Ω = autoUGenStrata("LogNormal",[log(35),0.5],nameD,dparams,50,1);
+    ωSeq,ωDict,Hω,Ωt = getOmegaSeq(disData);
+    text,xext,fext,mext = extForm_cheat(pData,disData,Ω);
+    push!(vList2,fext);
+    println("------------------ Iteration $(i) Finished ------------------");
+end
