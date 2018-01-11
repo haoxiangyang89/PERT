@@ -10,6 +10,7 @@
 @everywhere include("branchFunc.jl");
 @everywhere include("detFunc_1l.jl");
 @everywhere include("extForm_1l.jl");
+@everywhere include("main_pull.jl");
 
 pInputAdd = "test_14_P.csv";
 kInputAdd = "test_14_K.csv";
@@ -19,7 +20,7 @@ kInputAdd = "test_14_K.csv";
 pData = readInP(pInputAdd,kInputAdd);
 #disData,Ω = readInDis(ΩInputAdd);
 nameD,dparams = readInUnc(ϕInputAdd);
-disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500);
+disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500,1 - pData.p0);
 
 @time tbest,xbest,fbest = cutProc_Benders(pData,disData,Ω);
 @time text,xext,fext,mext = extForm_cheat(pData,disData,Ω);

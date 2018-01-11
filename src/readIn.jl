@@ -18,6 +18,7 @@ function readInP(pInputAdd,kInputAdd)
     D = Dict();
     D[0] = 0;
     Ji[0] = [];
+
     b = Dict();
     b[0] = Dict();
     eff = Dict();
@@ -103,7 +104,7 @@ function readInUnc(ϕInputAdd)
 end
 
 # automatically uncertainty data generation
-function autoUGen(nameH, Hparams, nameD, dparams, Ωn)
+function autoUGen(nameH, Hparams, nameD, dparams, Ωn, totalProb)
     disData = Dict();
     Ω = 1:Ωn;
 
@@ -158,14 +159,14 @@ function autoUGen(nameH, Hparams, nameD, dparams, Ωn)
         for i in keys(dparams)
             d[i] = round(rand(distrD[i]),4);
         end
-        pω = 1/Ωn;
+        pω = totalProb/Ωn;
         disData[ω] = disInfo(H,d,pω);
     end
     return disData,Ω;
 end
 
 # automatically uncertainty data generation: stratified
-function autoUGenStrata(nameH, Hparams, nameD, dparams, Ωt, Ωd)
+function autoUGenStrata(nameH, Hparams, nameD, dparams, Ωt, Ωd, totalProb)
     disData = Dict();
 
     if nameH == "Exponential"
@@ -223,7 +224,7 @@ function autoUGenStrata(nameH, Hparams, nameD, dparams, Ωt, Ωd)
             for i in keys(dparams)
                 d[i] = round(rand(distrD[i]),4);
             end
-            pω = 1/(Ωt*Ωd);
+            pω = totalProb/(Ωt*Ωd);
             disData[ω] = disInfo(H,d,pω);
         end
     end
@@ -231,7 +232,7 @@ function autoUGenStrata(nameH, Hparams, nameD, dparams, Ωt, Ωd)
 end
 
 # automatically uncertainty data generation: stratified
-function autoUGenStrata2(nameH, Hparams, nameD, dparams, Ωt, Ωd)
+function autoUGenStrata2(nameH, Hparams, nameD, dparams, Ωt, Ωd, totalProb)
     disData = Dict();
 
     if nameH == "Exponential"
@@ -293,7 +294,7 @@ function autoUGenStrata2(nameH, Hparams, nameD, dparams, Ωt, Ωd)
         H = round(rand(distrH),4);
         for ωd in 1:Ωd
             ω += 1;
-            pω = 1/(Ωt*Ωd);
+            pω = totalProb/(Ωt*Ωd);
             disData[ω] = disInfo(H,dDict[ωd],pω);
         end
     end

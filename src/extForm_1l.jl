@@ -4,7 +4,8 @@
 function extForm(pData,disData,Ω)
     M = Dict();
     for ω in Ω
-        M[ω] = sum(max(pData.D[i],pData.D[i]+disData[ω].d[i]) for i in pData.II if i != 0);
+        #M[ω] = sum(max(pData.D[i],pData.D[i]+disData[ω].d[i]) for i in pData.II if i != 0);
+        M[ω] = 300;
     end
 
     mp = Model(solver = GurobiSolver(Method = 0, OutputFlag = 0, IntFeasTol = 1e-9));
@@ -18,13 +19,13 @@ function extForm(pData,disData,Ω)
     @variable(mp,0 <= s[i in pData.II, j in pData.Ji[i], ω in Ω] <= 1);
 
     @constraint(mp, FConstr[i in pData.II, ω in Ω], disData[ω].H - F[i,ω]*M[ω] <= t0[i]);
-    @constraint(mp, GConstr[i in pData.II, ω in Ω], disData[ω].H - 1e-5 + G[i,ω]*M[ω] >= t0[i]);
+    @constraint(mp, GConstr[i in pData.II, ω in Ω], disData[ω].H - 1e-6 + G[i,ω]*M[ω] >= t0[i]);
     @constraint(mp, FGConstr[i in pData.II, ω in Ω], F[i,ω] + G[i,ω] == 1);
-    @constraint(mp, tConstr1[i in pData.II, ω in Ω], t[i,ω] + (1 - F[i,ω])*M[ω] >= t0[i]);
-    @constraint(mp, tConstr2[i in pData.II, ω in Ω], t[i,ω] - (1 - F[i,ω])*M[ω] <= t0[i]);
+    @constraint(mp, tConstr1[i in pData.II, ω in Ω], t[i,ω] + G[i,ω]*M[ω] >= t0[i]);
+    @constraint(mp, tConstr2[i in pData.II, ω in Ω], t[i,ω] - G[i,ω]*M[ω] <= t0[i]);
     @constraint(mp, tConstr3[i in pData.II, ω in Ω], t[i,ω] >= disData[ω].H * G[i,ω]);
-    @constraint(mp, xConstr1[i in pData.II, j in pData.Ji[i], ω in Ω], x[i,j,ω] + (1 - F[i,ω]) >= x0[i,j]);
-    @constraint(mp, xConstr2[i in pData.II, j in pData.Ji[i], ω in Ω], x[i,j,ω] - (1 - F[i,ω]) <= x0[i,j]);
+    @constraint(mp, xConstr1[i in pData.II, j in pData.Ji[i], ω in Ω], x[i,j,ω] + G[i,ω] >= x0[i,j]);
+    @constraint(mp, xConstr2[i in pData.II, j in pData.Ji[i], ω in Ω], x[i,j,ω] - G[i,ω] <= x0[i,j]);
     @constraint(mp, durationConstr1[k in pData.K, ω in Ω], t[k[2],ω] - t[k[1],ω] >= pData.D[k[1]] + disData[ω].d[k[1]]*G[k[1],ω]
                       - sum(pData.D[k[1]]*pData.eff[k[1]][j]*x[k[1],j,ω] + disData[ω].d[k[1]]*pData.eff[k[1]][j]*s[k[1],j,ω] for j in pData.Ji[k[1]]));
     @constraint(mp, durationConstr2[k in pData.K], t0[k[2]] - t0[k[1]] >= pData.D[k[1]]*(1 - sum(pData.eff[k[1]][j]*x0[k[1],j] for j in pData.Ji[k[1]])));

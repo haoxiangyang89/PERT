@@ -178,10 +178,10 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 		& S_{ij}^\omega \leq G_i^\omega & \forall \,i \in I, j \in J_i, \omega \in \Omega \label{cons:linearize1}\\
 		& S_{ij}^\omega \leq x_{ij}^\omega & \forall \,i \in I, j \in J_i, \omega \in \Omega \label{cons:linearize2}\\
 		& S_{ij}^\omega \geq G_i^\omega + x_{ij}^\omega - 1 & \forall \,i \in I, j \in J_i, \omega \in \Omega \label{cons:linearize3}\\
-		& t_i \geq 0 & \forall\,i \in I \\
 		& t_i^\omega \geq H^\omega G_i^\omega & \forall\, i \in I, \omega \in \Omega \\
 		& 0 \leq x_{ij} \leq 1 & \forall \,i \in I, j \in J_i\\ 
 		& 0 \leq x_{ij}^\omega \leq 1 & \forall \,i \in I, j \in J_i, \omega \in \Omega\\
+		& 0 \leq S_{ij}^\omega \leq 1 & \forall \,i \in I, j \in J_i, \omega \in \Omega\\
 		& G_i^\omega \in \{0,1\}. & \forall \,i \in I, \omega \in \Omega
 		\end{align}
 	\end{subequations}
@@ -212,7 +212,8 @@ Optimizing Crashing Decisions in Project Management Problem with Disruptions \ms
 		Even if the disruption can only bring negative effect on the duration of activities, a.k.a. lengthening all activities after that, it is still beneficial to delay the start of some activities under some circumstances. This means a small delay of some activity may gain the information of disruption which is more valuable and potentially decreases the total project span. Such claim can be verified by the serial network described in the last paragraph, only changing some duration parameters in the following way. Suppose the nominal duration, the timing of possible disruption and the probability of a disruption occurring remain the same. If the disruption occurs, it will change the duration of activity 2 to 9.1 and that of activity 3 to 13. For this example, if no delay is allowed, the optimal decision is to allocate the entire budget to activity 2 and the expected total project span is 24. If we delay the starting time of the activity 2 to 9.1 so that the disruption can be observed before we commit resources to activity 2, the expected total project span is 23.4. 
 	\subsection{Parallel Networks}
 		\begin{itemize}
-			\item Not optimal to delay when \(d_i \geq 0\).
+			\item Not optimal to delay when \(d_i \geq 0\) if each branch only contains a single activity.
+			\item If each branch is a serial path, it is possibly beneficial to delay the start of some activities.
 		\end{itemize}
 	\subsection{Y Networks}
 \section{Properties of the Sample Average Approximation Problem} \label{sec:consistency}

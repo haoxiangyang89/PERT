@@ -219,12 +219,12 @@ mpStatus = solve(mp);
 vList1 = [];
 vList2 = [];
 for i in 1:1000
-    disData,Ω = autoUGenStrata("LogNormal",[log(35),0.5],nameD,dparams,10,5);
+    disData,Ω = autoUGenStrata2("LogNormal",[log(35),0.5],nameD,dparams,10,5);
     ωSeq,ωDict,Hω,Ωt = getOmegaSeq(disData);
     text,xext,fext,mext = extForm_cheat(pData,disData,Ω);
     push!(vList1,fext);
 
-    disData,Ω = autoUGenStrata("LogNormal",[log(35),0.5],nameD,dparams,50,1);
+    disData,Ω = autoUGenStrata2("LogNormal",[log(35),0.5],nameD,dparams,50,1);
     ωSeq,ωDict,Hω,Ωt = getOmegaSeq(disData);
     text,xext,fext,mext = extForm_cheat(pData,disData,Ω);
     push!(vList2,fext);
