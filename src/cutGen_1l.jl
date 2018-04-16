@@ -77,9 +77,14 @@ function bGenbuild(pData,dDω,xhat,that,brInfo)
     return cutGen;
 end
 
-function bGenbuild_New(pData,dDω,xhat,that,brInfoω)
+function bGenbuild_New(pData,dDω,xhat,that,brInfoω,M = Dict())
     # imbed the logic in the program
-    M = iSolve_NC(pData,dDω,0);
+    if M == Dict()
+        MM = iSolve_NC(pData,dDω,0,brInfoω);
+        for i in pData.II
+            M[i] = MM;
+        end
+    end
 
     # sp = Model(solver = GurobiSolver(OutputFlag = 0));
     sp = Model(solver = GurobiSolver(OutputFlag = 0));
@@ -91,8 +96,8 @@ function bGenbuild_New(pData,dDω,xhat,that,brInfoω)
     @variable(sp, 0 <= s[i in pData.II,j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0] <= 1);
 
     # add the basic sub problem constraints
-    @constraint(sp, FCons[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0],dDω.H - F[i]*M <= that[i]);
-    @constraint(sp, GCons[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0],dDω.H + G[i]*M >= that[i]);
+    @constraint(sp, FCons[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0],dDω.H - F[i]*M[i] <= that[i]);
+    @constraint(sp, GCons[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0],dDω.H + G[i]*M[i] >= that[i]);
     @constraint(sp, FGCons[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0],F[i] + G[i] == 1);
 
     # add the predecessors and the successors logic constraints
@@ -101,10 +106,10 @@ function bGenbuild_New(pData,dDω,xhat,that,brInfoω)
 
     # add the basic sub problem constraints for the undecided activities
     @constraint(sp, tGbound1[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0],t[i] >= dDω.H*G[i]);
-    @constraint(sp, tFnAnt1[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0],t[i] + (1 - F[i])*M >= that[i]);
-    @constraint(sp, tFnAnt2[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0],t[i] - (1 - F[i])*M <= that[i]);
-    @constraint(sp, xFnAnt1[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0],x[i,j] + (1 - F[i]) >= xhat[i,j]);
-    @constraint(sp, xFnAnt2[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0],x[i,j] - (1 - F[i]) <= xhat[i,j]);
+    @constraint(sp, tFnAnt1[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0],t[i] + G[i]*M[i] >= that[i]);
+    @constraint(sp, tFnAnt2[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0],t[i] - G[i]*M[i] <= that[i]);
+    @constraint(sp, xFnAnt1[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0],x[i,j] + G[i] >= xhat[i,j]);
+    @constraint(sp, xFnAnt2[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0],x[i,j] - G[i] <= xhat[i,j]);
 
     # add the logic constraints for the activities that have already started
     @constraint(sp, tFnAnt3[i in pData.II; brInfoω[findin(pData.II,i)[1]] == -1], t[i] == that[i]);
@@ -113,7 +118,7 @@ function bGenbuild_New(pData,dDω,xhat,that,brInfoω)
 
     # linearize the bilinear term of x[i,j]*G[i]
     @constraint(sp, xGlin1[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0], s[i,j] <= G[i]);
-    @constraint(sp, xGlin2[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0], s[i,j] <= x[i,j] + 1 - G[i]);
+    @constraint(sp, xGlin2[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0], s[i,j] <= x[i,j]);
     @constraint(sp, xGlin3[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0], s[i,j] >= x[i,j] - 1 + G[i]);
 
     @constraint(sp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
@@ -133,14 +138,14 @@ function bGenbuild_New(pData,dDω,xhat,that,brInfoω)
     πdict = Dict();             # dual for t
     for i in pData.II
         if brInfoω[findin(pData.II,i)[1]] == 0
-            πdict[i] = -(getdual(sp[:FCons])[i] + getdual(sp[:GCons])[i] + getdual(sp[:tFnAnt1])[i] + getdual(sp[:tFnAnt2])[i]);
+            πdict[i] = (getdual(sp[:FCons])[i] + getdual(sp[:GCons])[i] + getdual(sp[:tFnAnt1])[i] + getdual(sp[:tFnAnt2])[i]);
             for j in pData.Ji[i]
-                λdict[i,j] = -(getdual(sp[:xFnAnt1])[i,j] + getdual(sp[:xFnAnt2])[i,j]);
+                λdict[i,j] = (getdual(sp[:xFnAnt1])[i,j] + getdual(sp[:xFnAnt2])[i,j]);
             end
         elseif brInfoω[findin(pData.II,i)[1]] == -1
-            πdict[i] = -(getdual(sp[:tFnAnt3])[i]);
+            πdict[i] = (getdual(sp[:tFnAnt3])[i]);
             for j in pData.Ji[i]
-                λdict[i,j] = -(getdual(sp[:xFnAnt3])[i,j]);
+                λdict[i,j] = (getdual(sp[:xFnAnt3])[i,j]);
             end
         else
             πdict[i] = 0;
@@ -155,9 +160,6 @@ end
 
 function subInt(pData,dDω,xhat,that)
     # solve the MIP recourse problem
-    M = iSolve_NC(pData,dDω,0);
-
-    # sp = Model(solver = GurobiSolver(OutputFlag = 0));
     sp = Model(solver = GurobiSolver(OutputFlag = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
@@ -216,14 +218,20 @@ function iSolve(pData,iTarget)
 end
 
 # build the LP to obtain the big M
-function iSolve_NC(pData,dDω,iTarget)
+function iSolve_NC(pData,dDω,iTarget,brInfoω)
     # mp = Model(solver = GurobiSolver(OutputFlag = 0));
     mp = Model(solver = GurobiSolver(OutputFlag = 0));
     @variable(mp, t[i in pData.II] >= 0);
     Dω = Dict();
 
     for i in keys(dDω.d)
-        Dω[i] = max(0,dDω.d[i])+pData.D[i];
+        if brInfoω[findin(pData.II,i)[1]] == 0
+            Dω[i] = max(0,dDω.d[i])+pData.D[i];
+        elseif brInfoω[findin(pData.II,i)[1]] == -1
+            Dω[i] = pData.D[i];
+        else
+            Dω[i] = pData.D[i] + dDω.d[i];
+        end
     end
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= Dω[k[1]]);
 
@@ -231,4 +239,100 @@ function iSolve_NC(pData,dDω,iTarget)
     solve(mp);
 
     return getobjectivevalue(mp);
+end
+
+function bGenbuild_Dual(pData,dDω,xhat,that,brInfoω,M = Dict())
+    # imbed the logic in the program
+    if M == Dict()
+        MM = iSolve_NC(pData,dDω,0,brInfoω);
+        for i in pData.II
+            M[i] = MM;
+        end
+    end
+
+    dp = Model(solver = GurobiSolver(OutputFlag = 0));
+
+    @variable(dp,λt0[k in pData.K; brInfoω[findin(pData.II,k[1])[1]] == 0] >= 0);
+    @variable(dp,λth0[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0] >= 0);
+    @variable(dp,λG1[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0] <= 0);
+    @variable(dp,λG2[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0] >= 0);
+    @variable(dp,λtM1[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0] <= 0);
+    @variable(dp,λtM2[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0] >= 0);
+    @variable(dp,λxM1[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0] <= 0);
+    @variable(dp,λxM2[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0] >= 0);
+    @variable(dp,λS1[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0] >= 0);
+    @variable(dp,λS2[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0] <= 0);
+    @variable(dp,λS3[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0] <= 0);
+    @variable(dp,λGu[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0] <= 0);
+
+    @variable(dp,λth1[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 1] >= 0);
+    @variable(dp,λt1[k in pData.K; brInfoω[findin(pData.II,k[1])[1]] == 1] >= 0);
+
+    @variable(dp,λtMe[i in pData.II; brInfoω[findin(pData.II,i)[1]] == -1]);
+    @variable(dp,λxMe[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == -1]);
+    @variable(dp,λte[k in pData.K; brInfoω[findin(pData.II,k[1])[1]] == -1] >= 0);
+
+    @variable(dp,λB <= 0);
+    @variable(dp,λxu[i in pData.II, j in pData.Ji[i]] <= 0);
+    cDict = Dict();
+    for i in pData.II
+        if i == 0
+            cDict[i] = 1;
+        else
+            cDict[i] = 0;
+        end
+    end
+
+    @objective(dp, Max, sum(pData.D[k[1]]*λt0[k] for k in pData.K if brInfoω[findin(pData.II,k[1])[1]] == 0) +
+        sum((that[i] + M[i] - dDω.H)*λG1[i] + (that[i] - dDω.H)*λG2[i] + that[i]*λtM1[i] + that[i]*λtM2[i] + λGu[i] for i in pData.II if brInfoω[findin(pData.II,i)[1]] == 0) +
+        sum(sum(λxM1[i,j]*xhat[i,j] + λxM2[i,j]*xhat[i,j] - λS1[i,j] for j in pData.Ji[i]) for i in pData.II if brInfoω[findin(pData.II,i)[1]] == 0) +
+        sum(dDω.H*λth1[i] for i in pData.II if brInfoω[findin(pData.II,i)[1]] == 1) + sum((pData.D[k[1]]+dDω.d[k[1]])*λt1[k] for k in pData.K if brInfoω[findin(pData.II,k[1])[1]] == 1) +
+        sum(that[i]*λtMe[i] + sum(xhat[i,j]*λxMe[i,j] for j in pData.Ji[i]) for i in pData.II if brInfoω[findin(pData.II,i)[1]] == -1) +
+        sum(pData.D[k[1]]*λte[k] for k in pData.K if brInfoω[findin(pData.II,k[1])[1]] == -1) +
+        sum(sum(λxu[i,j] for j in pData.Ji[i]) for i in pData.II) + pData.B*λB);
+    @constraint(dp,constrt0[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0],sum(-λt0[k] for k in pData.K if k[1] == i) + sum(λt0[k] for k in pData.K if (k[2] == i)&&(brInfoω[findin(pData.II,k[1])[1]] == 0)) +
+        sum(λt1[k] for k in pData.K if (k[2] == i)&&(brInfoω[findin(pData.II,k[1])[1]] == 1)) + sum(λte[k] for k in pData.K if (k[2] == i)&&(brInfoω[findin(pData.II,k[1])[1]] == -1)) +
+        λth0[i] + λtM1[i] + λtM2[i] <= cDict[i]);
+    @constraint(dp,constrt1[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 1], sum(-λt1[k] for k in pData.K if k[1] == i) + sum(λt0[k] for k in pData.K if (k[2] == i)&&(brInfoω[findin(pData.II,k[1])[1]] == 0)) +
+        sum(λt1[k] for k in pData.K if (k[2] == i)&&(brInfoω[findin(pData.II,k[1])[1]] == 1)) + sum(λte[k] for k in pData.K if (k[2] == i)&&(brInfoω[findin(pData.II,k[1])[1]] == -1)) +
+        λth1[i] <= cDict[i]);
+    @constraint(dp,constrte[i in pData.II; brInfoω[findin(pData.II,i)[1]] == -1],sum(-λte[k] for k in pData.K if k[1] == i) + sum(λt0[k] for k in pData.K if (k[2] == i)&&(brInfoω[findin(pData.II,k[1])[1]] == 0)) +
+        sum(λt1[k] for k in pData.K if (k[2] == i)&&(brInfoω[findin(pData.II,k[1])[1]] == 1)) + sum(λte[k] for k in pData.K if (k[2] == i)&&(brInfoω[findin(pData.II,k[1])[1]] == -1)) +
+        λtMe[i] <= cDict[i]);
+    @constraint(dp,constrx0[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0], sum(pData.D[i]*pData.eff[i][j]*λt0[k] for k in pData.K if k[1] == i) +
+        λxM1[i,j] + λxM2[i,j] - λS1[i,j] - λS3[i,j] + λB + λxu[i,j] <= 0);
+    @constraint(dp,constrx1[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 1], sum((pData.D[i] + dDω.d[i])*pData.eff[i][j]*λt1[k] for k in pData.K if k[1] == i) +
+        λB + λxu[i,j] <= 0);
+    @constraint(dp,constrxe[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == -1],sum(pData.D[i]*pData.eff[i][j]*λte[k] for k in pData.K if k[1] == i) +
+        λB + λxu[i,j] + λxMe[i,j] <= 0);
+    @constraint(dp,constrG[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0], sum(-dDω.d[i]*λt0[k] for k in pData.K if k[1] == i) - dDω.H*λth0[i] + M[i]*λG1[i] + M[i]*λG2[i] -
+        M[i]*λtM1[i] + M[i]*λtM2[i] - sum(λxM1[i,j] - λxM2[i,j] + λS1[i,j] + λS2[i,j] for j in pData.Ji[i]) + λGu[i] <= 0);
+    @constraint(dp,constrS[i in pData.II, j in pData.Ji[i]; brInfoω[findin(pData.II,i)[1]] == 0], λS1[i,j] + λS2[i,j] + λS3[i,j] + sum(dDω.d[i]*pData.eff[i][j]*λt0[k] for k in pData.K if k[1] == i) <= 0);
+
+    # obtain the dual variables for cuts
+    solve(dp);
+    vk = getobjectivevalue(dp);
+    # the cut generated is θ >= v - λ(x - xhat) - π(t - that)
+    λdict = Dict();             # dual for x
+    πdict = Dict();             # dual for t
+    for i in pData.II
+        if brInfoω[findin(pData.II,i)[1]] == 0
+            πdict[i] = (getvalue(dp[:λG1][i]) + getvalue(dp[:λG2][i]) + getvalue(dp[:λtM1][i]) + getvalue(dp[:λtM2][i]));
+            for j in pData.Ji[i]
+                λdict[i,j] = (getvalue(dp[:λxM1][i,j]) + getvalue(dp[:λxM2][i,j]));
+            end
+        elseif brInfoω[findin(pData.II,i)[1]] == -1
+            πdict[i] = (getvalue(dp[:λtMe][i]));
+            for j in pData.Ji[i]
+                λdict[i,j] = (getvalue(dp[:λxMe][i,j]));
+            end
+        else
+            πdict[i] = 0;
+            for j in pData.Ji[i]
+                λdict[i,j] = 0;
+            end
+        end
+    end
+    cutGen = cutType(πdict,λdict,vk);
+    return cutGen;
 end

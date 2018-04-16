@@ -1,5 +1,6 @@
 # This is the script to load the data and solve the problem
 @everywhere using JuMP,Gurobi,CPLEX,Cbc,Clp;
+@everywhere using Distributions,HDF5,JLD;
 
 @everywhere include("def.jl");
 @everywhere include("readIn.jl");

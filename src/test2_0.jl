@@ -1,5 +1,6 @@
 # test the variance of the recourse function with the deterministic solution
 @everywhere using JuMP,Gurobi,CPLEX,Cbc,Clp,HDF5,JLD;
+@everywhere using Distributions,HDF5,JLD;
 
 @everywhere include("def.jl");
 @everywhere include("readIn.jl");

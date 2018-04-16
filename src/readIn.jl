@@ -1,5 +1,3 @@
-using Distributions,HDF5,JLD;
-
 # This is the input function that reads in the project data
 function readInP(pInputAdd,kInputAdd)
     pRaw = readdlm(pInputAdd,',',header = false);

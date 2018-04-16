@@ -79,7 +79,6 @@ function pullDecomp(pData,disData,Ω,ϵ = 1e-6)
     mp = Model(solver = CplexSolver(CPX_PARAM_EPAGAP = 1e-6,CPX_PARAM_EPRHS = 1e-9, CPX_PARAM_EPINT = 1e-9));
     @variable(mp, t[i in pData.II] >= 0);
     @variable(mp, 0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);
-    @variable(mp, F[i in pData.II, ω in Ω], Bin);
     @variable(mp, G[i in pData.II, ω in Ω], Bin);
     @variable(mp, θ[ω in Ω] >= 0);
 
@@ -92,8 +91,7 @@ function pullDecomp(pData,disData,Ω,ϵ = 1e-6)
     @constraint(mp, budgetConstr, sum(sum(x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
 #    @constraint(mp, tGnAnt[i in pData.II, ω in Ω], t[i] <= (disData[ω].H - ϵ) + G[i,ω]*M);
     @constraint(mp, tGnAnt[i in pData.II, ω in Ω], t[i] <= disData[ω].H + G[i,ω]*M[i]);
-    @constraint(mp, tFnAnt[i in pData.II, ω in Ω], t[i] >= disData[ω].H - F[i,ω]*disData[ω].H);
-    @constraint(mp, FGnAnt[i in pData.II, ω in Ω], F[i,ω] + G[i,ω] == 1);
+    @constraint(mp, tFnAnt[i in pData.II, ω in Ω], t[i] >= disData[ω].H - (1-G[i,ω])*M[i]);
     LB = -Inf;
     UB = Inf;
 

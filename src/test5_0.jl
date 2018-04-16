@@ -1,5 +1,6 @@
 # test the discrete distribution with everything up to change, compare the results
 @everywhere using JuMP,Gurobi,CPLEX,Cbc,Clp;
+@everywhere using Distributions,HDF5,JLD;
 
 @everywhere include("def.jl");
 @everywhere include("readIn.jl");
@@ -96,11 +97,10 @@ end
 fHonlyU = ubCal(pData,disDataF,ΩF,xHonly,tHonly);
 println("-------------- HOnly Solved --------------");
 
-disData3 = deepcopy(disData2);
-for ω in ΩF
-    disData3[ω].H = meanH;
-end
-tfixed,xfixed,ffixed,mfixed = extForm(pData,disData3,ΩF);
+disData3 = Dict();
+disData3[1] = disInfo(meanH,meand,1-pData.p0);
+ΩF3 = 1:1;
+tfixed,xfixed,ffixed,mfixed = extForm(pData,disData3,ΩF3);
 tfixedO = Dict();
 xfixedO = Dict();
 for i in pData.II
