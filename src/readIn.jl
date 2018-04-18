@@ -298,3 +298,13 @@ function autoUGenStrata2(nameH, Hparams, nameD, dparams, Ωt, Ωd, totalProb)
     end
     return disData,Ω;
 end
+
+function orderdisData(disData,Ω)
+    dHList = [disData[ω].H for ω in Ω];
+    ωOrdered = sortperm(dHList);
+    disDataNew = Dict();
+    for ω in Ω
+        disDataNew[ω] = disData[ωOrdered[ω]];
+    end
+    return disDataNew;
+end
