@@ -160,7 +160,7 @@ function subInt(pData,dDω,xhat,that)
     return getobjectivevalue(sp);
 end
 
-function bGenbuild_Dual(pData,dDω,xhat,that,brInfoω,M = Dict())
+function sub_Dual(pData,dDω,xhat,that,brInfoω,M = Dict())
     # imbed the logic in the program
     if M == Dict()
         MM = iSolve_NC(pData,dDω,0,brInfoω);
@@ -289,7 +289,7 @@ function subPull(pData,dDω,xhat,that,Ghatω,M = 9999999)
     # obtain the dual variables for cuts
     solve(sp);
     vk = getobjectivevalue(sp);
-    # the cut generated is θ >= v - λ(x - xhat) - π(t - that) - γ(G - Ghat)
+    # the cut generated is θ >= v + λ(x - xhat) + π(t - that) + γ(G - Ghat)
     λdict = Dict();             # dual for x
     πdict = Dict();             # dual for t
     γdict = Dict();             # dual for G

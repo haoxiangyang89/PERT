@@ -54,29 +54,63 @@ for i in pData.II
     end
 end
 mp = createMaster_Par(pData,disData,Ω,partCurrent,partDet);
-solve(mp);
-# get master solution
-that = Dict();
-xhat = Dict();
-Ghat = Dict();
+ublb = 0;
+# initialize the cutSet as empty
+cutSet = Dict();
 for ω in Ω
-    Ghat[ω] = Dict();
-    for i in pData.II
-        Ghat[ω][i] = getvalue(mp[:G][i,partRev[i][ω]]);
-    end
+    cutSet[ω] = [];
 end
-for i in pData.II
-    that[i] = getvalue(mp[:t][i]);
-    for j in pData.Ji[i]
-        xhat[i,j] = getvalue(mp[:x][i,j]);
+
+while stopBool
+    stopBool = false;
+    mpstatus = solve(mp);
+    if (mpstatus == :Optimal) && (ublb < getobjectivevalue(mp) - 1e-4)
+        ublb = getobjectivevalue(mp);
+        # get master solution
+        that = Dict();
+        xhat = Dict();
+        Ghat = Dict();
+        for ω in Ω
+            Ghat[ω] = Dict();
+            for i in pData.II
+                Ghat[ω][i] = getvalue(mp[:G][i,partRev[i][ω]]);
+            end
+        end
+        for i in pData.II
+            that[i] = getvalue(mp[:t][i]);
+            for j in pData.Ji[i]
+                xhat[i,j] = getvalue(mp[:x][i,j]);
+            end
+        end
+
+        # solve the subproblem to obtain
+        πdict = Dict();
+        γdict = Dict();
+        λdict = Dict();
+        vk = Dict();
+        for ω in Ω
+            πdict[ω],γdict[ω],λdict[ω],vk[ω] = subPull(pData,disData[ω],xhat,that,Ghat[ω],400);
+        end
+        # add the cuts
+        mp,cutSet = addCuts(pData,Ω,mp,πdict,γdict,λdict,vk,that,xhat,Ghat,cutSet,partRev);
+        stopBool = true;
     end
 end
 
-# solve the subproblem to obtain
-πdict = Dict();
-γdict = Dict();
-λdict = Dict();
-vk = Dict();
+# obtain an upperbound
+ub = getobjectivevalue(mp);
+tbest = Dict();
+xbest = Dict();
+Gbest = Dict();
 for ω in Ω
-    πdict[ω],γdict[ω],λdict[ω],vk[ω] = subPull(pData,disData[ω],xhat,that,Ghat[ω],400);
+    Gbest[ω] = Dict();
+    for i in pData.II
+        Gbest[ω][i] = getvalue(mp[:G][i,partRev[i][ω]]);
+    end
+end
+for i in pData.II
+    tbest[i] = getvalue(mp[:t][i]);
+    for j in pData.Ji[i]
+        xbest[i,j] = getvalue(mp[:x][i,j]);
+    end
 end

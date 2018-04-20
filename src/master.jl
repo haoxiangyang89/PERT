@@ -14,7 +14,7 @@ function createMaster(pData,disData,Ω)
 end
 
 # create a master problem given a partition
-function createMaster_Par(pData,disData,Ω,partCurrent,partDet,cutSet = [],M = 9999999)
+function createMaster_Par(pData,disData,Ω,partCurrent,partDet,M = 9999999)
     # find the matching between scenario and partition
     partRev = Dict();
     partNo = Dict();
