@@ -4,10 +4,11 @@
 
 @everywhere include("def.jl");
 @everywhere include("readIn.jl");
-@everywhere include("main_1l.jl");
-@everywhere include("main_pull.jl");
-@everywhere include("cutGen_1l.jl");
-@everywhere include("tightenGen_1l.jl");
+@everywhere include("master.jl");
+@everywhere include("sub.jl");
+@everywhere include("cuts.jl");
+@everywhere include("iSolve.jl");
+@everywhere include("tighten.jl");
 @everywhere include("branchFunc.jl");
 @everywhere include("detFunc_1l.jl");
 @everywhere include("extForm_1l.jl");
@@ -61,6 +62,7 @@ for ω in Ω
     cutSet[ω] = [];
 end
 
+stopBool = true;
 while stopBool
     stopBool = false;
     mpstatus = solve(mp);

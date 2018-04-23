@@ -47,7 +47,7 @@ function createMaster_Par(pData,disData,Ω,partCurrent,partDet,M = 9999999)
 
     # logic constraints of G
     @constraint(mp, GijCon[i in pData.II, j in pData.Succ[i],ω in Ω], G[i,partRev[i][ω]] <= G[j,partRev[i][ω]]);
-    @constraint(mp, Gω12Con[i in pData.II, m in 1:(partNo[i] - 1)], G[i,m] <= G[i,m + 1]);
+    @constraint(mp, Gω12Con[i in pData.II, m in 1:(partNo[i] - 1)], G[i,m] >= G[i,m + 1]);
     @constraint(mp, Gdet1[i in pData.II,m in 1:partNo[i]; partDet[i][m] == 1], G[i,m] == 1);
     @constraint(mp, Gdet0[i in pData.II,m in 1:partNo[i]; partDet[i][m] == -1], G[i,m] == 0);
     @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
