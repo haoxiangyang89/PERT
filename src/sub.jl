@@ -137,29 +137,6 @@ function subRelax_New(pData,dDω,xhat,that,brInfoω,M = Dict())
     return cutGen;
 end
 
-function subInt(pData,dDω,xhat,that)
-    # solve the MIP recourse problem
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
-    @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
-    @variable(sp, t[i in pData.II] >= 0);
-
-    # add the basic sub problem constraints
-    @constraint(sp, fixT[i in pData.II; that[i] < dDω.H], t[i] == that[i]);
-    @constraint(sp, boundT[i in pData.II; that[i] >= dDω.H], t[i] >= dDω.H);
-    @constraint(sp, fixX[i in pData.II,j in pData.Ji[i]; that[i] < dDω.H], x[i,j] == xhat[i,j]);
-
-    @constraint(sp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
-    @constraint(sp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
-    @constraint(sp, durationConstr[k in pData.K; that[k[1]] < dDω.H], t[k[2]] - t[k[1]] >= pData.D[k[1]]*
-        (1 - sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
-    @constraint(sp, durationConstr2[k in pData.K; that[k[1]] >= dDω.H], t[k[2]] - t[k[1]] >= (pData.D[k[1]]+dDω.d[k[1]])*
-        (1 - sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
-
-    @objective(sp, Min, t[0]);
-    solve(sp);
-    return getobjectivevalue(sp);
-end
-
 function sub_Dual(pData,dDω,xhat,that,brInfoω,M = Dict())
     # imbed the logic in the program
     if M == Dict()

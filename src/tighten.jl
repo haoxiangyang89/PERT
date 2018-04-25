@@ -28,7 +28,7 @@ function getOmegaSeq(disData)
     return ωSeq,ωDict,Hω,Ωt;
 end
 
-function precludeRel(pData,disData,Ω)
+function precludeRel(pData,disData,Ω,ub = Inf)
     # solve |II| number of LP to obtain each activity's earliest starting time
     # initialize the brInfo
     brInfo = zeros(length(pData.II),length(Ω));
@@ -40,11 +40,21 @@ function precludeRel(pData,disData,Ω)
             end
         end
     end
+    if ub != Inf
+        for i in pData.II
+            tlate = lSolve(pData,i,ub);
+            for ω in Ω
+                if tlate <= disData[ω].H
+                    brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] = -1;
+                end
+            end
+        end
+    end
 
     return brInfo;
 end
 
-function precludeRelStrata(pData,Hω,Ωt)
+function precludeRelStrata(pData,Hω,Ωt,ub = Inf)
     # solve |II| number of LP to obtain each activity's earliest starting time
     # initialize the brInfo
     brInfo = zeros(length(pData.II),length(Ωt));
@@ -53,6 +63,14 @@ function precludeRelStrata(pData,Hω,Ωt)
         for ω in Ωt
             if tearly >= Hω[ω]
                 brInfo[findin(pData.II,i)[1],ω] = 1;
+            end
+        end
+    end
+    if ub != Inf
+        tlate = lSolve(pData,i);
+        for ω in Ωt
+            if tlate <= Hω[ω]
+                brInfo[findin(pData.II,i)[1],ω] = -1;
             end
         end
     end

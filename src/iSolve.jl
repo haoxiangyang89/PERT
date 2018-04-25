@@ -16,6 +16,25 @@ function iSolve(pData,iTarget)
     return getobjectivevalue(mp);
 end
 
+# build the LP to obtain the latest possible starting time of an activity
+function lSolve(pData,iTarget,ubTemp)
+    mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    @variable(mp, t[i in pData.II] >= 0);
+    @variable(mp, 0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);
+
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1 -
+        sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
+    @constraint(mp, budgetConstr, sum(sum(x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+
+    @constraint(mp, ubCon, t[0] <= ubTemp);
+
+    @objective(mp, Max, t[iTarget]);
+    solve(mp);
+
+    return getobjectivevalue(mp);
+end
+
 # build the LP to obtain the big M
 function iSolve_NC(pData,dDω,iTarget,brInfoω)
     # mp = Model(solver = GurobiSolver(OutputFlag = 0));
