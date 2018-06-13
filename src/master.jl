@@ -88,7 +88,7 @@ function createMaster_Mixed(pData,disData,Ω,ωInfo,cutSet,M = 9999999)
             for nc in 1:length(cutSet[ω])
                 @constraint(mp, θ[ω] >= cutSet[ω][nc][4] + sum(cutSet[ω][nc][1][i]*(mp[:t][i] - cutSet[ω][nc][5][i]) for i in pData.II) +
                     sum(sum(cutSet[ω][nc][2][i,j]*(mp[:x][i,j] - cutSet[ω][nc][6][i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                    sum(cutSet[ω][nc][3][i,ω]*(mp[:G][i,ω] - cutSet[ω][nc][7][i,ω]) for i in pData.II if (i,ω) in keys(cutSet[ω][nc][7])));
+                    sum(cutSet[ω][nc][3][i,ω1]*(mp[:G][i,ω1] - cutSet[ω][nc][7][i,ω1]) for (i,ω1) in keys(cutSet[ω][nc][7])));
             end
         end
     end

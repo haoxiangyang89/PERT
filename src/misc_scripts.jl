@@ -2,7 +2,13 @@
 # obtain the RHS of the cut
 cutSet[ω][nc][4] + sum(cutSet[ω][nc][1][i]*(that[i] - cutSet[ω][nc][5][i]) for i in pData.II) +
             sum(sum(cutSet[ω][nc][2][i,j]*(xhat[i,j] - cutSet[ω][nc][6][i,j]) for j in pData.Ji[i]) for i in pData.II if i != 0) +
-            sum(cutSet[ω][nc][3][i,ω]*(Ghat[i,ω] - cutSet[ω][nc][7][i,ω]) for i in pData.II if (i,ω) in keys(cutSet[ω][nc][7]));
+            sum(cutSet[ω][nc][3][i,ω]*(Ghat[i,ω] - cutSet[ω][nc][7][i,ω]) for (i,ω) in keys(cutSet[ω][nc][7]));
+
+cutValue = cutSet[ω][nc][4] + sum(cutSet[ω][nc][1][i]*(text[i] - cutSet[ω][nc][5][i]) for i in pData.II) +
+            sum(sum(cutSet[ω][nc][2][i,j]*(xext[i,j] - cutSet[ω][nc][6][i,j]) for j in pData.Ji[i]) for i in pData.II if i != 0)
+if length(keys(cutSet[ω][nc][7])) != 0
+    cutValue += sum(cutSet[ω][nc][3][i,ω1]*(Gext[i,ω1] - cutSet[ω][nc][7][i,ω1]) for (i,ω1) in keys(cutSet[ω][nc][7]));
+end
 
 ##########################################################################################
 # obtain the 50/500 test data
