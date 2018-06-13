@@ -64,3 +64,35 @@ function createMaster_Par(pData,disData,Ω,partCurrent,partDet,cutSet,M = 999999
 
     return mp;
 end
+
+# create a master problem with a selection of binary variables
+function createMaster_Mixed(pData,disData,Ω,ωInfo,cutSet,M = 9999999)
+    # cutSet includes the cuts generated
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+    @variables(mp, begin
+      θ[Ω] >= 0
+      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
+      t[i in pData.II] >= 0
+      G[i in pData.II,ω in Ω; (i,ω) in ωInfo], Bin
+    end);
+    @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
+    @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+
+    # logic constraints between G and t
+    @constraint(mp, tGcons1[i in pData.II, ω in Ω; (i,ω) in ωInfo], t[i] <= disData[ω].H + G[i,ω]*M);
+    @constraint(mp, tGcons2[i in pData.II, ω in Ω; (i,ω) in ωInfo], t[i] >= disData[ω].H - (1 - G[i,ω])*M);
+
+    for ω in Ω
+        if cutSet[ω] != []
+            for nc in 1:length(cutSet[ω])
+                @constraint(mp, θ[ω] >= cutSet[ω][nc][4] + sum(cutSet[ω][nc][1][i]*(mp[:t][i] - cutSet[ω][nc][5][i]) for i in pData.II) +
+                    sum(sum(cutSet[ω][nc][2][i,j]*(mp[:x][i,j] - cutSet[ω][nc][6][i,j]) for j in pData.Ji[i]) for i in pData.II) +
+                    sum(cutSet[ω][nc][3][i,ω]*(mp[:G][i,ω] - cutSet[ω][nc][7][i,ω]) for i in pData.II if (i,ω) in keys(cutSet[ω][nc][7])));
+            end
+        end
+    end
+    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
+
+    return mp;
+end

@@ -47,6 +47,50 @@ function subIntG(pData,dDω,xhat,that,Ghatω)
     return getobjectivevalue(sp);
 end
 
+function subIntGMixed(pData,dDω,xhat,that,ωCurr,Ghatω,M = 400,returnOpt = 0)
+    # solve the MIP recourse problem
+    sp = Model(solver = GurobiSolver(OutputFlag = 0,Method = 1));
+    @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
+    @variable(sp, t[i in pData.II] >= 0);
+    @variable(sp, s[i in pData.II, j in pData.Ji[i]] >= 0);
+    @variable(sp, G[i in pData.II], Bin);
+
+    # add the basic sub problem constraints
+    @constraint(sp, tGcons1[i in pData.II],dDω.H + G[i]*M >= that[i]);
+    @constraint(sp, tGcons2[i in pData.II],dDω.H - (1 - G[i])*M <= that[i]);
+    @constraint(sp, tGbound[i in pData.II],t[i] >= dDω.H*G[i]);
+    @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*M >= that[i]);
+    @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*M <= that[i]);
+    @constraint(sp, xFnAnt1[i in pData.II, j in pData.Ji[i]],x[i,j] + G[i] >= xhat[i,j]);
+    @constraint(sp, xFnAnt2[i in pData.II, j in pData.Ji[i]],x[i,j] - G[i] <= xhat[i,j]);
+
+    # linearize the bilinear term of x[i,j]*G[i]
+    @constraint(sp, xGlin1[i in pData.II, j in pData.Ji[i]], s[i,j] <= G[i]);
+    @constraint(sp, xGlin2[i in pData.II, j in pData.Ji[i]], s[i,j] <= x[i,j] + 1 - G[i]);
+    @constraint(sp, xGlin3[i in pData.II, j in pData.Ji[i]], s[i,j] >= x[i,j] - 1 + G[i]);
+
+    @constraint(sp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(sp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+    @constraint(sp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]] + dDω.d[k[1]]*G[k[1]]
+        - sum(pData.D[k[1]]*pData.eff[k[1]][j]*x[k[1],j] + dDω.d[k[1]]*pData.eff[k[1]][j]*s[k[1],j] for j in pData.Ji[k[1]]));
+
+    # with the given Ghat
+    @constraint(sp, GConstr[i in pData.II, j in pData.Succ[i]], G[i] <= G[j]);
+    @constraint(sp, GGcons1[(i,ω) in keys(Ghatω);ω == ωCurr], G[i] == Ghatω[i,ω]);
+    @constraint(sp, GGcons2[(i,ω) in keys(Ghatω);ω < ωCurr], G[i] <= Ghatω[i,ω]);
+    @constraint(sp, GGcons3[(i,ω) in keys(Ghatω);ω > ωCurr], G[i] >= Ghatω[i,ω]);
+
+    @objective(sp, Min, t[0]);
+
+    # obtain the dual variables from solving the sub
+    solve(sp);
+    if returnOpt == 0
+        return getobjectivevalue(sp);
+    else
+        return sp;
+    end
+end
+
 function ubCal(pData,disData,Ω,xhat,that)
     # calculate the upper bound of the problem given the master solution
     ubCost = that[0]*pData.p0;

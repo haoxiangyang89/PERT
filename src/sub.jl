@@ -279,3 +279,66 @@ function subPull(pData,dDω,xhat,that,Ghatω,M = 9999999)
     end
     return πdict,γdict,λdict,vk;
 end
+
+function subMixed(pData,dDω,xhat,that,Ghatω,ωCurr,Ω,M = 9999999,returnOpt = 0)
+    sp = Model(solver = GurobiSolver(OutputFlag = 0,Method = 1));
+    @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
+    @variable(sp, t[i in pData.II] >= 0);
+    @variable(sp, s[i in pData.II, j in pData.Ji[i]] >= 0);
+    @variable(sp, 0 <= G[i in pData.II] <= 1);
+
+    # add the basic sub problem constraints
+    @constraint(sp, tGcons1[i in pData.II],dDω.H + G[i]*M >= that[i]);
+    @constraint(sp, tGcons2[i in pData.II],dDω.H - (1 - G[i])*M <= that[i]);
+    @constraint(sp, tGbound[i in pData.II],t[i] >= dDω.H*G[i]);
+    @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*M >= that[i]);
+    @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*M <= that[i]);
+    @constraint(sp, xFnAnt1[i in pData.II, j in pData.Ji[i]],x[i,j] + G[i] >= xhat[i,j]);
+    @constraint(sp, xFnAnt2[i in pData.II, j in pData.Ji[i]],x[i,j] - G[i] <= xhat[i,j]);
+
+    # linearize the bilinear term of x[i,j]*G[i]
+    @constraint(sp, xGlin1[i in pData.II, j in pData.Ji[i]], s[i,j] <= G[i]);
+    @constraint(sp, xGlin2[i in pData.II, j in pData.Ji[i]], s[i,j] <= x[i,j] + 1 - G[i]);
+    @constraint(sp, xGlin3[i in pData.II, j in pData.Ji[i]], s[i,j] >= x[i,j] - 1 + G[i]);
+
+    @constraint(sp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(sp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+    @constraint(sp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]] + dDω.d[k[1]]*G[k[1]]
+        - sum(pData.D[k[1]]*pData.eff[k[1]][j]*x[k[1],j] + dDω.d[k[1]]*pData.eff[k[1]][j]*s[k[1],j] for j in pData.Ji[k[1]]));
+
+    # with the given Ghat
+    @constraint(sp, GConstr[i in pData.II, j in pData.Succ[i]], G[i] <= G[j]);
+    @constraint(sp, GGcons1[(i,ω) in keys(Ghatω);ω == ωCurr], G[i] == Ghatω[i,ω]);
+    @constraint(sp, GGcons2[(i,ω) in keys(Ghatω);ω < ωCurr], G[i] <= Ghatω[i,ω]);
+    @constraint(sp, GGcons3[(i,ω) in keys(Ghatω);ω > ωCurr], G[i] >= Ghatω[i,ω]);
+
+    @objective(sp, Min, t[0]);
+
+    # obtain the dual variables from solving the sub
+    solve(sp);
+    vk = getobjectivevalue(sp);
+    # the cut generated is θ >= v + λ(x - xhat) + π(t - that) + γ(G - Ghat)
+    λdict = Dict();             # dual for x
+    πdict = Dict();             # dual for t
+    γdict = Dict();             # dual for G
+    for i in pData.II
+        πdict[i] = (getdual(sp[:tFnAnt1][i]) + getdual(sp[:tFnAnt2][i]) + getdual(sp[:tGcons1][i]) + getdual(sp[:tGcons2][i]));
+        for j in pData.Ji[i]
+            λdict[i,j] = (getdual(sp[:xFnAnt1])[i,j] + getdual(sp[:xFnAnt2])[i,j]);
+        end
+    end
+    for (i,ω) in keys(Ghat)
+        if ω == ωCurr
+            γdict[i,ω] = getdual(sp[:GGcons1][(i,ω)]);
+        elseif ω < ωCurr
+            γdict[i,ω] = getdual(sp[:GGcons2][(i,ω)]);
+        else
+            γdict[i,ω] = getdual(sp[:GGcons3][(i,ω)]);
+        end
+    end
+    if returnOpt == 0
+        return πdict,λdict,γdict,vk;
+    else
+        return πdict,λdict,γdict,vk,sp;
+    end
+end

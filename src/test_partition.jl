@@ -12,7 +12,10 @@
 @everywhere include("branchFunc.jl");
 @everywhere include("detForm.jl");
 @everywhere include("extForm.jl");
-@everywhere include("main_pull.jl");
+@everywhere include("ubCalFunc.jl");
+@everywhere include("tighten.jl");
+@everywhere include("partition_LP.jl");
+@everywhere include("partition_LR.jl");
 
 pInputAdd = "test_14_P.csv";
 kInputAdd = "test_14_K.csv";
@@ -26,8 +29,8 @@ disData = orderdisData(disData,Ω);
 
 # create the initial partition
 tdet,xdet,fdet = detBuild(pData);
-ub = ubCal(pData,disData,Ω,xdet,tdet);
-brInfo = precludeRel(pData,disData,Ω,ub);
+ubdet = ubCal(pData,disData,Ω,xdet,tdet);
+brInfo = precludeRel(pData,disData,Ω,ubdet);
 partCurrent = Dict();
 partDet = Dict();
 for i in pData.II
@@ -123,11 +126,15 @@ for i in pData.II
         xbest[i,j] = getvalue(mp[:x][i,j]);
     end
 end
+FBest = getvalue(mp[:G]);
 μp = relaxPart(pData,disData,Ω,cutSet,partCurrent,partDet,400);
-partNew = createPar(pData,disData,Ω,partCurrent,partDet,μp);
+μd = lapConstruct2(pData,disData,Ω,cutSet,partCurrent,partDet,400);
+μcut = lapConstructCut(pData,disData,Ω,cutSet,partCurrent,partDet,ub,400);
+partNew = createPar(pData,disData,Ω,partCurrent,partDet,μd);
 
 # Repeat the process of partition --- generate cuts
 partCurrent = partNew;
+partDet = partDetNew;
 partRev = Dict();
 for i in pData.II
     partRev[i] = Dict();
@@ -195,5 +202,6 @@ for i in pData.II
         xbest[i,j] = getvalue(mp[:x][i,j]);
     end
 end
+FBest = getvalue(mp[:G]);
 μp = relaxPart(pData,disData,Ω,cutSet,partCurrent,partDet,400);
 partNew = createPar(pData,disData,Ω,partCurrent,partDet,μp);

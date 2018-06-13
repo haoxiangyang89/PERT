@@ -40,8 +40,9 @@ function extForm(pData,disData,Ω)
     solve(mp);
     text = getvalue(mp[:t0]);
     xext = getvalue(mp[:x0]);
+    gext = getvalue(mp[:G]);
     fext = getobjectivevalue(mp);
-    return text,xext,fext,mp;
+    return text,xext,fext,gext,mp;
 end
 
 function extForm_cheat(pData,disData,Ω)
@@ -82,6 +83,7 @@ function extForm_cheat(pData,disData,Ω)
     solve(mp);
     text = getvalue(mp[:t0]);
     xext = getvalue(mp[:x0]);
+    gext = getvalue(mp[:G]);
     fext = getobjectivevalue(mp);
-    return text,xext,fext,mp;
+    return text,xext,fext,gext,mp;
 end
