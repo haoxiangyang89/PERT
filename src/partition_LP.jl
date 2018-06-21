@@ -1,4 +1,4 @@
-function relaxPart(pData,disData,Ω,cutSet,partCurrentTemp,partDet,M = 9999999,FPre = [])
+function relaxPart(pData,disData,Ω,cutSet,partCurrentTemp,partDet,M = 9999999,FPre = [],returnOpt = 0)
     # formulate the linear relaxation of the master problem and solve it to obtain the dual solution
     partRev = Dict();
     partNo = Dict();
@@ -58,7 +58,11 @@ function relaxPart(pData,disData,Ω,cutSet,partCurrentTemp,partDet,M = 9999999,F
             μp[i,ω] = -getdual(lrm[:GFCon][i,ω]);
         end
     end
-    return μp;
+    if returnOpt == 0
+        return μp;
+    else
+        return μp,lrm;
+    end
 end
 
 function createPar(pData,disData,Ω,partCurrentTemp,partDetTemp,μp)
@@ -144,6 +148,101 @@ function createParCut(pData,disData,Ω,partCurrentTemp,partDetTemp,μp)
         end
     end
 
+    return partNew,partDetNew;
+end
+
+function createParOpt(pData,disData,Ω,partCurrentTemp,partDetTemp,cutSet,Tmax = 200)
+    # formulate the linear relaxation of the master problem and solve it to obtain the dual solution
+    partRev = Dict();
+    partNo = Dict();
+    for i in pData.II
+        partRev[i] = Dict();
+        partNo[i] = length(partCurrentTemp[i]);
+        for partIter in 1:partNo[i]
+            for item in partCurrentTemp[i][partIter]
+                partRev[i][item] = partIter;
+            end
+        end
+    end
+    # obtain the range where the F is undecided
+    partZero = Dict();
+    for i in pData.II
+        zeroMin = minimum([ω for ω in Ω if partDetTemp[i][partRev[i][ω]] == 0]) - 1;
+        zeroMax = maximum([ω for ω in Ω if partDetTemp[i][partRev[i][ω]] == 0]);
+        partZero[i] = zeroMin:zeroMax;
+    end
+    H = Dict();
+    H[0] = 0;
+    H[length(Ω)+1] = Tmax;
+    for ω in Ω
+        H[ω] = disData[ω].H;
+    end
+
+    mpar = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+    @variable(mpar,t[i in pData.II] >= 0);
+    @variable(mpar,0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);
+    @variable(mpar,θ[ω in Ω] >= 0);
+    @variable(mpar,0 <= G[i in pData.II, ω in Ω] <= 1);
+    #@variable(mpar,F[i in pData.II, ω in partZero[i]], Bin);
+    @variable(mpar,0 <= F[i in pData.II, ω in partZero[i]] <= 1);
+
+    @constraint(mpar, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(mpar, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
+    @constraint(mpar, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+
+    # logic constraints between G and t
+    @constraint(mpar, tGcons1I[i in pData.II], t[i] <= sum(H[ω+1]*F[i,ω] for ω in partZero[i]));
+    @constraint(mpar, tGcons2I[i in pData.II], t[i] >= sum(H[ω]*F[i,ω] for ω in partZero[i]));
+    @constraint(mpar, Fcons[i in pData.II], sum(F[i,ω] for ω in partZero[i]) == 1);
+    @constraint(mpar, GFcons[i in pData.II, ω in Ω], G[i,ω] == sum(F[i,ω1] for ω1 in partZero[i] if ω1 >= ω));
+    @constraint(mpar, Gdet1[i in pData.II,ω in Ω; partDetTemp[i][partRev[i][ω]] == 1], G[i,ω] == 1);
+
+    @constraint(mpar, cuts[ω in Ω, nc in 1:length(cutSet[ω])], θ[ω] >= cutSet[ω][nc][4] +
+        sum(cutSet[ω][nc][1][i]*(mpar[:t][i] - cutSet[ω][nc][5][i]) for i in pData.II) +
+        sum(sum(cutSet[ω][nc][3][i,j]*(mpar[:x][i,j] - cutSet[ω][nc][6][i,j]) for j in pData.Ji[i]) for i in pData.II) +
+        sum(cutSet[ω][nc][2][i]*(mpar[:G][i,ω] - cutSet[ω][nc][7][i]) for i in pData.II));
+
+    @objective(mpar, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
+
+    solve(mpar);
+    Fsol = getvalue(mpar[:F]);
+    splitLoc = Dict();
+    for i in pData.II
+        for ω in Ω
+            if Fsol[i,ω] == 1
+                splitLoc[i] = ω;
+            end
+        end
+    end
+    partNew = Dict();
+    partDetNew = Dict();
+    for i in pData.II
+        partNew[i] = [];
+        partDetNew[i] = [];
+        if i in keys(splitLoc)
+            for pci in 1:length(partCurrentTemp[i])
+                if !(splitLoc[i] in partCurrentTemp[i][pci])
+                    push!(partNew[i],partCurrentTemp[i][pci]);
+                    push!(partDetNew[i],partDetTemp[i][pci]);
+                else
+                    splitPos = findfirst(partCurrentTemp[i][pci],splitLoc[i]);
+                    if (splitPos != length(partDetTemp[i][pci]))
+                        partNew1 = [partCurrentTemp[i][pci][ps] for ps in 1:splitPos];
+                        partNew2 = [partCurrentTemp[i][pci][ps] for ps in (splitPos + 1):length(partCurrentTemp[i][pci])];
+                    end
+                    push!(partNew[i],partNew1);
+                    push!(partDetNew[i],partDetTemp[i][pci]);
+                    push!(partNew[i],partNew2);
+                    push!(partDetNew[i],partDetTemp[i][pci]);
+                end
+            end
+        else
+            for pci in 1:length(partCurrentTemp[i])
+                push!(partNew[i],partCurrentTemp[i][pci]);
+                push!(partDetNew[i],partDetTemp[i][pci]);
+            end
+        end
+    end
     return partNew,partDetNew;
 end
 

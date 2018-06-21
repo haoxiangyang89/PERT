@@ -24,8 +24,20 @@ kInputAdd = "test_14_K.csv";
 
 pData = readInP(pInputAdd,kInputAdd);
 nameD,dparams = readInUnc(ϕInputAdd);
-disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500,1 - pData.p0);
-disData = orderdisData(disData,Ω);
+data = load("testData_500.jld");
+disData = data["disData"];
+Ω = 1:500;
+text = data["text"];
+xext = data["xext"];
+Gext = data["gext"];
+fext = data["fext"];
+GextDict = Dict();
+for ω in Ω
+    GextDict[ω] = Dict();
+    for i in pData.II
+        GextDict[ω][i] = Gext[i,ω];
+    end
+end
 
 # create the initial partition
 tdet,xdet,fdet = detBuild(pData);
@@ -76,35 +88,45 @@ stopBool = true;
 while stopBool
     stopBool = false;
     mpstatus = solve(mp);
-    if (mpstatus == :Optimal) && (ublb < getobjectivevalue(mp) - 1e-4)
-        ublb = getobjectivevalue(mp);
-        # get master solution
-        that = Dict();
-        xhat = Dict();
-        Ghat = Dict();
-        for ω in Ω
-            Ghat[ω] = Dict();
-            for i in pData.II
-                Ghat[ω][i] = getvalue(mp[:G][i,partRev[i][ω]]);
-            end
-        end
-        for i in pData.II
-            that[i] = getvalue(mp[:t][i]);
-            for j in pData.Ji[i]
-                xhat[i,j] = getvalue(mp[:x][i,j]);
-            end
-        end
 
-        # solve the subproblem to obtain
-        πdict = Dict();
-        γdict = Dict();
-        λdict = Dict();
-        vk = Dict();
-        for ω in Ω
-            πdict[ω],γdict[ω],λdict[ω],vk[ω] = subPull(pData,disData[ω],xhat,that,Ghat[ω],400);
+    # get master solution
+    that = Dict();
+    xhat = Dict();
+    Ghat = Dict();
+    θhat = Dict();
+    for ω in Ω
+        Ghat[ω] = Dict();
+        for i in pData.II
+            Ghat[ω][i] = getvalue(mp[:G][i,partRev[i][ω]]);
         end
+    end
+    for i in pData.II
+        that[i] = getvalue(mp[:t][i]);
+        for j in pData.Ji[i]
+            xhat[i,j] = getvalue(mp[:x][i,j]);
+        end
+    end
+    for ω in Ω
+        θhat[ω] = getvalue(mp[:θ][ω]);
+    end
+
+    # solve the subproblem to obtain
+    πdict = Dict();
+    γdict = Dict();
+    λdict = Dict();
+    vk = Dict();
+    ubTemp = pData.p0*that[0];
+    addCutsList = [];
+    for ω in Ω
+        πdict[ω],λdict[ω],γdict[ω],vk[ω] = subPull(pData,disData[ω],xhat,that,Ghat[ω],400);
+        ubTemp += disData[ω].prDis*vk[ω];
+        if vk[ω] - θhat[ω] > 1e-6
+            push!(addCutsList,ω);
+        end
+    end
+    if addCutsList != []
         # add the cuts
-        mp,cutSet = addCuts(pData,Ω,mp,πdict,γdict,λdict,vk,that,xhat,Ghat,cutSet,partRev);
+        mp,cutSet = addCuts(pData,addCutsList,mp,πdict,γdict,λdict,vk,that,xhat,Ghat,cutSet,partRev);
         stopBool = true;
     end
 end
@@ -127,8 +149,11 @@ for i in pData.II
     end
 end
 FBest = getvalue(mp[:G]);
-μp = relaxPart(pData,disData,Ω,cutSet,partCurrent,partDet,400);
-μd = lapConstruct2(pData,disData,Ω,cutSet,partCurrent,partDet,400);
+# obtain the new partition
+partNew,partDetNew = createParOpt(pData,disData,Ω,partCurrent,partDet,cutSet);
+
+μp,lrm = relaxPart(pData,disData,Ω,cutSet,partCurrent,partDet,400,[],1);
+μd,lap = lapConstruct2(pData,disData,Ω,cutSet,partCurrent,partDet,400,[],1);
 μcut = lapConstructCut(pData,disData,Ω,cutSet,partCurrent,partDet,ub,400);
 partNew = createPar(pData,disData,Ω,partCurrent,partDet,μd);
 

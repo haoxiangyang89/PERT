@@ -53,7 +53,7 @@ function lapConstruct(pData,disData,Ω,cutSet,partCurrentTemp,partDet,μ,M = 999
     return lap;
 end
 
-function lapConstruct2(pData,disData,Ω,cutSet,partCurrentTemp,partDet,M = 999999,FPre = [])
+function lapConstruct2(pData,disData,Ω,cutSet,partCurrentTemp,partDet,M = 999999,FPre = [],returnOpt = 0)
     # dual model to solve the Lagrangian problem analytically
     partRev = Dict();
     partNo = Dict();
@@ -130,7 +130,11 @@ function lapConstruct2(pData,disData,Ω,cutSet,partCurrentTemp,partDet,M = 99999
             μp[i,ω] = getvalue(lap[:μ][i,ω]);
         end
     end
-    return μp;
+    if returnOpt == 0
+        return μp;
+    else
+        return μp,lap;
+    end
 end
 
 function lapConstructFix(pData,disData,Ω,cutSet,partCurrentTemp,partDet,M = 999999,FPre = [])

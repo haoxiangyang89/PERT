@@ -33,6 +33,43 @@ for ω in Ω
     end
 end
 
+tdet,xdet,fdet = detBuild(pData);
+ubdet = ubCal(pData,disData,Ω,xdet,tdet);
+brInfo = precludeRel(pData,disData,Ω,ubdet);
+partCurrent = Dict();
+partDet = Dict();
+for i in pData.II
+    # for each activity, break it into two partition, brInfo == 0 and brInfo == 1
+    partCurrent[i] = [];
+    partDet[i] = [];
+    part1 = [ω for ω in Ω if brInfo[findin(pData.II,i)[1],ω] == 1];
+    if part1 != []
+        push!(partCurrent[i],part1);
+        push!(partDet[i],1);
+    end
+    part0 = [ω for ω in Ω if brInfo[findin(pData.II,i)[1],ω] == 0];
+    if part0 != []
+        push!(partCurrent[i],part0);
+        push!(partDet[i],0);
+    end
+    partn1 = [ω for ω in Ω if brInfo[findin(pData.II,i)[1],ω] == -1];
+    if partn1 != []
+        push!(partCurrent[i],partn1);
+        push!(partDet[i],-1);
+    end
+end
+
+partRev = Dict();
+for i in pData.II
+    partRev[i] = Dict();
+    partNo = length(partCurrent[i]);
+    for partIter in 1:partNo
+        for item in partCurrent[i][partIter]
+            partRev[i][item] = partIter;
+        end
+    end
+end
+
 ωInfo = [];
 cutSet = Dict();
 for ω in Ω
@@ -46,32 +83,30 @@ tlb = Dict();
 xlb = Dict();
 Glb = Dict();
 θlb = Dict();
-lbPrev = -Inf;
 ωWrong = [];
 while keepIter
-    mp = createMaster_Mixed(pData,disData,Ω,ωInfo,cutSet,400);
+    mp = createMaster_MixedL(pData,disData,Ω,ωInfo,cutSet,partCurrent,partDet,400);
     solve(mp);
     # obtain the solution
     that = Dict();
     xhat = Dict();
     Ghat = Dict();
     θhat = Dict();
+    Ghatω = Dict();
     for i in pData.II
         that[i] = getvalue(mp[:t][i]);
         for j in pData.Ji[i]
             xhat[i,j] = getvalue(mp[:x][i,j]);
         end
         for ω in Ω
-            if (i,ω) in ωInfo
-                Ghat[i,ω] = getvalue(mp[:G][i,ω]);
-            end
+            Ghat[i,ω] = getvalue(mp[:G][i,ω]);
         end
     end
     for ω in Ω
         θhat[ω] = getvalue(mp[:θ][ω]);
     end
     lbCost = getobjectivevalue(mp);
-
+    # generate cuts
     lbPrev = lbCost;
     πdict = Dict();
     λdict = Dict();
@@ -80,8 +115,12 @@ while keepIter
     θInt = Dict();
     ubTemp = pData.p0*that[0];
     for ω in Ω
-        πdict[ω],λdict[ω],γdict[ω],vk[ω] = subMixed(pData,disData[ω],xhat,that,Ghat,ω,Ω,400);
-        ubTemp += disData[ω].prDis*subIntGMixed(pData,disData[ω],xhat,that,ω,Ghat);
+        Ghatω[ω] = Dict();
+        for i in pData.II
+            Ghatω[ω][i] = Ghat[i,ω];
+        end
+        πdict[ω],λdict[ω],γdict[ω],vk[ω] = subPull(pData,disData[ω],xhat,that,Ghatω[ω],400);
+        ubTemp += disData[ω].prDis*subIntC(pData,disData[ω],xhat,that,400);
     end
     if ubCost > ubTemp
         ubCost = ubTemp;
@@ -91,7 +130,7 @@ while keepIter
     ωTightCounter = 0;
     for ω in Ω
         if vk[ω] - θhat[ω] > 1e-6
-            push!(cutSet[ω],(πdict[ω],λdict[ω],γdict[ω],vk[ω],that,xhat,Ghat));
+            push!(cutSet[ω],(πdict[ω],λdict[ω],γdict[ω],vk[ω],that,xhat,Ghatω[ω]));
         else
             ωTightCounter += 1;
         end
@@ -104,9 +143,7 @@ while keepIter
                 xlb[i,j] = xhat[i,j];
             end
             for ω in Ω
-                if (i,ω) in ωInfo
-                    Glb[i,ω] = Ghat[i,ω];
-                end
+                Glb[i,ω] = Ghat[i,ω];
             end
         end
         for ω in Ω
@@ -114,7 +151,6 @@ while keepIter
         end
     end
 end
-lbPrev = lbCost;
 
 #################################################################################
 subMIntDict = Dict();
@@ -159,4 +195,17 @@ for i in pData.II
     if bestω != -1
         push!(ωInfo,(i,bestω));
     end
+end
+
+# Rule 2: pick the mid point of fractional solution
+for i in pData.II
+    fracList = [ω for ω in Ω if (Glb[i,ω] < 1 - 1e-6)&(Glb[i,ω] > 1e-6)];
+    if fracList != []
+        startF = minimum(fracList);
+        endF = maximum(fracList);
+    else
+        startF = -1;
+        endF = -1;
+    end
+    println(i," ", startF," ",endF);
 end

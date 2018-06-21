@@ -277,7 +277,7 @@ function subPull(pData,dDω,xhat,that,Ghatω,M = 9999999)
             λdict[i,j] = (getdual(sp[:xFnAnt1])[i,j] + getdual(sp[:xFnAnt2])[i,j]);
         end
     end
-    return πdict,γdict,λdict,vk;
+    return πdict,λdict,γdict,vk;
 end
 
 function subMixed(pData,dDω,xhat,that,Ghatω,ωCurr,Ω,M = 9999999,returnOpt = 0)
