@@ -141,7 +141,7 @@ end
 function ubCalP(pData,disData,Ω,xhat,that)
     # parallel version of calculating the upper bound
     ubCost = that[0]*pData.p0;
-    cωList = pmap(ω -> subIntC(pData,disData[ω],xhat,that), Ω);
+    cωList = pmap(ω -> subIntC(pData,disData[ω],xhat,that,400), Ω);
     ubCost += sum(cωList[i]*disData[Ω[i]].prDis for i in 1:length(Ω));
     return ubCost;
 end
