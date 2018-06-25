@@ -124,16 +124,24 @@ while keepIter
     vk = Dict();
     vk1 = Dict();
     θInt = Dict();
-    ubTemp = pData.p0*that[0];
     for ω in Ω
         Ghatω[ω] = Dict();
         for i in pData.II
             Ghatω[ω][i] = Ghat[i,ω];
         end
-        πdict[ω],λdict[ω],γdict[ω],vk[ω] = subPull(pData,disData[ω],xhat,that,Ghatω[ω],400);
-        #πdict1[ω],λdict1[ω],vk1[ω] = subLag(pData,disData[ω],xhat,that,Ghatω[ω],γdict[ω],400);
-        ubTemp += disData[ω].prDis*subIntC(pData,disData[ω],xhat,that,400);
     end
+    # for ω in Ω
+    #     πdict[ω],λdict[ω],γdict[ω],vk[ω] = subPull(pData,disData[ω],xhat,that,Ghatω[ω],400);
+    # end
+    ubTemp = ubCalP(pData,disData,Ω,xhat,that);
+    dataList = pmap(ω -> subPull(pData,disData[ω],xhat,that,Ghatω[ω],400), Ω);
+    for ω in Ω
+        πdict[ω] = dataList[ω][1];
+        λdict[ω] = dataList[ω][2];
+        γdict[ω] = dataList[ω][3];
+        vk[ω] = dataList[ω][4];
+    end
+        #πdict1[ω],λdict1[ω],vk1[ω] = subLag(pData,disData[ω],xhat,that,Ghatω[ω],γdict[ω],400);
     if ubCost > ubTemp
         ubCost = ubTemp;
         tbest = copy(that);
