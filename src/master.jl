@@ -133,6 +133,7 @@ function createMaster_MixedL(pData,disData,Ω,ωInfo,cutSet,partCurrentTemp,part
     @constraint(mp, GijCon[i in pData.II, j in pData.Succ[i],ω in Ω], G[i,ω] <= G[j,ω]);
     @constraint(mp, Gω12Con[i in pData.II, ω in 1:(length(Ω)-1)], G[i,ω] >= G[i,ω + 1]);
     @constraint(mp, Gdet1[i in pData.II, ω in Ω; partDet[i][partRev[i][ω]] == 1], G[i,ω] == 1);
+    @constraint(mp, Gdet0[i in pData.II, ω in Ω; partDet[i][partRev[i][ω]] == -1], G[i,ω] == 0);
 
     for ω in Ω
         if cutSet[ω] != []
@@ -146,5 +147,49 @@ function createMaster_MixedL(pData,disData,Ω,ωInfo,cutSet,partCurrentTemp,part
 
     @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
 
+    return mp;
+end
+
+function masterF(pData,disData,Ω,ωInfo,cutSet,Tmax = 999999)
+    H = Dict();
+    H[0] = 0;
+    H[length(Ω)+1] = Tmax;
+    for ω in Ω
+        H[ω] = disData[ω].H;
+    end
+
+    # the master with generated columns
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+    @variables(mp, begin
+      θ[Ω] >= 0
+      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
+      t[i in pData.II] >= 0
+      0 <= F[i in pData.II,ω in 0:length(Ω)] <= 1
+    end);
+    for (i,ω) in ωInfo
+        setcategory(F[i,ω], :Bin);
+    end
+
+    @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
+    @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+
+    # logic constraints between G and t
+    @constraint(mp, tFcons1I[i in pData.II], t[i] <= sum(H[ω+1]*F[i,ω] for ω in Ω));
+    @constraint(mp, tFcons2I[i in pData.II], t[i] >= sum(H[ω]*F[i,ω] for ω in Ω));
+    # logic constraints of G
+    @constraint(mp, Fsum[i in pData.II], sum(F[i,ω] for ω in 0:length(Ω)) == 1);
+
+    for ω in Ω
+        if cutSet[ω] != []
+            for nc in 1:length(cutSet[ω])
+                @constraint(mp, θ[ω] >= cutSet[ω][nc][4] + sum(cutSet[ω][nc][1][i]*(mp[:t][i] - cutSet[ω][nc][5][i]) for i in pData.II) +
+                    sum(sum(cutSet[ω][nc][2][i,j]*(mp[:x][i,j] - cutSet[ω][nc][6][i,j]) for j in pData.Ji[i]) for i in pData.II) +
+                    sum(sum(cutSet[ω][nc][3][i]*(mp[:F][i,ω1] - cutSet[ω][nc][7][i,ω1]) for ω1 in Ω if ω1 >= ω) for i in pData.II));
+            end
+        end
+    end
+
+    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
     return mp;
 end

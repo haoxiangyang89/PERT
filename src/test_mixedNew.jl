@@ -7,9 +7,15 @@
 @everywhere include("master.jl");
 @everywhere include("sub.jl");
 @everywhere include("cuts.jl");
+@everywhere include("iSolve.jl");
+@everywhere include("tighten.jl");
+@everywhere include("branchFunc.jl");
 @everywhere include("detForm.jl");
 @everywhere include("extForm.jl");
 @everywhere include("ubCalFunc.jl");
+@everywhere include("tighten.jl");
+@everywhere include("partition_LP.jl");
+@everywhere include("partition_LR.jl");
 
 pInputAdd = "test_14_P.csv";
 kInputAdd = "test_14_K.csv";
@@ -83,6 +89,8 @@ tlb = Dict();
 xlb = Dict();
 Glb = Dict();
 θlb = Dict();
+xbest = Dict();
+tbest = Dict();
 ωWrong = [];
 while keepIter
     mp = createMaster_MixedL(pData,disData,Ω,ωInfo,cutSet,partCurrent,partDet,400);
@@ -110,8 +118,11 @@ while keepIter
     lbPrev = lbCost;
     πdict = Dict();
     λdict = Dict();
+    πdict1 = Dict();
+    λdict1 = Dict();
     γdict = Dict();
     vk = Dict();
+    vk1 = Dict();
     θInt = Dict();
     ubTemp = pData.p0*that[0];
     for ω in Ω
@@ -120,6 +131,7 @@ while keepIter
             Ghatω[ω][i] = Ghat[i,ω];
         end
         πdict[ω],λdict[ω],γdict[ω],vk[ω] = subPull(pData,disData[ω],xhat,that,Ghatω[ω],400);
+        #πdict1[ω],λdict1[ω],vk1[ω] = subLag(pData,disData[ω],xhat,that,Ghatω[ω],γdict[ω],400);
         ubTemp += disData[ω].prDis*subIntC(pData,disData[ω],xhat,that,400);
     end
     if ubCost > ubTemp
@@ -185,7 +197,7 @@ for i in pData.II
     disMin = Inf;
     bestω = -1;
     for ω in Ω
-        if !((i,ω) in ωInfo)
+        if !((i,ω) in ωInfo)&(Glb[i,ω] < 1)&(Glb[i,ω] > 0)
             if abs(disData[ω].H - tlb[i]) < disMin
                 bestω = ω;
                 disMin = abs(disData[ω].H - tlb[i]);
@@ -193,6 +205,7 @@ for i in pData.II
         end
     end
     if bestω != -1
+        #println((i,bestω));
         push!(ωInfo,(i,bestω));
     end
 end

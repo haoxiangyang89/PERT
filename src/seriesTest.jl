@@ -69,3 +69,29 @@ nameD,dparams = readInUnc(ϕInputAdd);
 disData,Ω = autoUGen("Uniform",[0,1],nameD,dparams,5000,1 - pData.p0);
 disData = orderdisData(disData,Ω);
 text,xext,fext,gext,mp = extForm_cheat(pData,disData,Ω);
+################################################################################
+# solve the max-min problem by enumerating
+maxlb = Dict();
+keepBool = true;
+ωNew = [];
+for i in 1:2
+    bestImprove = -Inf;
+    bestω = -1;
+    ω = 1;
+    while (keepBool)&(ω <= 1500)
+        if !((i,ω) in ωInfo)&(Glb[i,ω] < 1 - 1e-7)&(Glb[i,ω] > 1e-7)
+            mptest = masterMax(pData,disData,Ω,ωInfo,Glb,[(i,ω)],400);
+            mptest.solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9,OutputFlag = 0);
+            solve(mptest);
+            maxlb[ω] = getobjectivevalue(mptest);
+            # if bestImprove < maxlb
+            #     bestImprove = maxlb;
+            #     bestω = ω;
+            # else
+            #     # keepBool = false;
+            #     # push!(ωNew,(i,bestω));
+            # end
+        end
+        ω += 1;
+    end
+end
