@@ -1,5 +1,5 @@
-# process of mixed first stage
-@everywhere using JuMP,Gurobi,CPLEX;
+# Two bus case with piecewise constant f(H)
+@everywhere using JuMP,Gurobi,CPLEX,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
 
 @everywhere include("def.jl");
@@ -7,38 +7,21 @@
 @everywhere include("master.jl");
 @everywhere include("sub.jl");
 @everywhere include("cuts.jl");
-@everywhere include("iSolve.jl");
-@everywhere include("tighten.jl");
-@everywhere include("branchFunc.jl");
 @everywhere include("detForm.jl");
 @everywhere include("extForm.jl");
 @everywhere include("ubCalFunc.jl");
-@everywhere include("tighten.jl");
-@everywhere include("partition_LP.jl");
-@everywhere include("partition_LR.jl");
 
-pInputAdd = "test_14_P.csv";
-kInputAdd = "test_14_K.csv";
-ΩInputAdd = "test_14_Omega_full.csv";
-ϕInputAdd = "test_14_Phi_full.csv";
+pInputAdd = "test_2_P_PieceU.csv";
+kInputAdd = "test_2_K.csv";
+ϕInputAdd = "test_2_Phi_PieceU.csv";
 
 pData = readInP(pInputAdd,kInputAdd);
 nameD,dparams = readInUnc(ϕInputAdd);
-data = load("testData_500.jld");
-disData = data["disData"];
-Ω = 1:500;
-text = data["text"];
-xext = data["xext"];
-Gext = data["gext"];
-fext = data["fext"];
-GextDict = Dict();
-for ω in Ω
-    GextDict[ω] = Dict();
-    for i in pData.II
-        GextDict[ω][i] = Gext[i,ω];
-    end
-end
+disData,Ω = autoUGen("PiecewiseU",[[0.1,1.5,1.7],[0.2,0.8]],nameD,dparams,5000,1 - pData.p0);
+disData = orderdisData(disData,Ω);
+@time text,xext,fext,gext,mp = extForm_cheat(pData,disData,Ω);
 
+################################################################################
 tdet,xdet,fdet = detBuild(pData);
 ubdet = ubCal(pData,disData,Ω,xdet,tdet);
 brInfo = precludeRel(pData,disData,Ω,ubdet);
@@ -171,62 +154,16 @@ while keepIter
         end
     end
 end
+################################################################################
+t2Improve = [];
+for ω in Ω
+    if (Glb[2,ω] < 1 - 1e-7)&(Glb[2,ω] > 1e-7)
+        lbProxy = masterMaxLP(pData,disData,Ω,ωInfo,Glb,[(i,ω)],cutSet,partCurrent,partDet,400);
+        push!(t2Improve,lbProxy);
+    end
+end
+ωSet = [ω for ω in Ω if (Glb[2,ω] < 1 - 1e-7)&(Glb[2,ω] > 1e-7)];
+HSet = [disData[ω].H for ω in ωSet];
 
-#################################################################################
-subMIntDict = Dict();
-for ω in Ω
-    subMIntDict[ω] = subIntGMixed(pData,disData[ω],xlb,tlb,ω,Glb);
-    if θlb[ω] > subMIntDict[ω] + 1e-6
-        println(θlb[ω]," ",subMIntDict[ω]);
-    end
-end
-#################################################################################
-# Print the θ^ω vs. subIntG^ω
-subIntDict = Dict();
-for ω in Ω
-   subIntDict[ω] = subIntG(pData,disData[ω],xext,text,GextDict[ω]);
-end
-subMixedDict = Dict();
-mMixed = solveMasterMixed(pData,disData,ωInfo,cutSet,text,xext,Gext);
-solve(mMixed);
-for ω in Ω
-    subMixedDict[ω] = getvalue(mMixed[:θ][ω]);
-end
-for ω in Ω
-    if subMixedDict[ω] > subIntDict[ω] + 1e-6
-        println(ω," ",subMixedDict[ω]," ",subIntDict[ω]," ");
-    end
-end
-#################################################################################
-
-# for each i, pick an ω to separate
-# Rule 1: pick the closest Hω to the current t[i]
-for i in pData.II
-    disMin = Inf;
-    bestω = -1;
-    for ω in Ω
-        if !((i,ω) in ωInfo)&(Glb[i,ω] < 1)&(Glb[i,ω] > 0)
-            if abs(disData[ω].H - tlb[i]) < disMin
-                bestω = ω;
-                disMin = abs(disData[ω].H - tlb[i]);
-            end
-        end
-    end
-    if bestω != -1
-        #println((i,bestω));
-        push!(ωInfo,(i,bestω));
-    end
-end
-
-# Rule 2: pick the mid point of fractional solution
-for i in pData.II
-    fracList = [ω for ω in Ω if (Glb[i,ω] < 1 - 1e-6)&(Glb[i,ω] > 1e-6)];
-    if fracList != []
-        startF = minimum(fracList);
-        endF = maximum(fracList);
-    else
-        startF = -1;
-        endF = -1;
-    end
-    println(i," ", startF," ",endF);
-end
+push!(ωInfo,(2,ωSet[indmax(t2Improve)]));
+################################################################################

@@ -270,14 +270,39 @@ function searchBestnou(pData,disData,Ω,ωInfo,Ghat,cutSet,partCurrentTemp,partD
                 q3Ind = Int64(ceil((halfInd + endInd)/2));
                 q1Obj = masterMaxLP(pData,disData,Ω,ωInfo,Ghat,[(currenti,q1Ind)],cutSet,partCurrentTemp,partDetTemp,M);
                 q3Obj = masterMaxLP(pData,disData,Ω,ωInfo,Ghat,[(currenti,q3Ind)],cutSet,partCurrentTemp,partDetTemp,M);
-                if (round(startObj,7) > round(q1Obj,7))|(round(q1Obj,7) > round(halfObj))
+                objList = [startObj,q1Obj,halfObj,q3Obj,endObj];
+                # one of 15 possibilities
+                if round(startObj,7) == round(maximum(objList),7)
+                    if round(q3Obj,7) < round(startObj,7)
+                        scenNo = 1;
+                    else
+                        scenNo = 2;
+                    end
+                elseif round(q1Obj,7) == round(maximum(objList),7)
+                    if round(halfObj,7) < round(q1Obj,7)
+                        scenNo = 1;
+                    else
+                        scenNo = 2;
+                    end
+                elseif round(halfObj,7) == round(maximum(objList),7)
+                    if round(endObj,7) < round(halfObj,7)
+                        scenNo = 2;
+                    else
+                        scenNo = 3;
+                    end
+                else
+                    scenNo = 3;
+                end
+                # ((round(startObj,7) == round(q1Obj,7))&(round(q1Obj,7) == round(halfObj,7)))
+                # ((round(q1Obj,7) == round(halfObj,7))&(round(halfObj,7) == round(q3Obj,7)))
+                if scenNo == 1
                     halfIndTemp = halfInd;
                     halfObjTemp = halfObj;
                     halfInd = q1Ind;
                     halfObj = q1Obj;
                     endInd = halfIndTemp;
                     endObj = halfObjTemp;
-                elseif (round(q1Obj,7) > round(halfObj,7))|(round(halfObj,7) > round(q3Obj,7))
+                elseif scenNo == 2
                     startInd = q1Ind;
                     startObj = q1Obj;
                     endInd = q3Ind;
@@ -291,18 +316,18 @@ function searchBestnou(pData,disData,Ω,ωInfo,Ghat,cutSet,partCurrentTemp,partD
                     startObj = halfObjTemp;
                 end
             end
-            if (startObj >= halfObj)&(halfObj >= endObj)
+            if (round(startObj,7) >= round(halfObj,7))&(round(halfObj,7) >= round(endObj,7))
                 # startInd is the best
                 push!(ωInfoNew,(currenti,startInd));
-            elseif (startObj <= halfObj)&(halfObj >= endObj)
+            elseif (round(startObj,7) <= round(halfObj,7))&(round(halfObj,7) >= round(endObj,7))
                 # halfInd is the best
-                push!(ωInfo,(currenti,halfInd));
+                push!(ωInfoNew,(currenti,halfInd));
             else
                 # endInd is the best
-                push!(ωInfo,(currenti,endInd));
+                push!(ωInfoNew,(currenti,endInd));
             end
         end
         push!(finishedList,currenti);
     end
-    return ωInfo;
+    return ωInfoNew;
 end

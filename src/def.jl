@@ -48,3 +48,9 @@ type cutType
   # constant term
   v :: Float64
 end
+
+# define the partition type
+type partType
+  startH :: Int64
+  endH :: Int64
+end

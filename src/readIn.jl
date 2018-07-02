@@ -1,3 +1,4 @@
+@everywhere include("piecewiseU.jl");
 # This is the input function that reads in the project data
 function readInP(pInputAdd,kInputAdd)
     pRaw = readdlm(pInputAdd,',',header = false);
@@ -125,6 +126,10 @@ function autoUGen(nameH, Hparams, nameD, dparams, Ωn, totalProb)
         μ = Hparams[1];
         σ = Hparams[2];
         distrH = Normal(μ,σ);
+    elseif nameH == "PiecewiseU"
+        endPts = Hparams[1];
+        mass = Hparams[2];
+        distrH = piecewiseUniformSampler(endPts,mass);
     end
 
     distrD = Dict();

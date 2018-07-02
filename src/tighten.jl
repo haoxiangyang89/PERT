@@ -231,3 +231,45 @@ function brInfoExt(pData,disData,Ω,brInfo,ωSeq)
     end
     return brInfo;
 end
+
+function obtainBds(pData,disData,Ω,mpTemp,ub)
+    H = Dict();
+    H[0] = 0;
+    for ω in Ω
+        H[ω] = disData[ω].H;
+    end
+    # obtain the boundInfo
+    ubInfo = Dict();
+    lbInfo = Dict();
+    for i in pData.II
+        ubInfo[i] = disData[length(Ω)].H + sum(pData.D[i] for i in pData.II);
+        lbInfo[i] = 0;
+    end
+
+    keepIter = true;
+    @constraint(mpTemp,pData.p0*mpTemp[:t][0] + sum(disData[ω].prDis*mpTemp[:θ][ω] for ω in Ω) <= ub);
+    ubTempInfo = Dict();
+    lbTempInfo = Dict();
+    while keepIter
+        keepIter = false;
+        for i in pData.II
+            @constraint(mpTemp,mpTemp[:t][i] <= ubInfo[i]);
+            @constraint(mpTemp,mpTemp[:t][i] >= lbInfo[i]);
+            @objective(mpTemp,Max,mpTemp[:t][i]);
+            solve(mpTemp);
+            ubTempInfo[i] = getobjectivevalue(mpTemp);
+            @objective(mpTemp,Min,mpTemp[:t][i]);
+            solve(mpTemp);
+            lbTempInfo[i] = getobjectivevalue(mpTemp);
+            if (ubTempInfo[i] < ubInfo[i] - 1e-5)
+                ubInfo[i] = ubTempInfo[i];
+                keepIter = true;
+            end
+            if (lbTempInfo[i] > lbInfo[i] + 1e-5)
+                lbInfo[i] = lbTempInfo[i];
+                keepIter = true;
+            end
+        end
+    end
+    return ubInfo,lbInfo;
+end

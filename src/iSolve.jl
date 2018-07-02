@@ -1,5 +1,5 @@
 # build the LP to obtain the earliest possible starting time of an activity
-function iSolve(pData,iTarget)
+function iSolve(pData,iTarget,ubTemp = 9999999)
     # mp = Model(solver = GurobiSolver(OutputFlag = 0));
     mp = Model(solver = GurobiSolver(OutputFlag = 0));
     @variable(mp, t[i in pData.II] >= 0);
@@ -10,6 +10,8 @@ function iSolve(pData,iTarget)
     @constraint(mp, budgetConstr, sum(sum(x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
 
+    @constraint(mp, ubCon, t[0] <= ubTemp);
+
     @objective(mp, Min, t[iTarget]);
     solve(mp);
 
@@ -17,7 +19,7 @@ function iSolve(pData,iTarget)
 end
 
 # build the LP to obtain the latest possible starting time of an activity
-function lSolve(pData,iTarget,ubTemp)
+function lSolve(pData,iTarget,ubTemp = 999999)
     mp = Model(solver = GurobiSolver(OutputFlag = 0));
     @variable(mp, t[i in pData.II] >= 0);
     @variable(mp, 0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);

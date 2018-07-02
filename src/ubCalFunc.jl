@@ -128,22 +128,31 @@ function subIntGMixed(pData,dDω,xhat,that,ωCurr,Ghatω,M = 400,returnOpt = 0)
     end
 end
 
-function ubCal(pData,disData,Ω,xhat,that)
+function ubCal(pData,disData,Ω,xhat,that,returnOpt = 0)
     # calculate the upper bound of the problem given the master solution
     ubCost = that[0]*pData.p0;
+    cω = Dict();
     for ω in Ω
-        cω = subIntC(pData,disData[ω],xhat,that);
-        ubCost += disData[ω].prDis*cω;
+        cω[ω] = subIntC(pData,disData[ω],xhat,that);
+        ubCost += disData[ω].prDis*cω[ω];
     end
-    return ubCost;
+    if returnOpt == 0
+        return ubCost;
+    else
+        return ubCost,cω;
+    end
 end
 
-function ubCalP(pData,disData,Ω,xhat,that)
+function ubCalP(pData,disData,Ω,xhat,that,returnOpt = 0)
     # parallel version of calculating the upper bound
     ubCost = that[0]*pData.p0;
     cωList = pmap(ω -> subIntC(pData,disData[ω],xhat,that,400), Ω);
     ubCost += sum(cωList[i]*disData[Ω[i]].prDis for i in 1:length(Ω));
-    return ubCost;
+    if returnOpt == 0
+        return ubCost;
+    else
+        return ubCost,cω;
+    end
 end
 
 function ubCalG(pData,disData,Ω,xhat,that,Ghat)
