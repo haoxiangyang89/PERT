@@ -104,4 +104,5 @@ function revisePar(pData,disData,PartSet,PartDet,ubInfo,lbInfo)
         newPartSet[i] = partSetiTemp;
         newPartDet[i] = partDetiTemp;
     end
+    return newPartSet,newPartDet;
 end
