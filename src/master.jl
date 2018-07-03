@@ -223,7 +223,7 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax)
         H[ω] = disData[ω].H;
     end
 
-    mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1

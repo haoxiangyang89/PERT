@@ -561,8 +561,12 @@ function sub_div(pData,dDω,ωCurr,that,xhat,yhat,divSet,M1 = 999999,returnOpt =
             end
         end
     end
+    Ghat = Dict();
+    for i in pData.II
+        Ghat[i] = getvalue(sp[:G][i]);
+    end
     if returnOpt == 0
-        return πdict,λdict,γdict,vk;
+        return πdict,λdict,γdict,vk,Ghat;
     else
         return πdict,λdict,γdict,vk,sp;
     end

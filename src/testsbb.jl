@@ -1,5 +1,4 @@
-# test for branch and bound tightening + big M tightening
-# Two bus case with piecewise constant f(H)
+# test sbb
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
 
@@ -17,102 +16,17 @@
 @everywhere include("tighten.jl");
 @everywhere include("partition_LP.jl");
 @everywhere include("partition_LR.jl");
+@everywhere include("part_tight.jl");
 
-pInputAdd = "test_2_P_PieceU.csv";
-kInputAdd = "test_2_K.csv";
-ϕInputAdd = "test_2_Phi_PieceU.csv";
+pInputAdd = "~/PERT_tests/14_ExponentialD_LogNormalH/test_14_P.csv";
+kInputAdd = "~/PERT_tests/14_ExponentialD_LogNormalH/test_14_K.csv";
+ϕInputAdd = "~/PERT_tests/14_ExponentialD_LogNormalH/test_14_Phi_full.csv";
 
 pData = readInP(pInputAdd,kInputAdd);
 nameD,dparams = readInUnc(ϕInputAdd);
-disData,Ω = autoUGen("PiecewiseU",[[0.1,1.5,1.7],[0.2,0.8]],nameD,dparams,500,1 - pData.p0);
+disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500,1 - pData.p0);
 disData = orderdisData(disData,Ω);
-@time text,xext,fext,gext,mp = extForm_cheat(pData,disData,Ω);
 
-################################################################################
-tdet,xdet,fdet = detBuild(pData);
-ubdet = ubCal(pData,disData,Ω,xdet,tdet);
-brInfo = precludeRel(pData,disData,Ω,ubdet);
-
-################################################################################
-# initialization
-mp = createMaster(pData,disData,Ω);
-keepIter = true;
-tlb = Dict();
-xlb = Dict();
-θlb = Dict();
-xbest = Dict();
-tbest = Dict();
-ubCost = ubdet;
-mpTemp = copy(mp);
-ubInfo,lbInfo = obtainBds(pData,disData,Ω,mpTemp,ubdet);
-mp = updateMaster(mp,ubInfo,lbInfo);
-# Benders decomposition
-while keepIter
-    solve(mp);
-    # obtain the solution
-    that = Dict();
-    xhat = Dict();
-    Ghat = Dict();
-    θhat = Dict();
-    for i in pData.II
-        that[i] = getvalue(mp[:t][i]);
-        for j in pData.Ji[i]
-            xhat[i,j] = getvalue(mp[:x][i,j]);
-        end
-    end
-    for ω in Ω
-        θhat[ω] = getvalue(mp[:θ][ω]);
-    end
-    lbCost = getobjectivevalue(mp);
-    # generate cuts
-    lbPrev = lbCost;
-    πdict = Dict();
-    λdict = Dict();
-    vk = Dict();
-    θInt = Dict();
-    ubTemp = ubCal(pData,disData,Ω,xhat,that);
-    if ubCost > ubTemp
-        ubCost = ubTemp;
-        tbest = copy(that);
-        xbest = copy(xhat);
-    end
-    # dataList = Dict();
-    # for ω in Ω
-    #     dataList[ω] = subTight(pData,disData[ω],xhat,that,ubInfo,lbInfo);
-    #     println(ω);
-    # end
-    dataList = pmap(ω -> subTight(pData,disData[ω],xhat,that,ubInfo,lbInfo), Ω);
-    for ω in Ω
-        πdict[ω] = dataList[ω][1];
-        λdict[ω] = dataList[ω][2];
-        vk[ω] = dataList[ω][3];
-    end
-        #πdict1[ω],λdict1[ω],vk1[ω] = subLag(pData,disData[ω],xhat,that,Ghatω[ω],γdict[ω],400);
-    ωTightCounter = 0;
-    for ω in Ω
-        if vk[ω] - θhat[ω] > 1e-5
-            @constraint(mp,mp[:θ][ω] >= vk[ω] + sum(πdict[ω][i]*(mp[:t][i] - that[i]) for i in pData.II) +
-                sum(sum(λdict[ω][i,j]*(mp[:x][i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II));
-        else
-            ωTightCounter += 1;
-        end
-    end
-    if ωTightCounter == length(Ω)
-        keepIter = false;
-        for i in pData.II
-            tlb[i] = that[i];
-            for j in pData.Ji[i]
-                xlb[i,j] = xhat[i,j];
-            end
-        end
-        for ω in Ω
-            θlb[ω] = θhat[ω];
-        end
-    end
-end
-
-################################################################################
-# spatial b&b process
 H = Dict();
 H[0] = 0;
 H[length(Ω)+1] = 10;
@@ -164,19 +78,19 @@ xlb = Dict();
 ylb = Dict();
 mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
 # process to fix some of the y's
-mpTight = copy(mp);
-@constraint(mpTight,pData.p0*mpTight[:t][0] + sum(disData[ω].prDis*mpTight[:θ][ω] for ω in Ω) <= ubCost);
-for i in pData.II
-    for par in 1:length(divSet[i])
-        if divDet[i][par] == 0
-            @objective(mpTight,Max,mpTight[:y][i,par]);
-            solve(mpTight);
-            if (getobjectivevalue(mpTight) == 0)&(divSet[i][par].startH != 0)&(divSet[i][par].startH != length(Ω))
-                divDet[i][par] = 1;
-            end
-        end
-    end
-end
+# mpTight = copy(mp);
+# @constraint(mpTight,pData.p0*mpTight[:t][0] + sum(disData[ω].prDis*mpTight[:θ][ω] for ω in Ω) <= ubCost);
+# for i in pData.II
+#     for par in 1:length(divSet[i])
+#         if divDet[i][par] == 0
+#             @objective(mpTight,Max,mpTight[:y][i,par]);
+#             solve(mpTight);
+#             if (getobjectivevalue(mpTight) == 0)&(divSet[i][par].startH != 0)&(divSet[i][par].startH != length(Ω))
+#                 divDet[i][par] = 1;
+#             end
+#         end
+#     end
+# end
 while keepIter
     solve(mp);
     # obtain the solution
