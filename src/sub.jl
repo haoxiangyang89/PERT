@@ -512,10 +512,8 @@ function sub_div(pData,dDω,ωCurr,that,xhat,yhat,divSet,ubInfo,lbInfo,M1 = 9999
     @variable(sp, 0 <= s[i in pData.II,j in pData.Ji[i]] <= 1);
 
     # add the basic sub problem constraints
-    @constraint(sp, GCons11[i in pData.II],G[i] <= (that[i] - dDω.H)/M1 + 1);
-    @constraint(sp, GCons12[i in pData.II],G[i] >= (that[i] - dDω.H)/M1);
-    @constraint(sp, GCons21[i in pData.II; dDω.H >= lbInfo],G[i] <= (that[i] - dDω.H)/(ubInfo[i] - dDω.H) + 1);
-    @constraint(sp, GCons22[i in pData.II; dDω.H <= ubInfo[i]],G[i] >= (that[i] - dDω.H)/(ubInfo[i] - dDω.H));
+    @constraint(sp, GCons1[i in pData.II],G[i] <= (that[i] - dDω.H)/M1 + 1);
+    @constraint(sp, GCons2[i in pData.II],G[i] >= (that[i] - dDω.H)/M1);
     @constraint(sp, GFixed0[i in pData.II],G[i] >= sum(yhat[i,par] for par in 1:length(divSet[i]) if ωCurr < divSet[i][par].startH));
     @constraint(sp, GFixed1[i in pData.II],G[i] <= 1 - sum(yhat[i,par] for par in 1:length(divSet[i]) if ωCurr >= divSet[i][par].endH));
 
