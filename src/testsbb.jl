@@ -18,14 +18,18 @@
 @everywhere include("partition_LR.jl");
 @everywhere include("part_tight.jl");
 
-pInputAdd = "~/PERT_tests/14_ExponentialD_LogNormalH/test_14_P.csv";
-kInputAdd = "~/PERT_tests/14_ExponentialD_LogNormalH/test_14_K.csv";
-ϕInputAdd = "~/PERT_tests/14_ExponentialD_LogNormalH/test_14_Phi_full.csv";
+pInputAdd = "/home/haoxiang/PERT_tests/14_ExponentialD_LogNormalH/test_14_P.csv";
+kInputAdd = "/home/haoxiang/PERT_tests/14_ExponentialD_LogNormalH/test_14_K.csv";
+ϕInputAdd = "/home/haoxiang/PERT_tests/14_ExponentialD_LogNormalH/test_14_Phi_full.csv";
 
 pData = readInP(pInputAdd,kInputAdd);
 nameD,dparams = readInUnc(ϕInputAdd);
 disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500,1 - pData.p0);
 disData = orderdisData(disData,Ω);
+
+tdet,xdet,fdet = detBuild(pData);
+ubdet = ubCal(pData,disData,Ω,xdet,tdet);
+brInfo = precludeRel(pData,disData,Ω,ubdet);
 
 H = Dict();
 H[0] = 0;
@@ -70,12 +74,14 @@ end
 xbest = Dict();
 tbest = Dict();
 ubCost = ubdet;
+lbCost = -Inf;
 
 keepIter = true;
 tlb = Dict();
 xlb = Dict();
 θlb = Dict();
 ylb = Dict();
+dataList = [];
 mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
 # process to fix some of the y's
 # mpTight = copy(mp);
@@ -129,7 +135,7 @@ while keepIter
     #     dataList[ω] = sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,100,1);
     #     println(ω);
     # end
-    dataList = pmap(ω -> sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,1000), Ω);
+    dataList = pmap(ω -> sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,3000), Ω);
     for ω in Ω
         πdict[ω] = dataList[ω][1];
         λdict[ω] = dataList[ω][2];
