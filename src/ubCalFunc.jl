@@ -151,7 +151,7 @@ function ubCalP(pData,disData,Ω,xhat,that,Tmax,returnOpt = 0)
     if returnOpt == 0
         return ubCost;
     else
-        return ubCost,cω;
+        return ubCost,cωList;
     end
 end
 

@@ -27,8 +27,9 @@ nameD,dparams = readInUnc(ϕInputAdd);
 disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500,1 - pData.p0);
 disData = orderdisData(disData,Ω);
 
+Tmax = 3000;
 tdet,xdet,fdet = detBuild(pData);
-ubdet = ubCal(pData,disData,Ω,xdet,tdet);
+ubdet = ubCal(pData,disData,Ω,xdet,tdet,Tmax);
 brInfo = precludeRel(pData,disData,Ω,ubdet);
 
 H = Dict();
@@ -124,7 +125,7 @@ while keepIter
     γdict = Dict();
     vk = Dict();
     θInt = Dict();
-    ubTemp,θInt = ubCal(pData,disData,Ω,xhat,that,1);
+    ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax,1);
     if ubCost > ubTemp
         ubCost = ubTemp;
         tbest = copy(that);
@@ -135,7 +136,7 @@ while keepIter
     #     dataList[ω] = sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,100,1);
     #     println(ω);
     # end
-    dataList = pmap(ω -> sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,3000), Ω);
+    dataList = pmap(ω -> sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,Tmax), Ω);
     for ω in Ω
         πdict[ω] = dataList[ω][1];
         λdict[ω] = dataList[ω][2];
