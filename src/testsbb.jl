@@ -28,8 +28,16 @@ nameD,dparams = readInUnc(ϕInputAdd);
 disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500,1 - pData.p0);
 disData = orderdisData(disData,Ω);
 
-Tmax = disData[length(Ω)].H + sum(pData.D[i] for i in pData.II);
-Tmax1 = disData[length(Ω)].H + sum(pData.D[i] + maximum([disData[ω].d[i] for ω in Ω]) for i in pData.II if i != 0);
+Tmax = disData[length(Ω)].H + longestPath(pData)[0];
+pdData = deepcopy(pData);
+for i in pData.II
+    if i != 0
+        pdData.D[i] = pData.D[i] + maximum([disData[ω].d[i] for ω in Ω])
+    else
+        pdData.D[i] = pData.D[i];
+    end
+end
+Tmax1 = disData[length(Ω)].H + longestPath(pdData)[0];
 tdet,xdet,fdet = detBuild(pData);
 ubdet = ubCal(pData,disData,Ω,xdet,tdet,Tmax1);
 brInfo = precludeRel(pData,disData,Ω,ubdet);
@@ -86,25 +94,11 @@ xlb = Dict();
 ylb = Dict();
 dataList = [];
 mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
-# process to fix some of the y's
-mpTight = createMaster_DivR(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
-@constraint(mpTight,pData.p0*mpTight[:t][0] + sum(disData[ω].prDis*mpTight[:θ][ω] for ω in Ω) <= ubCost);
-for i in pData.II
-    # for par in 1:length(divSet[i])
-    #     if divDet[i][par] == 0
-            @objective(mpTight,Max,mpTight[:t][i]);
-            solve(mpTight);
-            for par in 1:length(divSet[i])
-                if getobjectivevalue(mpTight) < H[divSet[i][par].startH]
-                    println(i,par);
-                end
-            end
-            # if (getobjectivevalue(mpTight) == 0)&(divSet[i][par].startH != 0)&(divSet[i][par].startH != length(Ω))
-            #     divDet[i][par] = 1;
-            # end
-        # end
-    # end
-end
+mpTemp = copy(mp);
+ubInfo,lbInfo = obtainBds(pData,disData,Ω,mpTemp,ubCost);
+divSet,divDet = revisePar(pData,disData,divSet,divDet,ubInfo,lbInfo);
+mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
+mp = updateMaster(mp,ubInfo,lbInfo);
 while keepIter
     solve(mp);
     # obtain the solution
@@ -132,7 +126,7 @@ while keepIter
     γdict = Dict();
     vk = Dict();
     θInt = Dict();
-    ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax,1);
+    ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1);
     if ubCost > ubTemp
         ubCost = ubTemp;
         tbest = copy(that);
@@ -143,7 +137,7 @@ while keepIter
     #     dataList[ω] = sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,100,1);
     #     println(ω);
     # end
-    dataList = pmap(ω -> sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,Tmax), Ω);
+    dataList = pmap(ω -> sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,ubInfo,lbInfo,Tmax1), Ω);
     for ω in Ω
         πdict[ω] = dataList[ω][1];
         λdict[ω] = dataList[ω][2];
