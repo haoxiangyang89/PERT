@@ -27,14 +27,14 @@ nameD,dparams = readInUnc(ϕInputAdd);
 disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500,1 - pData.p0);
 disData = orderdisData(disData,Ω);
 
-Tmax = 3000;
+Tmax = disData[length(Ω)] + sum(pData.D[i] for i in pData.II);
 tdet,xdet,fdet = detBuild(pData);
 ubdet = ubCal(pData,disData,Ω,xdet,tdet,Tmax);
 brInfo = precludeRel(pData,disData,Ω,ubdet);
 
 H = Dict();
 H[0] = 0;
-H[length(Ω)+1] = 10;
+H[length(Ω)+1] = Tmax;
 for ω in Ω
     H[ω] = disData[ω].H;
 end
@@ -85,18 +85,23 @@ ylb = Dict();
 dataList = [];
 mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
 # process to fix some of the y's
-mpTight = createMaster_DivR(pData,disData,Ω,divSet,divDet,cutSet,Tmax);;
+mpTight = createMaster_DivR(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
 @constraint(mpTight,pData.p0*mpTight[:t][0] + sum(disData[ω].prDis*mpTight[:θ][ω] for ω in Ω) <= ubCost);
 for i in pData.II
-    for par in 1:length(divSet[i])
-        if divDet[i][par] == 0
-            @objective(mpTight,Max,mpTight[:y][i,par]);
+    # for par in 1:length(divSet[i])
+    #     if divDet[i][par] == 0
+            @objective(mpTight,Max,mpTight[:t][i]);
             solve(mpTight);
-            if (getobjectivevalue(mpTight) == 0)&(divSet[i][par].startH != 0)&(divSet[i][par].startH != length(Ω))
-                divDet[i][par] = 1;
+            for par in 1:length(divSet[i])
+                if getobjectivevalue(mpTight) < H[divSet[i][par].startH]
+                    println(i,par);
+                end
             end
-        end
-    end
+            # if (getobjectivevalue(mpTight) == 0)&(divSet[i][par].startH != 0)&(divSet[i][par].startH != length(Ω))
+            #     divDet[i][par] = 1;
+            # end
+        # end
+    # end
 end
 while keepIter
     solve(mp);
