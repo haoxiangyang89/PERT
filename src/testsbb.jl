@@ -94,10 +94,10 @@ xlb = Dict();
 ylb = Dict();
 dataList = [];
 mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
-mpTemp = copy(mp);
+# mpTemp = copy(mp);
 ubInfo,lbInfo = obtainBds(pData,disData,Ω,mpTemp,ubCost);
-divSet,divDet = revisePar(pData,disData,divSet,divDet,ubInfo,lbInfo);
-mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
+# divSet,divDet = revisePar(pData,disData,divSet,divDet,ubInfo,lbInfo);
+# mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
 mp = updateMaster(mp,ubInfo,lbInfo);
 while keepIter
     solve(mp);

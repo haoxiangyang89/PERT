@@ -512,8 +512,10 @@ function sub_div(pData,dDω,ωCurr,that,xhat,yhat,divSet,ubInfo,lbInfo,M1 = 9999
     @variable(sp, 0 <= s[i in pData.II,j in pData.Ji[i]] <= 1);
 
     # add the basic sub problem constraints
-    @constraint(sp, GCons1[i in pData.II],G[i] <= (that[i] - dDω.H)/M1 + 1);
-    @constraint(sp, GCons2[i in pData.II],G[i] >= (that[i] - dDω.H)/M1);
+    @constraint(sp, GCons11[i in pData.II],G[i] <= (that[i] - dDω.H)/M1 + 1);
+    @constraint(sp, GCons12[i in pData.II],G[i] >= (that[i] - dDω.H)/M1);
+    @constraint(sp, GCons21[i in pData.II],G[i] <= (that[i] - dDω.H)/(dDω.H - lbInfo[i]) + 1);
+    @constraint(sp, GCons22[i in pData.II],G[i] >= (that[i] - dDω.H)/(ubInfo[i] - dDω.H));
     @constraint(sp, GFixed0[i in pData.II],G[i] >= sum(yhat[i,par] for par in 1:length(divSet[i]) if ωCurr < divSet[i][par].startH));
     @constraint(sp, GFixed1[i in pData.II],G[i] <= 1 - sum(yhat[i,par] for par in 1:length(divSet[i]) if ωCurr >= divSet[i][par].endH));
 
@@ -547,7 +549,9 @@ function sub_div(pData,dDω,ωCurr,that,xhat,yhat,divSet,ubInfo,lbInfo,M1 = 9999
     πdict = Dict();             # dual for t
     γdict = Dict();             # dual for y
     for i in pData.II
-        πdict[i] = (getdual(sp[:GCons1][i]) + getdual(sp[:GCons2][i]))/M1 + (getdual(sp[:tFnAnt1][i]) + getdual(sp[:tFnAnt2][i]));
+        πdict[i] = (getdual(sp[:GCons11][i]) + getdual(sp[:GCons12][i]))/M1 +
+            getdual(sp[:GCons21][i])/(dDω.H - lbInfo[i]) + getdual(sp[:GCons22][i])/(ubInfo[i] - dDω.H) +
+            (getdual(sp[:tFnAnt1][i]) + getdual(sp[:tFnAnt2][i]));
         for j in pData.Ji[i]
             λdict[i,j] = (getdual(sp[:xFnAnt1][i,j]) + getdual(sp[:xFnAnt2][i,j]));
         end
