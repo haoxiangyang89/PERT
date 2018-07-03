@@ -38,6 +38,13 @@ function splitPar(PartSet,PartDet,splitInfo)
 end
 
 function revisePar(pData,disData,PartSet,PartDet,ubInfo,lbInfo)
+    H = Dict();
+    H[0] = 0;
+    H[length(Ω)+1] = Tmax;
+    for ω in Ω
+        H[ω] = disData[ω].H;
+    end
+
     newPartSet = copy(PartSet);
     newPartDet = copy(PartDet);
     # for each activity
@@ -46,10 +53,12 @@ function revisePar(pData,disData,PartSet,PartDet,ubInfo,lbInfo)
         partDetiTemp = [];
         for par in 1:length(PartSet[i])
             if PartDet[i][par] == 0
-                if (PartSet[i][par].startH < lbInfo[i])
+                set1 = [ω for ω in (PartSet[i][par].startH + 1):(PartSet[i][par].endH - 1) if H[ω] < lbInfo[i]];
+                set3 = [ω for ω in (PartSet[i][par].startH + 1):(PartSet[i][par].endH - 1) if H[ω] >= ubInfo[i]];
+                if set1 != []
                     # split the current set into parts with the first det as 1
                     set1start = PartSet[i][par].startH;
-                    set1end = maximum([ω for ω in PartSet[i][par].startH:PartSet[i][par].endH if disData[ω].H < lbInfo[i]]);
+                    set1end = maximum(set1);
                     if set1end == PartSet[i][par].endH
                         push!(partSetiTemp,PartSet[i][par]);
                         push!(partDetiTemp,1);
@@ -57,12 +66,12 @@ function revisePar(pData,disData,PartSet,PartDet,ubInfo,lbInfo)
                         push!(partSetiTemp,partType(set1start,set1end));
                         push!(partDetiTemp,1);
                         set2start = set1end;
-                        if (PartSet[i][par].endH < ubInfo[i])
+                        if set3 == []
                             set2end = PartSet[i][par].endH;
                             push!(partSetiTemp,partType(set2start,set2end));
                             push!(partDetiTemp,0);
                         else
-                            set2end = minimum([ω for ω in PartSet[i][par].startH:PartSet[i][par].endH if disData[ω].H >= ubInfo[i]]);
+                            set2end = minimum(set3);
                             push!(partSetiTemp,partType(set2start,set2end));
                             push!(partDetiTemp,0);
                             set3start = set2end;
@@ -72,21 +81,20 @@ function revisePar(pData,disData,PartSet,PartDet,ubInfo,lbInfo)
                         end
                     end
                     # split the current set into parts with the first det as 0
-                elseif (PartSet[i][par].startH < ubInfo[i])
+                else
                     set1start = PartSet[i][par].startH;
-                    set1end = minimum([ω for ω in PartSet[i][par].startH:PartSet[i][par].endH if disData[ω].H >= ubInfo[i]]);
-                    if set1end == PartSet[i][par].endH
+                    if set3 == []
                         push!(partSetiTemp,PartSet[i][par]);
                         push!(partDetiTemp,0);
                     else
-                        set2start = set1end;
-                        set2end = PartSet[i][par].endH;
-                        push!(partSetiTemp,partType(set2start,set2end));
+                        set1end = minimum(set3);
+                        push!(partSetiTemp,partType(set1start,set1end));
+                        push!(partDetiTemp,0);
+                        set3start = set1end;
+                        set3end = PartSet[i][par].endH;
+                        push!(partSetiTemp,partType(set3start,set3end));
                         push!(partDetiTemp,-1);
                     end
-                else
-                    push!(partSetiTemp,PartSet[i][par]);
-                    push!(partDetiTemp,-1);
                 end
             else
                 push!(partSetiTemp,PartSet[i][par]);
