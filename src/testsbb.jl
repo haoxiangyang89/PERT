@@ -85,19 +85,19 @@ ylb = Dict();
 dataList = [];
 mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
 # process to fix some of the y's
-# mpTight = copy(mp);
-# @constraint(mpTight,pData.p0*mpTight[:t][0] + sum(disData[ω].prDis*mpTight[:θ][ω] for ω in Ω) <= ubCost);
-# for i in pData.II
-#     for par in 1:length(divSet[i])
-#         if divDet[i][par] == 0
-#             @objective(mpTight,Max,mpTight[:y][i,par]);
-#             solve(mpTight);
-#             if (getobjectivevalue(mpTight) == 0)&(divSet[i][par].startH != 0)&(divSet[i][par].startH != length(Ω))
-#                 divDet[i][par] = 1;
-#             end
-#         end
-#     end
-# end
+mpTight = createMaster_DivR(pData,disData,Ω,divSet,divDet,cutSet,Tmax);;
+@constraint(mpTight,pData.p0*mpTight[:t][0] + sum(disData[ω].prDis*mpTight[:θ][ω] for ω in Ω) <= ubCost);
+for i in pData.II
+    for par in 1:length(divSet[i])
+        if divDet[i][par] == 0
+            @objective(mpTight,Max,mpTight[:y][i,par]);
+            solve(mpTight);
+            if (getobjectivevalue(mpTight) == 0)&(divSet[i][par].startH != 0)&(divSet[i][par].startH != length(Ω))
+                divDet[i][par] = 1;
+            end
+        end
+    end
+end
 while keepIter
     solve(mp);
     # obtain the solution
