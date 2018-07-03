@@ -273,3 +273,50 @@ function obtainBds(pData,disData,Ω,mpTemp,ub)
     end
     return ubInfo,lbInfo;
 end
+
+function longestPath(pData)
+    lDict = Dict();
+    finishedList = [];
+    activeList = [];
+    for i in pData.II
+        if pData.Pre[i] == []
+            lDict[i] = 0;
+        else
+            lDict[i] = -Inf;
+        end
+    end
+    # Dijkstra with negative edge weight
+    while length(finishedList) < length(pData.II)
+        for i in pData.II
+            if !((i in activeList)|(i in finishedList))
+                enterBool = true;
+                for j in pData.Pre[i]
+                    if !(j in finishedList)
+                        enterBool = false;
+                    end
+                end
+                if enterBool
+                    push!(activeList,i);
+                end
+            end
+        end
+        # find the largest activity in activeList
+        maxVal = -Inf;
+        maxInd = -1;
+        for iInd in activeList
+            if maxVal < lDict[iInd]
+                maxVal = lDict[iInd];
+                maxInd = iInd;
+            end
+        end
+        # update the activities connected to maxInd
+        for j in pData.Succ[maxInd]
+            if lDict[j] < lDict[maxInd] + pData.D[maxInd]
+                lDict[j] = lDict[maxInd] + pData.D[maxInd];
+            end
+        end
+        push!(finishedList,maxInd);
+        deleteat!(activeList,findfirst(activeList,maxInd));
+    end
+    return lDict;
+end

@@ -1,3 +1,4 @@
+addprocs(20);
 # test sbb
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
@@ -27,9 +28,10 @@ nameD,dparams = readInUnc(ϕInputAdd);
 disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500,1 - pData.p0);
 disData = orderdisData(disData,Ω);
 
-Tmax = disData[length(Ω)] + sum(pData.D[i] for i in pData.II);
+Tmax = disData[length(Ω)].H + sum(pData.D[i] for i in pData.II);
+Tmax1 = disData[length(Ω)].H + sum(pData.D[i] + maximum([disData[ω].d[i] for ω in Ω]) for i in pData.II if i != 0);
 tdet,xdet,fdet = detBuild(pData);
-ubdet = ubCal(pData,disData,Ω,xdet,tdet,Tmax);
+ubdet = ubCal(pData,disData,Ω,xdet,tdet,Tmax1);
 brInfo = precludeRel(pData,disData,Ω,ubdet);
 
 H = Dict();
