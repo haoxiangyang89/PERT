@@ -30,7 +30,7 @@ disData = orderdisData(disData,Ω);
 
 ################################################################################
 tdet,xdet,fdet = detBuild(pData);
-ubdet = ubCal(pData,disData,Ω,xdet,tdet);
+ubdet = ubCal(pData,disData,Ω,xdet,tdet,100);
 brInfo = precludeRel(pData,disData,Ω,ubdet);
 
 ################################################################################

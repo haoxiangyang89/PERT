@@ -91,113 +91,117 @@ tbest = Dict();
 ubCost = ubdet;
 lbCost = -Inf;
 
-keepIter = true;
-tlb = Dict();
-xlb = Dict();
-θlb = Dict();
-ylb = Dict();
-dataList = [];
-mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
-mpTemp = copy(mp);
-ubInfo,lbInfo = obtainBds(pData,disData,Ω,mpTemp,ubCost);
-# divSet,divDet = revisePar(pData,disData,divSet,divDet,ubInfo,lbInfo);
-# mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
-mp = updateMaster(mp,ubInfo,lbInfo);
-while keepIter
-    solve(mp);
-    # obtain the solution
-    that = Dict();
-    xhat = Dict();
-    θhat = Dict();
-    yhat = Dict();
-    for i in pData.II
-        that[i] = getvalue(mp[:t][i]);
-        for j in pData.Ji[i]
-            xhat[i,j] = getvalue(mp[:x][i,j]);
-        end
-        for par in 1:length(divSet[i])
-            yhat[i,par] = getvalue(mp[:y][i,par]);
-        end
-    end
-    for ω in Ω
-        θhat[ω] = getvalue(mp[:θ][ω]);
-    end
-    lbCost = getobjectivevalue(mp);
-    # generate cuts
-    lbPrev = lbCost;
-    πdict = Dict();
-    λdict = Dict();
-    γdict = Dict();
-    vk = Dict();
-    θInt = Dict();
-    ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1);
-    if ubCost > ubTemp
-        ubCost = ubTemp;
-        tbest = copy(that);
-        xbest = copy(xhat);
-    end
-    # dataList = Dict();
-    # for ω in Ω
-    #     dataList[ω] = sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,100,1);
-    #     println(ω);
-    # end
-    # dataList = pmap(ω -> sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,ubInfo,lbInfo,Tmax1), Ω);
-    dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
-    for ω in Ω
-        πdict[ω] = dataList[ω][1];
-        λdict[ω] = dataList[ω][2];
-        γdict[ω] = dataList[ω][3];
-        vk[ω] = dataList[ω][4];
-    end
-        #πdict1[ω],λdict1[ω],vk1[ω] = subLag(pData,disData[ω],xhat,that,Ghatω[ω],γdict[ω],400);
-    ωTightCounter = 0;
-    cutDual = Dict();
-    for ω in Ω
-        if vk[ω] - θhat[ω] > 1e-5
-            cutDual[ω] = [vk[ω],πdict[ω],λdict[ω],γdict[ω]];
-            mp = addtxCut(pData,ω,mp,πdict,λdict,γdict,vk,that,xhat,yhat,divSet);
-        else
-            cutDual[ω] = [];
-            ωTightCounter += 1;
-        end
-    end
-    push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
-    if ωTightCounter == length(Ω)
-        keepIter = false;
+tic();
+while (ubCost - lbCost)/ubCost > 0.01
+    keepIter = true;
+    tlb = Dict();
+    xlb = Dict();
+    θlb = Dict();
+    ylb = Dict();
+    dataList = [];
+    mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
+    # mpTemp = copy(mp);
+    # ubInfo,lbInfo = obtainBds(pData,disData,Ω,mpTemp,ubCost);
+    #mp = updateMaster(mp,ubInfo,lbInfo);
+    # divSet,divDet = revisePar(pData,disData,divSet,divDet,ubInfo,lbInfo);
+    # mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
+    while keepIter
+        solve(mp);
+        # obtain the solution
+        that = Dict();
+        xhat = Dict();
+        θhat = Dict();
+        yhat = Dict();
         for i in pData.II
-            tlb[i] = that[i];
+            that[i] = getvalue(mp[:t][i]);
             for j in pData.Ji[i]
-                xlb[i,j] = xhat[i,j];
+                xhat[i,j] = getvalue(mp[:x][i,j]);
             end
             for par in 1:length(divSet[i])
-                ylb[i,par] = yhat[i,par];
+                yhat[i,par] = getvalue(mp[:y][i,par]);
             end
         end
         for ω in Ω
-            θlb[ω] = θhat[ω];
+            θhat[ω] = getvalue(mp[:θ][ω]);
+        end
+        lbCost = getobjectivevalue(mp);
+        # generate cuts
+        lbPrev = lbCost;
+        πdict = Dict();
+        λdict = Dict();
+        γdict = Dict();
+        vk = Dict();
+        θInt = Dict();
+        ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1);
+        if ubCost > ubTemp
+            ubCost = ubTemp;
+            tbest = copy(that);
+            xbest = copy(xhat);
+        end
+        # dataList = Dict();
+        # for ω in Ω
+        #     dataList[ω] = sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,100,1);
+        #     println(ω);
+        # end
+        # dataList = pmap(ω -> sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,ubInfo,lbInfo,Tmax1), Ω);
+        dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
+        for ω in Ω
+            πdict[ω] = dataList[ω][1];
+            λdict[ω] = dataList[ω][2];
+            γdict[ω] = dataList[ω][3];
+            vk[ω] = dataList[ω][4];
+        end
+            #πdict1[ω],λdict1[ω],vk1[ω] = subLag(pData,disData[ω],xhat,that,Ghatω[ω],γdict[ω],400);
+        ωTightCounter = 0;
+        cutDual = Dict();
+        for ω in Ω
+            if vk[ω] - θhat[ω] > 1e-5
+                cutDual[ω] = [vk[ω],πdict[ω],λdict[ω],γdict[ω]];
+                mp = addtxCut(pData,ω,mp,πdict,λdict,γdict,vk,that,xhat,yhat,divSet);
+            else
+                cutDual[ω] = [];
+                ωTightCounter += 1;
+            end
+        end
+        push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
+        if ωTightCounter == length(Ω)
+            keepIter = false;
+            for i in pData.II
+                tlb[i] = that[i];
+                for j in pData.Ji[i]
+                    xlb[i,j] = xhat[i,j];
+                end
+                for par in 1:length(divSet[i])
+                    ylb[i,par] = yhat[i,par];
+                end
+            end
+            for ω in Ω
+                θlb[ω] = θhat[ω];
+            end
         end
     end
-end
 
-# need to come up with a rule to partition: gradient descent like binary search
-# check θInt vs. θhat: why the lower bound and the upper bound do not converge quickly --->
-# use the sub problem solution G to learn the b&b
-# also need to think up a way to tightening the cuts for each partition
-GFrac = Dict();
-for i in pData.II
-    GFraciList = [ω for ω in Ω if (dataList[ω][5][i] < 1 - 1e-6)&(dataList[ω][5][i] > 1e-6)];
-    if GFraciList != []
-        GFrac[i] = [minimum(GFraciList),maximum(GFraciList)];
-    else
-        GFrac[i] = [];
+    # need to come up with a rule to partition: gradient descent like binary search
+    # check θInt vs. θhat: why the lower bound and the upper bound do not converge quickly --->
+    # use the sub problem solution G to learn the b&b
+    # also need to think up a way to tightening the cuts for each partition
+    GFrac = Dict();
+    for i in pData.II
+        GFraciList = [ω for ω in Ω if (dataList[ω][5][i] < 1 - 1e-6)&(dataList[ω][5][i] > 1e-6)];
+        if GFraciList != []
+            GFrac[i] = [minimum(GFraciList),maximum(GFraciList)];
+        else
+            GFrac[i] = [];
+        end
     end
-end
-# create new partition
-newPartition = [];
-for i in pData.II
-    if GFrac[i] != []
-        newItem = (i,Int(floor((GFrac[i][1] + GFrac[i][2])/2)));
-        push!(newPartition,newItem);
+    # create new partition
+    newPartition = [];
+    for i in pData.II
+        if GFrac[i] != []
+            newItem = (i,Int(floor((GFrac[i][1] + GFrac[i][2])/2)));
+            push!(newPartition,newItem);
+        end
     end
+    divSet,divDet = splitPar(divSet,divDet,newPartition);
 end
-divSet,divDet = splitPar(divSet,divDet,newPartition);
+tClock = toc();
