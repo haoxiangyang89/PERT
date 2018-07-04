@@ -37,7 +37,11 @@ for i in pData.II
         pdData.D[i] = pData.D[i];
     end
 end
-Tmax1 = disData[length(Ω)].H + longestPath(pdData)[0];
+lDict = longestPath(pdData);
+for i in pData.II
+    lDict[i] += disData[length(Ω)];
+end
+Tmax1 = lDict[0];
 tdet,xdet,fdet = detBuild(pData);
 ubdet = ubCal(pData,disData,Ω,xdet,tdet,Tmax1);
 brInfo = precludeRel(pData,disData,Ω,ubdet);
@@ -94,7 +98,7 @@ xlb = Dict();
 ylb = Dict();
 dataList = [];
 mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
-# mpTemp = copy(mp);
+mpTemp = copy(mp);
 ubInfo,lbInfo = obtainBds(pData,disData,Ω,mpTemp,ubCost);
 # divSet,divDet = revisePar(pData,disData,divSet,divDet,ubInfo,lbInfo);
 # mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
@@ -137,7 +141,8 @@ while keepIter
     #     dataList[ω] = sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,100,1);
     #     println(ω);
     # end
-    dataList = pmap(ω -> sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,ubInfo,lbInfo,Tmax1), Ω);
+    # dataList = pmap(ω -> sub_div(pData,disData[ω],ω,that,xhat,yhat,divSet,ubInfo,lbInfo,Tmax1), Ω);
+    dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
     for ω in Ω
         πdict[ω] = dataList[ω][1];
         λdict[ω] = dataList[ω][2];
