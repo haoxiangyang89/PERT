@@ -39,7 +39,7 @@ for i in pData.II
 end
 lDict = longestPath(pdData);
 for i in pData.II
-    lDict[i] += disData[length(Ω)];
+    lDict[i] += disData[length(Ω)].H;
 end
 Tmax1 = lDict[0];
 tdet,xdet,fdet = detBuild(pData);

@@ -587,8 +587,8 @@ function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
 
     # add the basic sub problem constraints
     @constraint(sp, GyRelax1[i in pData.II,par in 1:length(divSet[i])], Gy[i,par] <= G[i]);
-    @constraint(sp, GyRelax2[i in pData.II,par in 1:length(divSet[i])], Gy[i,par] <= y[i,par]);
-    @constraint(sp, GyRelax3[i in pData.II,par in 1:length(divSet[i])], Gy[i,par] >= G[i] + y[i,par] - 1);
+    @constraint(sp, GyRelax2[i in pData.II,par in 1:length(divSet[i])], Gy[i,par] <= yhat[i,par]);
+    @constraint(sp, GyRelax3[i in pData.II,par in 1:length(divSet[i])], Gy[i,par] >= G[i] + yhat[i,par] - 1);
 
     @constraint(sp, GCons1[i in pData.II],dDω.H*G[i] - sum(H[divSet[i][par].endH]*Gy[i,par] for par in 1:length(divSet[i])) <= dDω.H - that[i]);
     @constraint(sp, GCons2[i in pData.II],sum(H[divSet[i][par].startH]*Gy[i,par] for par in 1:length(divSet[i])) - dDω.H*G[i] >= -that[i] + sum(yhat[i,par]*H[divSet[i][par].startH] for par in 1:length(divSet[i])));
@@ -631,7 +631,8 @@ function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
             λdict[i,j] = (getdual(sp[:xFnAnt1][i,j]) + getdual(sp[:xFnAnt2][i,j]));
         end
         for par in 1:length(divSet[i])
-            γdict[i,par] = H[divSet[i][par].startH]*getdual(sp[:GCons2][i]);
+            γdict[i,par] = H[divSet[i][par].startH]*getdual(sp[:GCons2][i]) +
+                getdual(sp[:GyRelax2][i,par]) + getdual(sp[:GyRelax3][i,par]);
             if ωCurr < divSet[i][par].startH
                 γdict[i,par] += getdual(sp[:GFixed0][i]);
             elseif ωCurr >= divSet[i][par].endH
