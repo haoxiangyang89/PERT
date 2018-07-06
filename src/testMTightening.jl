@@ -24,7 +24,7 @@ kInputAdd = "test_2_K.csv";
 
 pData = readInP(pInputAdd,kInputAdd);
 nameD,dparams = readInUnc(ϕInputAdd);
-disData,Ω = autoUGen("PiecewiseU",[[0.1,1.5,1.7],[0.2,0.8]],nameD,dparams,500,1 - pData.p0);
+disData,Ω = autoUGen("PiecewiseU",[[0.1,1.5,1.7],[0.2,0.8]],nameD,dparams,2000,1 - pData.p0);
 disData = orderdisData(disData,Ω);
 @time text,xext,fext,gext,mp = extForm_cheat(pData,disData,Ω);
 
