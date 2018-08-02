@@ -14,6 +14,8 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
         lDict[i] += disData[length(Ω)].H;
     end
     Tmax1 = lDict[0];
+
+    # start with an upper bound based on the deterministic solution
     tdet,xdet,fdet = detBuild(pData);
     ubdet = ubCal(pData,disData,Ω,xdet,tdet,Tmax1);
     brInfo = precludeRel(pData,disData,Ω,ubdet);
@@ -171,4 +173,6 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
         end
         divSet,divDet = splitPar(divSet,divDet,newPartition);
     end
+
+    return tbest,xbest,lbCost,ubCost;
 end
