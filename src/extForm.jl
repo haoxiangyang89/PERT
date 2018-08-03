@@ -8,7 +8,7 @@ function extForm(pData,disData,Ω,TL = Inf)
         M[ω] = 300;
     end
 
-    mp = Model(solver = GurobiSolver(Method = 0, IntFeasTol = 1e-9, TimeLimit = TL));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9, TimeLimit = TL));
     # mp = Model(solver = CbcSolver());
     @variable(mp,t0[i in pData.II] >= 0);
     @variable(mp,0 <= x0[i in pData.II, j in pData.Ji[i]] <= 1);
@@ -51,7 +51,7 @@ function extForm_cheat(pData,disData,Ω,TL = Inf)
         M[ω] = sum(max(pData.D[i],pData.D[i]+disData[ω].d[i]) for i in pData.II if i != 0);
     end
 
-    mp = Model(solver = GurobiSolver(Method = 0, IntFeasTol = 1e-9, TimeLimit = TL));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9, TimeLimit = TL));
     # mp = Model(solver = CbcSolver());
     @variable(mp,t0[i in pData.II] >= 0);
     @variable(mp,0 <= x0[i in pData.II, j in pData.Ji[i]] <= 1);
