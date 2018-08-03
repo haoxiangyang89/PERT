@@ -18,6 +18,7 @@ addprocs(20);
 @everywhere include("partition_LP.jl");
 @everywhere include("partition_LR.jl");
 @everywhere include("part_tight.jl");
+@everywhere include("partitionSolve.jl");
 
 pInputAdd = "/home/haoxiang/PERT_tests/14_ExponentialD_LogNormalH/test_14_P.csv";
 kInputAdd = "/home/haoxiang/PERT_tests/14_ExponentialD_LogNormalH/test_14_K.csv";
