@@ -81,9 +81,19 @@ function extForm_cheat(pData,disData,Ω,TL = Inf)
     @objective(mp,Min,pData.p0*t0[0] + sum(disData[ω].prDis*t[0,ω] for ω in Ω));
 
     solve(mp);
-    text = getvalue(mp[:t0]);
-    xext = getvalue(mp[:x0]);
-    gext = getvalue(mp[:G]);
+
+    text = Dict();
+    xext = Dict();
+    Gext = Dict();
+    for i in pData.II
+        text[i] = getvalue(mp[:t0][i]);
+        for j in pData.Ji[i]
+            xext[i,j] = getvalue(mp[:x0][i,j]);
+        end
+        for ω in Ω
+            gext[i,ω] = getvalue(mp[:G][i,ω]);
+        end
+    end
     fext = getobjectivevalue(mp);
     return text,xext,fext,gext,mp;
 end

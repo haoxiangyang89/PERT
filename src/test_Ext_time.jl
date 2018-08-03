@@ -28,9 +28,16 @@ nameD,dparams = readInUnc(ϕInputAdd);
 disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500,1 - pData.p0);
 disData = orderdisData(disData,Ω);
 
+tic();
+tbest,xbest,lbCost,ubCost = partitionSolve(pData,disData,0.01);
+timedecomp = toc();
+gapdecomp = (ubCost - lbCost)/ubCost;
+
+tic();
 text,xext,fext,gext,mp = extForm_cheat(pData,disData,Ω,999999);
+timeext = toc();
 ubmp = mp.objVal;
 lbmp = mp.objBound;
-gap = (mp.objVal - mp.objBound)/mp.objVal;
-dDict = [text,xext,fext,gext,ubmp,lbmp,gap];
+gapext = (mp.objVal - mp.objBound)/mp.objVal;
+dDict = [tbest,xbest,lbCost,ubCost,gapdecomp,timedecomp,text,xext,fext,gext,ubmp,lbmp,gapext,timeext];
 save("test_Ext_time.jld","dDict",dDict);
