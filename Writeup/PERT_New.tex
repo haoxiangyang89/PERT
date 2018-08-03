@@ -35,6 +35,7 @@
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{corollary}[theorem]{Corollary}
 \newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{assumption}{Assumption}
 \newtheorem{conjecture}[theorem]{Conjecture}
 \newtheorem{remark}{Remark}
 \newtheorem{example}{Example}
@@ -219,7 +220,7 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 	\noi In this example, the optimal solution is to crash activity 1 with one unit of resource, i.e.\,\(x_1 = 1, x_2 = 0\). Activity 1 starts at time \(t_1 = 0\) and activity 2 starts at time \(t_2 = 1.5\). The optimal expected project span is \(\mathbb{E}[t_T] = 6.5\). We can compare an alternative solution which crash activity 2 with one unit of resource, which has a longer expected duration. Crashing activity 2 matches the intuition from the deterministic case where on the critical path the activities with longer expected duration are prioritized. However, in this case with a stochastic disruption, the latter solution (\(t_1 = 0, t_2 = 3, x_1 = 0, x_2 = 1\)) yields a longer expected project span as \(\mathbb{E}[t_T] = 7.5\). The reason behind this gap is that by crashing activity 1 with one unit amount of resource, the probability of activity 2 starting before the disruption increases to \(0.8\), which prevents activity 2 from seeing the increased duration. \\
 	\newline
 	These examples above indicate that the crashing optimization problem with stochastic disruption has complicated nature. The intuition of deterministic crashing optimization problem does not apply here, and we need a math program model as~\eqref{prob:extensive} to solve for the best crashing plan.
-	\textcolor{blue}{Add the conclusion of consistency. Add the proof of consistency. Prove the inconsistency of the stratified sampling method. }
+	\textcolor{blue}{NP-hardness proof. Add the conclusion of consistency. Add the proof of consistency. Prove the inconsistency of the stratified sampling method. }
 	
 	\section{Decomposition Method} \label{sec:decomposition}
 	Model~\eqref{prob:extensive} is a two-stage stochastic mixed integer program (2SMIP). If we attempt to decompose it into a master problem~\eqref{prob:masterOri} and scenario-specific subproblems~\eqref{prob:subOri}, the state variables \(t\) and \(x\) are all continuous and binary variables exist in the recourse problems. The recourse problems become nonconvex. Most of previous literature of stochastic mixed integer programming assumes a special structure or property which cannot be applied to our problem setting. For example, Sherali/Fracticelli, Sen/Higle, Ntaimo/Sen, Sherali/Zhu, Sen/Sherali, Gade/Kucukyavuz/Sen solve 2SMIPs with pure binary first stage variables using sequential convex approximation of recourse by a branch-and-cut process framework where disjunctive cuts or Gomory cuts are added. Ahmed/Sun/Zou assumes state variables to be binary so that the Lagrangian cuts are a tight approximation of the recourse function. Caroe/Tind solves a more general case of 2SMIP by using the MIP duality theory but the practical tractability is not optimistic. 
@@ -238,27 +239,27 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 		\label{prob:subOri}
 		\begin{align}
 		(S^\omega) \qquad f^\omega(\hat{t},\hat{x}) = \min \quad & t_T \\
-		& H^\omega + G_i M \geq \hat{t}_i \qquad \qquad \forall \,i \in I, \omega \in \Omega \label{cons:sG1}\\
-		& H^\omega - (1 - G_i) M \leq \hat{t}_i \qquad \qquad \forall \,i \in I, \omega \in \Omega \label{cons:sG2}\\
-		& t_i + G_i M_t \geq \hat{t}_i \qquad \qquad \forall \,i \in I, \omega \in \Omega \label{cons:stG1}\\
-		& t_i - G_i M_t \leq \hat{t}_i \qquad \qquad \forall \,i \in I, \omega \in \Omega \label{cons:stG2}\\
-		& x_{ij} + G_i \geq \hat{x}_{ij} \qquad \qquad \forall \,i \in I, j \in J_i, \omega \in \Omega \label{cons:sxG1}\\
-		& x_{ij} - G_i \leq \hat{x}_{ij} \qquad \qquad \forall \,i \in I, j \in J_i, \omega \in \Omega \label{cons:sxG2}\\
+		& H^\omega + G_i M \geq \hat{t}_i \qquad \qquad \forall \,i \in I \label{cons:sG1}\\
+		& H^\omega - (1 - G_i) M \leq \hat{t}_i \qquad \qquad \forall \,i \in I \label{cons:sG2}\\
+		& t_i + G_i M_t \geq \hat{t}_i \qquad \qquad \forall \,i \in I \label{cons:stG1}\\
+		& t_i - G_i M_t \leq \hat{t}_i \qquad \qquad \forall \,i \in I \label{cons:stG2}\\
+		& x_{ij} + G_i \geq \hat{x}_{ij} \qquad \qquad \forall \,i \in I, j \in J_i \label{cons:sxG1}\\
+		& x_{ij} - G_i \leq \hat{x}_{ij} \qquad \qquad \forall \,i \in I, j \in J_i \label{cons:sxG2}\\
 		& t_k - t_i \geq D_i + d_i^\omega G_i -\sum_{j \in J_i} D_i e_{ij} x_{ij} - \sum_{j \in J_i} d_i^\omega e_{ij} z_{ij} \nonumber \\ 
-		& \qquad \qquad \forall \,i \in I, j \in J_i, \omega \in \Omega \label{cons:subSep}\\
-		& \sum_{j \in J_i} x_{ij} \leq 1 \qquad \qquad \forall \,i \in I, \omega \in \Omega \label{cons:subBudget1}\\
+		& \qquad \qquad \forall \,i \in I, j \in J_i \label{cons:subSep}\\
+		& \sum_{j \in J_i} x_{ij} \leq 1 \qquad \qquad \forall \,i \in I \label{cons:subBudget1}\\
 		& \sum_{i \in I}\sum_{j \in J_i} b_{ij}x_{ij} \leq B \qquad \qquad \forall \,\omega \in \Omega \label{cons:subBudget}\\
-		& z_{ij} \leq G_i \qquad \qquad \forall \,i \in I, j \in J_i, \omega \in \Omega \label{cons:sublinearize1}\\
-		& z_{ij} \leq x_{ij} \qquad \qquad \forall \,i \in I, j \in J_i, \omega \in \Omega \label{cons:sublinearize2}\\
-		& z_{ij} \geq G_i + x_{ij} - 1 \qquad \qquad \forall \,i \in I, j \in J_i, \omega \in \Omega \label{cons:sublinearize3}\\
-		& t_i \geq H^\omega G_i \qquad \qquad \forall\, i \in I, \omega \in \Omega \\
-		& 0 \leq x_{ij} \leq 1 \qquad \qquad \forall \,i \in I, j \in J_i, \omega \in \Omega\\
-		& 0 \leq z_{ij} \leq 1 \qquad \qquad \forall \,i \in I, j \in J_i, \omega \in \Omega\\
-		& G_i \in \{0,1\}. \qquad \qquad \forall \,i \in I, \omega \in \Omega. \label{cons:subInt}
+		& z_{ij} \leq G_i \qquad \qquad \forall \,i \in I, j \in J_i \label{cons:sublinearize1}\\
+		& z_{ij} \leq x_{ij} \qquad \qquad \forall \,i \in I, j \in J_i \label{cons:sublinearize2}\\
+		& z_{ij} \geq G_i + x_{ij} - 1 \qquad \qquad \forall \,i \in I, j \in J_i \label{cons:sublinearize3}\\
+		& t_i \geq H^\omega G_i \qquad \qquad \forall\, i \in I \label{cons:subH}\\
+		& 0 \leq x_{ij} \leq 1 \qquad \qquad \forall \,i \in I, j \in J_i\\
+		& 0 \leq z_{ij} \leq 1 \qquad \qquad \forall \,i \in I, j \in J_i\\
+		& G_i \in \{0,1\}. \qquad \qquad \forall \,i \in I. \label{cons:subInt}
 		\end{align}
 	\end{subequations}
 	We can relax the integrality constraints~\eqref{cons:subInt} and solve the subproblem to obtain Benders' cuts. Although those Benders' cuts are no longer a tight approximation of the recourse function \(f^\omega(x,t), \forall \omega \in \Omega\), they still provide a valid lower bound. On the other hand, in each iteration of the Benders' decomposition, the upper bound can be obtained by solving the subproblems~\eqref{prob:subOri}, given a first stage solution. We observe that a smaller \(M\) yields a tighter gap between the upper bound and the lower bound, because we can rewrite constraints~\eqref{cons:sG1} and~\eqref{cons:sG2} as:
-	\begin{equation}
+	\begin{equation} \label{cons:Grange}
 		(\hat{t}_i - H^\omega)/M \leq G_i \leq (\hat{t}_i - H^\omega)/M + 1
 	\end{equation}
 	and \(G_i\) can take a wider range of value when \(M\) is larger. Therefore, sequentially tightening \(M\) is helpful to generate a tighter lower bound as the algorithm progresses. Eventually, if for a scenario we can fix the \(G_i\) for all \(i \in I\) to either 0 or 1, the Benders' cuts will be tight.\\
@@ -278,10 +279,10 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 	\end{proof}
 	\noi Proposition~\ref{prop:bounds} indicates that all \(t_i,\ \forall i \in I\) are bounded on an interval \([0,T_{\max}]\). Since there are precedence relationships between activities, the possible range of different activities' starting time can be further limited. We first set up two parameters \(H^0 = 0\) and \(H^{|\Omega| + 1} = T_{\max}\) and then define a partition of this interval for each \(i \in I\) to exploit this limitation as follows:
 	\begin{definition}
-		For an activity \(i \in I\), the partition of interval \([0,T_{\max}]\) is denoted by \(\mathcal{P}\), which is an ordered set of two-element tuples \((\bar{\omega}^q,\underbar{\omega}^q)\), which is indexed by \(q \in \mathcal{Q}\) and corresponds to the upper bound scenario index and the lower bound scenario index. The partition has the following properties:
+		For an activity \(i \in I\), the partition of interval \([0,T_{\max}]\) is denoted by \(\mathcal{P}_i\), which is an ordered set of two-element tuples \((\underbar{\omega}^q,\bar{\omega}^q)\), indexed by \(q \in \mathcal{Q}_i\) and corresponds to the upper bound scenario index and the lower bound scenario index. The partition has the following properties:
 		\begin{itemize}
 			\item \(\underbar{\omega}^1 = 0\)
-			\item \(\bar{\omega}^{|\mathcal{Q}|} = T_{\max}\)
+			\item \(\bar{\omega}^{|\mathcal{Q}_i|} = T_{\max}\)
 			\item \(\bar{\omega}^q = \underbar{\omega}^{q + 1}\).
 		\end{itemize}
 	\end{definition}
@@ -292,28 +293,157 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 		\caption{An illustration of partition on interval \([0,T_{\max}]\).}
 		\label{fig:simplePart}
 	\end{figure}
-	Here we present the modified master problem and subproblems with the addition of partition:
+	\noi For each activity \(i \in I\), with the partition \(\mathcal{P}_i\) defined, we can see the starting time \(t_i\) of the master problem lies in the range specified by one element of \(\mathcal{P}_i\). We introduce an indicator \(y_i^q\), \(\forall i \in I, q \in \mathcal{Q}_i\) in the first stage:
+	\begin{equation}
+		y_i^q = \begin{cases}
+			1 & \text{if \(t_i \in [H^{\underbar{\omega}^q},H^{\bar{\omega}^q}]\)}\\
+			0 & \text{otherwise}
+		\end{cases}
+		\qquad \forall i \in I, q \in \mathcal{Q}_i,
+	\end{equation}
+	and we use the following constraints to represent this relationship:
+	\begin{subequations} \label{cons:yCons}
+		\begin{align}
+			& \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} y_i^{q} \leq t_i \leq \sum_{q \in \mathcal{Q}_i} H^{\bar{\omega}^q} y_i^{q} \qquad \qquad \forall i \in I \label{cons:tyBounds}\\
+			& \sum_{q \in \mathcal{Q}_i} y_i^q = 1 \qquad \qquad \forall i \in I. \label{cons:sumy1}
+		\end{align}
+	\end{subequations}
+	In constraint~\eqref{cons:sumy1}, we enforce that \(t_i\) can only lie in one of the ranges specified by the partition, as only one of \(y_i^q\) can take value \(1\) for each \(i \in I\). Depending on the value of \(y_i^q\), we can write the bounds of the such range as in~\eqref{cons:tyBounds}. \\
+	\newline
+	The benefit of setting up the \(y\) variables is to obtain tighter bounds for \(t_i\) than the generic bounds \([0,T_{\max}]\) in Proposition~\ref{prop:bounds}. Suppose solving the master problem provides a solution \(\hat{y}_i^{\tilde{q}}, \forall i \in I, q \in \mathcal{Q}_i \). Then we can replace the big-\(M\) in constraints~\eqref{cons:sG1} and~\eqref{cons:sG2} of the scenario with moderate \(M_i^{\omega,+}\) and \(M_i^{\omega,-}\) because introducing variables \(y\) gives us better bounds on \(t_i\):
 	\begin{subequations}
 		\begin{align}
-			(M_P) \quad \min \quad &p^0 t_T + \sum_{\omega \in \Omega} p^\omega \theta^{\omega}\\
-			\text{s.t.} \quad & t_k - t_i \geq D_{i}(1 - \sum_{j \in J_i} x_{ij} e_{ij}) \qquad \qquad \forall \,i \in I, (i,k) \in \mathcal{A} \label{cons:MpSep}\\
-			& \sum_{i \in I} \sum_{j \in J_i} b_{ij}x_{ij} \leq B  \label{cons:MpBudget}\\
-			& \sum_{j \in J_i} x_{ij} \leq 1  \qquad \qquad \forall \,i \in I \label{cons:MpSingleBudget}\\
-			& \sum_{q \in \mathcal{Q}_i} y^q_i = 1 \qquad \qquad \forall i \in I \\
-			& \sum_{q \in \mathcal{Q}_i} \underbar{H}_i^{q} y_i^{q} \leq t_i \leq \sum_{q \in \mathcal{Q}_i} \bar{H}_i^{q} y_i^{q} \qquad \qquad \forall i \in I\\
-			& \theta^\omega \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) \nonumber \\
-			&\qquad + \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_i^{\omega,q,\ell} \left( \sum_{\tilde{q} \in \mathcal{Q}_i, \bar{H}_i^{\tilde{q}} \leq \bar{H}_i^{\ell,q},\underbar{H}_i^{\tilde{q}} \geq \underbar{H}_i^{\ell,q} }y_i^{\tilde{q}} - \hat{y}_i^{q,\ell} \right) \nonumber \\
-			& \qquad  \forall \omega \in \Omega, \ell = 1, 2, \dots\\
-			& y_i^q \in \{0,1\} \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i\\
-			& t_i \geq 0 \qquad \qquad \forall \,i \in I\\
-			& 0 \leq x_{ij} \leq 1 \qquad \qquad \forall \,i \in I, j \in J_i.
+			& M_i^{\omega,+} = \sum_{q \in \mathcal{Q}_i} H^{\bar{\omega}^q} \hat{y}_i^q - H^\omega\\
+			& M_i^{\omega,-} = H^\omega - \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} \hat{y}_i^q，
+		\end{align}
+	\end{subequations}
+	and the constraints~\eqref{cons:sG1} and~\eqref{cons:sG2} become:
+	\begin{subequations} \label{cons:newBoundsm}
+		\begin{align}
+			H^\omega + G_i \left(\sum_{q \in \mathcal{Q}_i} H^{\bar{\omega}^q} \hat{y}_i^q - H^\omega \right) \geq \hat{t}_i \qquad \qquad \forall i \in I\\
+			H^\omega - (1 - G_i) \left(H^\omega - \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} \hat{y}_i^q \right) \leq \hat{t}_i \qquad \qquad \forall i \in I.
+		\end{align}
+	\end{subequations}
+	The multiplication of \(G_i \hat{y}_i^q\) makes the dual of subproblem no longer linear of \(y\). To fix this, since \(\hat{y}_i^q\) is binary and \(G_i\) for all \(i \in I, q \in \mathcal{Q}_i\), we can introduce variables \(F_i^q\) to linearize the bilinear term and rewrite constraints~\eqref{cons:newBoundsm} as follows:
+	\begin{subequations} \label{cons:newBoundsmlin}
+		\begin{align}
+			H^\omega + \sum_{q \in \mathcal{Q}_i} H^{\bar{\omega}^q} F_i^q - H^\omega G_i \geq \hat{t}_i \qquad \qquad \forall i \in I \label{cons:FG1}\\
+			G_i H^\omega - \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} F_i^q \leq \hat{t}_i - \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} \hat{y}_i^q \qquad \qquad \forall i \in I \label{cons:FG2}\\
+			F_i^q \leq G_i \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i \label{cons:FGlin1}\\
+			F_i^q \leq \hat{y}_i^q \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i \label{cons:FGlin2}\\
+			F_i^q \geq G_i + \hat{y}_i^q - 1 \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i. \label{cons:FGlin3}
+		\end{align}
+	\end{subequations}
+	In the subproblem, for each activity \(i \in I\), there is only one \(\hat{q} \in \mathcal{Q}_i\) such that \(\hat{y}_i^{\hat{q}} = 1\), which means \(\hat{t}_i \in [H^{\underbar{\omega}^{\hat{q}}},H^{\bar{\omega}^{\hat{q}}}]\). We examine the validity and effectiveness result of these tightened constraints. For validity, we check if constraints~\eqref{cons:newBoundsm} matches the logic when \(G_i\) is binary, while for effectiveness, we need to compare the feasible range of \(G\) in constraints~\eqref{cons:Grange} and that specified by constraints~\eqref{cons:newBoundsm}. \\
+	\newline
+	For a specific \(i \in I\), constraints~\eqref{cons:newBoundsm} can be rewritten using \(\hat{q}\):
+	\begin{subequations} \label{cons:sGnew}
+		\begin{align}
+		H^\omega + G_i \left( H^{\bar{\omega}^{\hat{q}}} - H^\omega \right) \geq \hat{t}_i \label{cons:sGnew1}\\
+		H^\omega - (1 - G_i) \left(H^\omega - H^{\underbar{\omega}^{\hat{q}}} \right) \leq \hat{t}_i. \label{cons:sGnew2}
+		\end{align}
+	\end{subequations}
+	For a scenario \(\omega \in \Omega\), there are three possible positions of \(H^\omega\) relative to this range with \(\hat{y}_i^{\hat{q}} = 1\): \(H^\omega \in [H^{\underbar{\omega}^{\hat{q}}},H^{\bar{\omega}^{\hat{q}}}]\), \(H^\omega < H^{\underbar{\omega}^{\hat{q}}}\), or \(H^\omega > H^{\bar{\omega}^{\hat{q}}}\). When \(G_i = 1\), the left-hand side of constraint~\eqref{cons:sGnew1} is \(H^{\bar{\omega}^{\hat{q}}}\) and the left-hand side of constraint~\eqref{cons:sGnew2} is \(H^\omega\). When \(G_i = 0\), the left-hand side of constraint~\eqref{cons:sGnew1} is \(H^\omega\), and the left-hand side of constraint~\eqref{cons:sGnew2} is \(H^{\underbar{\omega}^{\hat{q}}}\).
+	\begin{enumerate}
+		\item 
+			\(H^\omega \in [H^{\underbar{\omega}^{\hat{q}}},H^{\bar{\omega}^{\hat{q}}})\): we can see that if \(\hat{t}_i \geq H^\omega\), by logic \(G_i\) should take value \(1\). Constraints~\eqref{cons:sGnew} match \(\hat{t}_i \geq H^\omega\) for \(G_i = 1\) and is violated for \(G_i = 0\). Similar validity results hold if \(\hat{t}_i < H^\omega\). In addition, the possible value \(G_i\) can take changes from the one shown in~\eqref{cons:Grange} to:
+			\begin{equation*}
+			\left(\hat{t}_i - H^\omega \right)/\left( H^{\bar{\omega}^{\hat{q}}} - H^\omega \right) \leq G_i \leq (\hat{t}_i - H^\omega)/\left(H^\omega - H^{\underbar{\omega}^{\hat{q}}} \right) + 1
+			\end{equation*}
+			Since the value of \(M\) decreases compared to constraints~\eqref{cons:Grange}, when \(\hat{t}_i \geq H^\omega\), the lower bound increases and upper bound is \(1\). When \(\hat{t}_i < H^\omega\), the upper bound decreases and the lower bound is \(0\). Therefore, the feasible range of \(G_i\) for each \(i \in I\) shrinks, which achieves the goal to tighten the subproblem relaxation.
+		\item 
+			\(H^\omega < H^{\underbar{\omega}^{\hat{q}}}\): we can see \(G_i = 1\) is feasible and \(G_i = 0\) violates constraint~\eqref{cons:sGnew1}. The possible value \(G_i\) can take becomes:
+			\begin{align*}
+			G_i \geq \left(\hat{t}_i - H^\omega \right)/\left( H^{\bar{\omega}^{\hat{q}}} - H^\omega \right)\\
+			G_i \geq (\hat{t}_i - H^\omega)/\left(H^\omega - H^{\underbar{\omega}^{\hat{q}}} \right) + 1.
+			\end{align*}
+			Similar to Case 1, the lower bound increases compared to using a large \(M\) and the upper bound is \(1\), and we achieve a tightened relaxation.
+		\item 
+			\(H^\omega \geq H^{\bar{\omega}^{\hat{q}}}\): we can see \(G_i = 0\) is feasible and \(G_i = 1\) violates constraint~\eqref{cons:sGnew2}. The possible value \(G_i\) can take becomes:
+			\begin{align*}
+			G_i \leq \left(\hat{t}_i - H^\omega \right)/\left( H^{\bar{\omega}^{\hat{q}}} - H^\omega \right)\\
+			G_i \leq (\hat{t}_i - H^\omega)/\left(H^\omega - H^{\underbar{\omega}^{\hat{q}}} \right) + 1.
+			\end{align*}
+			Similar to Case 1, the upper bound decreases compared to using a large \(M\) and the lower bound is \(0\), and we achieve a tightened relaxation.
+	\end{enumerate}
+	The tightened constraints~\eqref{cons:newBoundsm} is shown to have validity and effectiveness properties. However, for the latter two situations, \(H^\omega < H^{\underbar{\omega}^{\hat{q}}}\) and \(H^\omega > H^{\bar{\omega}^{\hat{q}}}\), \(G_i\) can still take fractional value. We further tighten the formulation by adding two constraints involving \(y\), such that if the subproblems belonging to those two situations, \(G_i\) can be fixed as either \(0\) or \(1\). For scenario \(\omega \in \Omega\), suppose solving the master problem provides the solution \(\hat{y}_i^q, \forall i \in I, q \in \mathcal{Q}_i\), we have:
+		\begin{equation}\label{cons:subyG}
+			\sum_{q \in \mathcal{Q}_i, H^\omega < H^{\underbar{\omega}^q}} \hat{y}_i^q \leq G_i \leq 1 - \sum_{q \in \mathcal{Q}_i, H^\omega \geq H^{\bar{\omega}^q}} \hat{y}_i^q \qquad \forall i \in I 
+		\end{equation}
+	Again we check the validity and the effectiveness result of constraints~\eqref{cons:subyG} for the three situations listed above:
+	\begin{enumerate}
+		\item 
+			\(H^\omega \in [H^{\underbar{\omega}^{\hat{q}}},H^{\bar{\omega}^{\hat{q}}})\): the lower bound is \(0\) since \(y_i^q = 0\) for all elements of partition left of \(\hat{q}\), and the upper bound is \(1\) because \(y_i^q = 0\) for all elements of partition right of \(\hat{q}\). Therefore, \(0 \leq G_i \leq 1\) is valid.
+		\item 
+			\(H^\omega < H^{\underbar{\omega}^{\hat{q}}}\): the lower bound is \(1\) since the summation term, \(\sum_{q \in \mathcal{Q}_i, H^\omega < H^{\underbar{\omega}^q}} \hat{y}_i^q\), includes \(y_i^{\hat{q}}\), which forces \(G_i = 1\). This matches the logic since \(\hat{t}_i \geq H^\omega\).
+		\item 
+			\(H^\omega \geq H^{\bar{\omega}^{\hat{q}}}\): the upper bound is \(1\) since the summation term, \(\sum_{q \in \mathcal{Q}_i, H^\omega \geq H^{\bar{\omega}^q}} \hat{y}_i^q\), includes \(y_i^{\hat{q}}\), which forces \(G_i = 0\). This matches the logic since \(\hat{t}_i \leq H^\omega\).
+	\end{enumerate}
+	With the addition of constraints~\eqref{cons:newBoundsmlin} and~\eqref{cons:subyG} in the subproblems, we present the tightened version of subproblems as follows: 
+	\begin{subequations}
+		\label{prob:subTightened}
+		\begin{align}
+		(S_P^\omega) \qquad \min \quad & t_T \\
+		\text{s.t.} \quad & H^\omega + \sum_{q \in \mathcal{Q}_i} H^{\bar{\omega}^q} F_i^q - H^\omega G_i \geq \hat{t}_i \qquad \qquad \forall i \in I \label{cons:sFG1t}\\
+		& G_i H^\omega - \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} F_i^q \leq \hat{t}_i - \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} \hat{y}_i^q \qquad \qquad \forall i \in I \label{cons:sFG2t}\\
+		& F_i^q \leq G_i \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i \label{cons:sFGlin1t}\\
+		& F_i^q \leq \hat{y}_i^q \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i \label{cons:sFGlin2t}\\
+		& F_i^q \geq G_i + \hat{y}_i^q - 1 \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i. \label{cons:sFGlin3t}\\
+		& G_i \geq \sum_{q \in \mathcal{Q}_i, H^\omega < H^{\underbar{\omega}^q}} \hat{y}_i^q \qquad \qquad \forall i \in I \label{cons:syG1t}\\
+		& G_i \leq 1 - \sum_{q \in \mathcal{Q}_i, H^\omega \geq H^{\bar{\omega}^q}} \hat{y}_i^q \qquad \qquad \forall i \in I \label{cons:syG2t}\\
+		& \text{Constraints~\eqref{cons:stG1}-\eqref{cons:subH}}\\
+		& 0 \leq x_{ij} \leq 1 \qquad \qquad \forall \,i \in I, j \in J_i\\
+		& 0 \leq z_{ij} \leq 1 \qquad \qquad \forall \,i \in I, j \in J_i\\
+		& 0 \leq G_i \leq 1. \qquad \qquad \forall \,i \in I. \label{cons:G01t}
+		\end{align}
+	\end{subequations}
+	Suppose we solve the subproblems \((S_P^\omega)\) for every \(\omega \in \Omega\) and generate a linear cut indexed by \(\ell\):
+	\begin{equation} \label{cons:cut}
+		\theta^\omega \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) + \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_i^{\omega,q,\ell} \left( y_i^{q} - \hat{y}_i^{q,\ell} \right).
+	\end{equation}
+	Since the subproblem is a linear relaxation, \(\theta^\omega\) is a lower approximation of \(f^\omega\) for the current partition. However, since the validity result depends on the current partition, the cut needs to be modified once the partition is updated to retain the validity result. We assume that the update only refines the partition for each \(i \in I\):
+	\begin{assumption}
+		For two partitions \(\mathcal{P}^1_i\) and \(\mathcal{P}^2_i\), indexed by \(\mathcal{Q}^1_i\) and \(\mathcal{Q}^2_i\) respectively, where \(\mathcal{P}^2_i\) is used in a later iteration than \(\mathcal{P}^1_i\), we have:
+		\begin{equation*}
+		\forall q^2 \in \mathcal{Q}^2_i, \exists q^1 \in \mathcal{Q}^1_i \text{ s.t. } \bar{\omega}^{q^1} \geq \bar{\omega}^{q^2} \text{ and } \underbar{\omega}^{q^1} \leq \underbar{\omega}^{q^1}.
+		\end{equation*}
+	\end{assumption}
+	\noi Suppose at the current iteration for each \(i \in I\), the partition is \(\mathcal{P}_i\) indexed by \(\mathcal{Q}_i\), cut~\eqref{cons:cut} can be updated to:
+	\begin{align} \label{cons:updatedcut}
+		& \theta^\omega \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) + \nonumber \\
+		& \qquad \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_i^{\omega,q,\ell} \left( \sum_{\tilde{q} \in \mathcal{Q}_i, \bar{H}_i^{\tilde{q}} \leq \bar{H}_i^{\ell,q},\underbar{H}_i^{\tilde{q}} \geq \underbar{H}_i^{\ell,q} }y_i^{\tilde{q}} - \hat{y}_i^{q,\ell} \right) \nonumber\\
+		& \qquad \forall \ell = 1,2, \dots,
+	\end{align}
+	and we prove the validity of this updated cut:
+	\begin{proposition}
+		With constraint~\eqref{cons:updatedcut}, \(\theta^\omega\) is a valid lower approximation of \(f^\omega\) for all \(\omega \in \Omega\).
+	\end{proposition}
+	\begin{proof}
+		content...
+	\end{proof}
+	\noi Here we present the modified master problem with valid cuts~\eqref{cons:updatedcut}:
+	\begin{subequations}
+		\begin{align}
+		(M_P) \quad \min \quad &p^0 t_T + \sum_{\omega \in \Omega} p^\omega \theta^{\omega}\\
+		\text{s.t.} \quad & t_k - t_i \geq D_{i}(1 - \sum_{j \in J_i} x_{ij} e_{ij}) \qquad \qquad \forall \,i \in I, (i,k) \in \mathcal{A} \label{cons:MpSep}\\
+		& \sum_{i \in I} \sum_{j \in J_i} b_{ij}x_{ij} \leq B  \label{cons:MpBudget}\\
+		& \sum_{j \in J_i} x_{ij} \leq 1  \qquad \qquad \forall \,i \in I \label{cons:MpSingleBudget}\\
+		& \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} y_i^{q} \leq t_i \leq \sum_{q \in \mathcal{Q}_i} H^{\bar{\omega}^q} y_i^{q} \qquad \qquad \forall i \in I\\
+		& \sum_{q \in \mathcal{Q}_i} y^q_i = 1 \qquad \qquad \forall i \in I \\
+		& \theta^\omega \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) \nonumber \\
+		&\qquad + \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_i^{\omega,q,\ell} \left( \sum_{\tilde{q} \in \mathcal{Q}_i, \bar{H}_i^{\tilde{q}} \leq \bar{H}_i^{\ell,q},\underbar{H}_i^{\tilde{q}} \geq \underbar{H}_i^{\ell,q} }y_i^{\tilde{q}} - \hat{y}_i^{q,\ell} \right) \nonumber \\
+		& \qquad  \forall \omega \in \Omega, \ell = 1, 2, \dots\\
+		& y_i^q \in \{0,1\} \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i\\
+		& t_i \geq 0 \qquad \qquad \forall \,i \in I\\
+		& 0 \leq x_{ij} \leq 1 \qquad \qquad \forall \,i \in I, j \in J_i.
 		\end{align}
 	\end{subequations}
 	\textcolor{blue}{
-		Proof of NP-hard.\\
-		Proof of validity of tighter cuts: strengthened Benders cuts.\\
-		Proof of increasing-decreasing behavior.
-	}
+	\begin{itemize}
+		\item algorithm
+		\item end points of each partition
+		\item proof of convergence if we have \(y_i^q\) for every \(\omega\)
+	\end{itemize}}
 	\begin{comment}
 	\textcolor{blue}{ The materials above are the most important idea I want to convey in this section. Here are some additional results we have discussed but I haven't compiled to \LaTeX \ yet. Time allowing, I can add some stuff in maybe tonight or this coming week.
 		\begin{itemize}

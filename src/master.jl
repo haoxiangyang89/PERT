@@ -223,56 +223,12 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax)
         H[ω] = disData[ω].H;
     end
 
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9,OutputFlag = 0));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
       t[i in pData.II] >= 0
       y[i in pData.II, par in 1:length(divSet[i])], Bin
-    end);
-    @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
-    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
-    @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
-    @constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSet[i][par].endH]*y[i,par] for par in 1:length(divSet[i])));
-    @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSet[i])));
-    @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
-    @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
-    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
-
-    # add the cut
-    # cutInfo = 2 dimensional vector, first dimention record the primal solution,
-    # second dimension record the dual solution for every scenario
-    for nc in 1:length(cutSet)
-        for ω in Ω
-            if cutSet[nc][2][ω] != []
-                # if there is a cut for scenario ω in iteration nc
-                # @constraint(mp, θ[ω] >= cutSet[nc][2][ω][1] + sum(cutSet[nc][2][ω][2][i]*(mp[:t][i] - cutSet[nc][1][1][i]) for i in pData.II) +
-                #     sum(sum(cutSet[nc][2][ω][3][i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                #     sum(sum(cutSet[nc][2][ω][4][i,revPar(cutSet[nc][1][4][i],divSet[i][par])]*(mp[:y][i,par] - cutSet[nc][1][3][i,revPar(cutSet[nc][1][4][i],divSet[i][par])]) for par in 1:length(divSet[i])) for i in pData.II));
-                @constraint(mp, θ[ω] >= cutSet[nc][2][ω][1] + sum(cutSet[nc][2][ω][2][i]*(mp[:t][i] - cutSet[nc][1][1][i]) for i in pData.II) +
-                    sum(sum(cutSet[nc][2][ω][3][i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                    sum(sum(cutSet[nc][2][ω][4][i,par]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par]) for par in 1:length(cutSet[nc][1][4][i])) for i in pData.II));
-            end
-        end
-    end
-
-    return mp;
-end
-
-function createMaster_DivR(pData,disData,Ω,divSet,divDet,cutSet,Tmax)
-    H = Dict();
-    H[0] = 0;
-    H[length(Ω)+1] = Tmax;
-    for ω in Ω
-        H[ω] = disData[ω].H;
-    end
-
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
-    @variables(mp, begin
-      θ[Ω] >= 0
-      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
-      t[i in pData.II] >= 0
-      0 <= y[i in pData.II, par in 1:length(divSet[i])] <= 1
     end);
     @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));

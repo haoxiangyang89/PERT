@@ -26,7 +26,7 @@ kInputAdd = "/home/haoxiang/PERT_tests/14_ExponentialD_LogNormalH/test_14_K.csv"
 pData = readInP(pInputAdd,kInputAdd);
 nameD,dparams = readInUnc(ϕInputAdd);
 disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500,1 - pData.p0);
-disData = orderdisData(disData,Ω
+disData = orderdisData(disData,Ω);
 
 text,xext,fext,gext,mp = extForm_cheat(pData,disData,Ω,999999);
 ubmp = mp.objVal;
