@@ -84,7 +84,7 @@ function extForm_cheat(pData,disData,Ω,prec = 1e-4,TL = Inf)
 
     text = Dict();
     xext = Dict();
-    Gext = Dict();
+    gext = Dict();
     for i in pData.II
         text[i] = getvalue(mp[:t0][i]);
         for j in pData.Ji[i]

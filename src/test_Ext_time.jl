@@ -35,7 +35,7 @@ timedecomp = toc();
 gapdecomp = (ubCost - lbCost)/ubCost;
 
 tic();
-text,xext,fext,gext,mp = extForm_cheat(pData,disData,Ω,999999);
+text,xext,fext,gext,mp = extForm_cheat(pData,disData,Ω,1e-2,999999);
 timeext = toc();
 ubmp = mp.objVal;
 lbmp = mp.objBound;
