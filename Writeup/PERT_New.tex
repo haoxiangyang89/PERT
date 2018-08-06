@@ -227,7 +227,7 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 	\begin{subequations}
 		\label{prob:masterOri}
 		\begin{align}
-		(M) \quad \min \quad &p^0 t_T + \sum_{\omega \in \Omega} p^\omega f^\omega(t,x)\\
+		(M) \quad z^* = \min \quad &p^0 t_T + \sum_{\omega \in \Omega} p^\omega f^\omega(t,x)\\
 		\text{s.t.} \quad & t_k - t_i \geq D_{i}(1 - \sum_{j \in J_i} x_{ij} e_{ij}) \qquad \qquad \forall \,i \in I, (i,k) \in \mathcal{A} \label{cons:MSep}\\
 		& \sum_{i \in I} \sum_{j \in J_i} b_{ij}x_{ij} \leq B  \label{cons:MBudget}\\
 		& \sum_{j \in J_i} x_{ij} \leq 1  \qquad \qquad \forall \,i \in I \label{cons:MSingleBudget}\\
@@ -383,7 +383,7 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 	\begin{subequations}
 		\label{prob:subTightened}
 		\begin{align}
-		(S_P^\omega) \qquad \min \quad & t_T \\
+		(S_P^\omega) \qquad v^\omega = \min \quad & t_T \\
 		\text{s.t.} \quad & H^\omega + \sum_{q \in \mathcal{Q}_i} H^{\bar{\omega}^q} F_i^q - H^\omega G_i \geq \hat{t}_i \qquad \qquad \forall i \in I \label{cons:sFG1t}\\
 		& G_i H^\omega - \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} F_i^q \leq \hat{t}_i - \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} \hat{y}_i^q \qquad \qquad \forall i \in I \label{cons:sFG2t}\\
 		& F_i^q \leq G_i \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i \label{cons:sFGlin1t}\\
@@ -397,9 +397,9 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 		& 0 \leq G_i \leq 1. \qquad \qquad \forall \,i \in I. \label{cons:G01t}
 		\end{align}
 	\end{subequations}
-	Suppose we solve the subproblems \((S_P^\omega)\) for every \(\omega \in \Omega\) and generate a linear cut indexed by \(\ell\):
+	Suppose we solve the subproblems \((S_P^\omega)\) for every \(\omega \in \Omega\) and generate a linear cut indexed by \(\ell\), where coefficients \(\pi,\lambda\) and \(\gamma\) can be calculated based on the dual variables obtained:
 	\begin{equation} \label{cons:cut}
-		\theta^\omega \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) + \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_i^{\omega,q,\ell} \left( y_i^{q} - \hat{y}_i^{q,\ell} \right).
+		\theta^\omega \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) + \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_{i,q}^{\omega,\ell} \left( y_i^{q} - \hat{y}_i^{q,\ell} \right).
 	\end{equation}
 	Since the subproblem is a linear relaxation, \(\theta^\omega\) is a lower approximation of \(f^\omega\) for the current partition. However, since the validity result depends on the current partition, the cut needs to be modified once the partition is updated to retain the validity result. We assume that the update only refines the partition for each \(i \in I\):
 	\begin{assumption}
@@ -411,7 +411,7 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 	\noi Suppose at the current iteration for each \(i \in I\), the partition is \(\mathcal{P}_i\) indexed by \(\mathcal{Q}_i\), cut~\eqref{cons:cut} can be updated to:
 	\begin{align} \label{cons:updatedcut}
 		& \theta^\omega \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) + \nonumber \\
-		& \qquad \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_i^{\omega,q,\ell} \left( \sum_{\tilde{q} \in \mathcal{Q}_i, \bar{H}_i^{\tilde{q}} \leq \bar{H}_i^{\ell,q},\underbar{H}_i^{\tilde{q}} \geq \underbar{H}_i^{\ell,q} }y_i^{\tilde{q}} - \hat{y}_i^{q,\ell} \right) \nonumber\\
+		& \qquad \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_{i,q}^{\omega,\ell} \left( \sum_{\tilde{q} \in \mathcal{Q}_i, H^{\bar{\omega}^{\tilde{q}}} \leq H^{\bar{\omega}^{q,\ell}},H^{\underbar{\omega}^{\tilde{q}}} \geq H^{\bar{\omega}^{q,\ell}} }y_i^{\tilde{q}} - \hat{y}_i^{q,\ell} \right) \nonumber\\
 		& \qquad \forall \ell = 1,2, \dots,
 	\end{align}
 	and we prove the validity of this updated cut:
@@ -422,22 +422,45 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 		content...
 	\end{proof}
 	\noi Here we present the modified master problem with valid cuts~\eqref{cons:updatedcut}:
-	\begin{subequations}
+	\begin{subequations} \label{prob:masterTightened}
 		\begin{align}
-		(M_P) \quad \min \quad &p^0 t_T + \sum_{\omega \in \Omega} p^\omega \theta^{\omega}\\
+		(M_P) \quad z_P^* = \min \quad &p^0 t_T + \sum_{\omega \in \Omega} p^\omega \theta^{\omega}\\
 		\text{s.t.} \quad & t_k - t_i \geq D_{i}(1 - \sum_{j \in J_i} x_{ij} e_{ij}) \qquad \qquad \forall \,i \in I, (i,k) \in \mathcal{A} \label{cons:MpSep}\\
 		& \sum_{i \in I} \sum_{j \in J_i} b_{ij}x_{ij} \leq B  \label{cons:MpBudget}\\
 		& \sum_{j \in J_i} x_{ij} \leq 1  \qquad \qquad \forall \,i \in I \label{cons:MpSingleBudget}\\
 		& \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} y_i^{q} \leq t_i \leq \sum_{q \in \mathcal{Q}_i} H^{\bar{\omega}^q} y_i^{q} \qquad \qquad \forall i \in I\\
 		& \sum_{q \in \mathcal{Q}_i} y^q_i = 1 \qquad \qquad \forall i \in I \\
 		& \theta^\omega \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) \nonumber \\
-		&\qquad + \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_i^{\omega,q,\ell} \left( \sum_{\tilde{q} \in \mathcal{Q}_i, \bar{H}_i^{\tilde{q}} \leq \bar{H}_i^{\ell,q},\underbar{H}_i^{\tilde{q}} \geq \underbar{H}_i^{\ell,q} }y_i^{\tilde{q}} - \hat{y}_i^{q,\ell} \right) \nonumber \\
+		&\qquad + \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_{i,q}^{\omega,\ell} \left( \sum_{\tilde{q} \in \mathcal{Q}_i, \bar{H}_i^{\tilde{q}} \leq \bar{H}_i^{\ell,q},\underbar{H}_i^{\tilde{q}} \geq \underbar{H}_i^{\ell,q} }y_i^{\tilde{q}} - \hat{y}_i^{q,\ell} \right) \nonumber \\
 		& \qquad  \forall \omega \in \Omega, \ell = 1, 2, \dots\\
 		& y_i^q \in \{0,1\} \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i\\
 		& t_i \geq 0 \qquad \qquad \forall \,i \in I\\
 		& 0 \leq x_{ij} \leq 1 \qquad \qquad \forall \,i \in I, j \in J_i.
 		\end{align}
 	\end{subequations}
+	The decomposition algorithm is presented as follows:
+	\begin{algorithm}
+		\caption{Decomposition algorithm for model~\eqref{prob:extensive}}
+		\label{alg:Cut}
+		\begin{algorithmic}[1]
+			\State Initialize with cut iteration number \(\ell := 0\), lower bound \(LB := 0\), upper bound \(UB := +\infty\), initial partition \(\mathcal{P}^\ell\) with its indexed set \(\mathcal{Q}^\ell\), and specified tolerance \(\epsilon > 0\) and \(\delta > 0\);
+			\While{\(\frac{UB - LB}{UB} > \epsilon\)} 
+			\State Solve master problem \((M_P)\) and obtain solution \(\hat{t}^{\ell}, \hat{x}^{\ell}, \hat{y}^{\ell}, \hat{\theta}^{\ell}\) and optimal value \(z_{P}^*\);
+			\State Update \(LB = z_{P}^*\) if \(z_{P}^* > LB\);
+			\State For each \(\omega \in \Omega\), solve problem \((S^\omega)\) and obtain \(f^{\omega}(\hat{t},\hat{x})\). 
+			\State Calculate \(z^* = p^0 \hat{t}_T + \sum_{\omega \in \Omega} p^\omega f^{\omega}(\hat{t},\hat{x})\) and update \(UB := z^*\) if \(z^* < UB\);
+			\State For each \(\omega \in \Omega\), solve problem \((S_P^\omega)\) given \(\hat{t}^{\ell}, \hat{x}^{\ell}, \hat{y}^{\ell}, \hat{\theta}^{\ell}\) and obtain optimal value \(v^{\omega,\ell}\) and coefficients \(\pi^{\omega,\ell}, \lambda^{\omega,\ell}, \gamma^{\omega,\ell}\);
+			\If{\(z^*_P \geq p^0 \hat{t}_T + \sum_{\omega \in \Omega} p^\omega v^{\omega,\ell} - \delta\)}
+			\State Obtain optimal value \(V^*\); 
+			\Else
+			\State Stop and return the status of infeasibility;
+			\EndIf
+			\vspace{0.1cm}
+			\EndWhile{\textbf{end while}}
+			\State Output \(V^*\) as a lower bound on the optimal value of model~\eqref{prob:extensive}, and output \(\hat{s}^{p,k}, \hat{s}^{q,k}\) as an \(\epsilon\)-feasible solution.
+		\end{algorithmic}
+	\end{algorithm}
+
 	\textcolor{blue}{
 	\begin{itemize}
 		\item algorithm

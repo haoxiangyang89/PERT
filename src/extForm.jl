@@ -45,13 +45,13 @@ function extForm(pData,disData,Ω,TL = Inf)
     return text,xext,fext,gext,mp;
 end
 
-function extForm_cheat(pData,disData,Ω,TL = Inf)
+function extForm_cheat(pData,disData,Ω,prec = 1e-4,TL = Inf)
     M = Dict();
     for ω in Ω
         M[ω] = sum(max(pData.D[i],pData.D[i]+disData[ω].d[i]) for i in pData.II if i != 0);
     end
 
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9, TimeLimit = TL));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9, TimeLimit = TL,MIPGap = prec));
     # mp = Model(solver = CbcSolver());
     @variable(mp,t0[i in pData.II] >= 0);
     @variable(mp,0 <= x0[i in pData.II, j in pData.Ji[i]] <= 1);
