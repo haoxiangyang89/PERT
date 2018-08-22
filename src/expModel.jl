@@ -38,7 +38,7 @@ function expModel(pData,eH,ed,M = 9999999)
         for j in pData.Ji[i]
             xexp[i,j] = getvalue(mp[:x0][i,j]);
         end
-        gexp[i,ω] = getvalue(mp[:G][i]);
+        gexp[i] = getvalue(mp[:G][i]);
     end
     fexp = getobjectivevalue(mp);
     return texp,xexp,fexp,gexp,mp;
