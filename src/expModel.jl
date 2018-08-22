@@ -28,5 +28,18 @@ function expModel(pData,eH,ed,M = 9999999)
     @constraint(mp, Slinear3[i in pData.II, j in pData.Ji[i]], s[i,j] >= x[i,j] - 1 + G[i]);
 
     @objective(mp,Min,pData.p0*t0[0] + (1 - pData.p0)*t[0]);
-    return mp;
+
+    solve(mp);
+    texp = Dict();
+    xexp = Dict();
+    gexp = Dict();
+    for i in pData.II
+        texp[i] = getvalue(mp[:t0][i]);
+        for j in pData.Ji[i]
+            xexp[i,j] = getvalue(mp[:x0][i,j]);
+        end
+        gexp[i,ω] = getvalue(mp[:G][i]);
+    end
+    fexp = getobjectivevalue(mp);
+    return texp,xexp,fexp,gexp,mp;
 end
