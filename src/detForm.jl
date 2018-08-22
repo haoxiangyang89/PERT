@@ -16,8 +16,14 @@ function detBuild(pData)
     @objective(mp, Min, t[0]);
     solve(mp);
 
-    tdet = getvalue(mp[:t]);
-    xdet = getvalue(mp[:x]);
+    tdet = Dict();
+    xdet = Dict();
+    for i in pData.II
+        tdet[i] = getvalue(mp[:t][i]);
+        for j in pData.Ji[i]
+            xdet[i,j] = getvalue(mp[:x][i,j]);
+        end
+    end
     fdet = getobjectivevalue(mp);
     return tdet,xdet,fdet;
 end
