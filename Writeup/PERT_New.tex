@@ -223,7 +223,7 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 	\textcolor{blue}{NP-hardness proof. Add the conclusion of consistency. Add the proof of consistency. Prove the inconsistency of the stratified sampling method. }
 	
 	\section{Decomposition Method} \label{sec:decomposition}
-	Model~\eqref{prob:extensive} is a two-stage stochastic mixed integer program (2SMIP). If we attempt to decompose it into a master problem~\eqref{prob:masterOri} and scenario-specific subproblems~\eqref{prob:subOri}, the state variables \(t\) and \(x\) are all continuous and binary variables exist in the recourse problems. The recourse problems become nonconvex. Most of previous literature of stochastic mixed integer programming assumes a special structure or property which cannot be applied to our problem setting. For example, Sherali/Fracticelli, Sen/Higle, Ntaimo/Sen, Sherali/Zhu, Sen/Sherali, Gade/Kucukyavuz/Sen solve 2SMIPs with pure binary first stage variables using sequential convex approximation of recourse by a branch-and-cut process framework where disjunctive cuts or Gomory cuts are added. Ahmed/Sun/Zou assumes state variables to be binary so that the Lagrangian cuts are a tight approximation of the recourse function. Caroe/Tind solves a more general case of 2SMIP by using the MIP duality theory but the practical tractability is not optimistic. 
+	Model~\eqref{prob:extensive} is a two-stage stochastic mixed integer program (2SMIP). If we attempt to decompose it into a master problem~\eqref{prob:masterOri} and scenario-specific subproblems~\eqref{prob:subOri}, the state variables \(t\) and \(x\) are all continuous and binary variables exist in the recourse problems. The recourse problems become nonconvex. Most of previous literature of stochastic mixed integer programming assumes a special structure or property which cannot be applied to our problem setting. \textcolor{blue}{For example, Sherali/Fracticelli, Sen/Higle, Ntaimo/Sen, Sherali/Zhu, Sen/Sherali, Gade/Kucukyavuz/Sen solve 2SMIPs with pure binary first stage variables using sequential convex approximation of recourse by a branch-and-cut process framework where disjunctive cuts or Gomory cuts are added. Ahmed/Sun/Zou assumes state variables to be binary so that the Lagrangian cuts are a tight approximation of the recourse function. Caroe/Tind solves a more general case of 2SMIP by using the MIP duality theory but the practical tractability is not optimistic. }
 	\begin{subequations}
 		\label{prob:masterOri}
 		\begin{align}
@@ -346,7 +346,7 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 	For a scenario \(\omega \in \Omega\), there are three possible positions of \(H^\omega\) relative to this range with \(\hat{y}_i^{\hat{q}} = 1\): \(H^\omega \in [H^{\underbar{\omega}^{\hat{q}}},H^{\bar{\omega}^{\hat{q}}}]\), \(H^\omega < H^{\underbar{\omega}^{\hat{q}}}\), or \(H^\omega > H^{\bar{\omega}^{\hat{q}}}\). When \(G_i = 1\), the left-hand side of constraint~\eqref{cons:sGnew1} is \(H^{\bar{\omega}^{\hat{q}}}\) and the left-hand side of constraint~\eqref{cons:sGnew2} is \(H^\omega\). When \(G_i = 0\), the left-hand side of constraint~\eqref{cons:sGnew1} is \(H^\omega\), and the left-hand side of constraint~\eqref{cons:sGnew2} is \(H^{\underbar{\omega}^{\hat{q}}}\).
 	\begin{enumerate}
 		\item 
-			\(H^\omega \in [H^{\underbar{\omega}^{\hat{q}}},H^{\bar{\omega}^{\hat{q}}})\): we can see that if \(\hat{t}_i \geq H^\omega\), by logic \(G_i\) should take value \(1\). Constraints~\eqref{cons:sGnew} match \(\hat{t}_i \geq H^\omega\) for \(G_i = 1\) and is violated for \(G_i = 0\). Similar validity results hold if \(\hat{t}_i < H^\omega\). In addition, the possible value \(G_i\) can take changes from the one shown in~\eqref{cons:Grange} to:
+			\(H^\omega \in [H^{\underbar{\omega}^{\hat{q}}},H^{\bar{\omega}^{\hat{q}}}]\): we can see that if \(\hat{t}_i \geq H^\omega\), by logic \(G_i\) should take value \(1\). Constraints~\eqref{cons:sGnew} match \(\hat{t}_i \geq H^\omega\) for \(G_i = 1\) and is violated for \(G_i = 0\). Similar validity results hold if \(\hat{t}_i < H^\omega\). In addition, the possible value \(G_i\) can take changes from the one shown in~\eqref{cons:Grange} to:
 			\begin{equation*}
 			\left(\hat{t}_i - H^\omega \right)/\left( H^{\bar{\omega}^{\hat{q}}} - H^\omega \right) \leq G_i \leq (\hat{t}_i - H^\omega)/\left(H^\omega - H^{\underbar{\omega}^{\hat{q}}} \right) + 1
 			\end{equation*}
@@ -359,7 +359,7 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 			\end{align*}
 			Similar to Case 1, the lower bound increases compared to using a large \(M\) and the upper bound is \(1\), and we achieve a tightened relaxation.
 		\item 
-			\(H^\omega \geq H^{\bar{\omega}^{\hat{q}}}\): we can see \(G_i = 0\) is feasible and \(G_i = 1\) violates constraint~\eqref{cons:sGnew2}. The possible value \(G_i\) can take becomes:
+			\(H^\omega > H^{\bar{\omega}^{\hat{q}}}\): we can see \(G_i = 0\) is feasible and \(G_i = 1\) violates constraint~\eqref{cons:sGnew2}. The possible value \(G_i\) can take becomes:
 			\begin{align*}
 			G_i \leq \left(\hat{t}_i - H^\omega \right)/\left( H^{\bar{\omega}^{\hat{q}}} - H^\omega \right)\\
 			G_i \leq (\hat{t}_i - H^\omega)/\left(H^\omega - H^{\underbar{\omega}^{\hat{q}}} \right) + 1.
@@ -368,28 +368,28 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 	\end{enumerate}
 	The tightened constraints~\eqref{cons:newBoundsm} is shown to have validity and effectiveness properties. However, for the latter two situations, \(H^\omega < H^{\underbar{\omega}^{\hat{q}}}\) and \(H^\omega > H^{\bar{\omega}^{\hat{q}}}\), \(G_i\) can still take fractional value. We further tighten the formulation by adding two constraints involving \(y\), such that if the subproblems belonging to those two situations, \(G_i\) can be fixed as either \(0\) or \(1\). For scenario \(\omega \in \Omega\), suppose solving the master problem provides the solution \(\hat{y}_i^q, \forall i \in I, q \in \mathcal{Q}_i\), we have:
 		\begin{equation}\label{cons:subyG}
-			\sum_{q \in \mathcal{Q}_i, H^\omega < H^{\underbar{\omega}^q}} \hat{y}_i^q \leq G_i \leq 1 - \sum_{q \in \mathcal{Q}_i, H^\omega \geq H^{\bar{\omega}^q}} \hat{y}_i^q \qquad \forall i \in I 
+			\sum_{q \in \mathcal{Q}_i, H^\omega \leq H^{\underbar{\omega}^q}} \hat{y}_i^q \leq G_i \leq 1 - \sum_{q \in \mathcal{Q}_i, H^\omega \geq H^{\bar{\omega}^q}} \hat{y}_i^q \qquad \forall i \in I 
 		\end{equation}
 	Again we check the validity and the effectiveness result of constraints~\eqref{cons:subyG} for the three situations listed above:
 	\begin{enumerate}
 		\item 
-			\(H^\omega \in [H^{\underbar{\omega}^{\hat{q}}},H^{\bar{\omega}^{\hat{q}}})\): the lower bound is \(0\) since \(y_i^q = 0\) for all elements of partition left of \(\hat{q}\), and the upper bound is \(1\) because \(y_i^q = 0\) for all elements of partition right of \(\hat{q}\). Therefore, \(0 \leq G_i \leq 1\) is valid.
+			\(H^\omega \in [H^{\underbar{\omega}^{\hat{q}}},H^{\bar{\omega}^{\hat{q}}}]\): the lower bound is \(0\) since \(y_i^q = 0\) for all elements of partition left of \(\hat{q}\), and the upper bound is \(1\) because \(y_i^q = 0\) for all elements of partition right of \(\hat{q}\). Therefore, \(0 \leq G_i \leq 1\) is valid.
 		\item 
-			\(H^\omega < H^{\underbar{\omega}^{\hat{q}}}\): the lower bound is \(1\) since the summation term, \(\sum_{q \in \mathcal{Q}_i, H^\omega < H^{\underbar{\omega}^q}} \hat{y}_i^q\), includes \(y_i^{\hat{q}}\), which forces \(G_i = 1\). This matches the logic since \(\hat{t}_i \geq H^\omega\).
+			\(H^\omega < H^{\underbar{\omega}^{\hat{q}}}\): the lower bound is \(1\) since the summation term, \(\sum_{q \in \mathcal{Q}_i, H^\omega \leq H^{\underbar{\omega}^q}} \hat{y}_i^q\), includes \(y_i^{\hat{q}}\), which forces \(G_i = 1\). This matches the logic since \(\hat{t}_i \geq H^\omega\).
 		\item 
-			\(H^\omega \geq H^{\bar{\omega}^{\hat{q}}}\): the upper bound is \(1\) since the summation term, \(\sum_{q \in \mathcal{Q}_i, H^\omega \geq H^{\bar{\omega}^q}} \hat{y}_i^q\), includes \(y_i^{\hat{q}}\), which forces \(G_i = 0\). This matches the logic since \(\hat{t}_i \leq H^\omega\).
+			\(H^\omega > H^{\bar{\omega}^{\hat{q}}}\): the upper bound is \(1\) since the summation term, \(\sum_{q \in \mathcal{Q}_i, H^\omega \geq H^{\bar{\omega}^q}} \hat{y}_i^q\), includes \(y_i^{\hat{q}}\), which forces \(G_i = 0\). This matches the logic since \(\hat{t}_i \leq H^\omega\).
 	\end{enumerate}
 	With the addition of constraints~\eqref{cons:newBoundsmlin} and~\eqref{cons:subyG} in the subproblems, we present the tightened version of subproblems as follows: 
 	\begin{subequations}
 		\label{prob:subTightened}
 		\begin{align}
-		(S_P^\omega) \qquad v^\omega = \min \quad & t_T \\
+		(S_{\mathcal{P}}^\omega) \qquad g^\omega_{\mathcal{P}}(\hat{t},\hat{x},\hat{y}) = \min \quad & t_T \\
 		\text{s.t.} \quad & H^\omega + \sum_{q \in \mathcal{Q}_i} H^{\bar{\omega}^q} F_i^q - H^\omega G_i \geq \hat{t}_i \qquad \qquad \forall i \in I \label{cons:sFG1t}\\
 		& G_i H^\omega - \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} F_i^q \leq \hat{t}_i - \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} \hat{y}_i^q \qquad \qquad \forall i \in I \label{cons:sFG2t}\\
 		& F_i^q \leq G_i \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i \label{cons:sFGlin1t}\\
 		& F_i^q \leq \hat{y}_i^q \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i \label{cons:sFGlin2t}\\
 		& F_i^q \geq G_i + \hat{y}_i^q - 1 \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i. \label{cons:sFGlin3t}\\
-		& G_i \geq \sum_{q \in \mathcal{Q}_i, H^\omega < H^{\underbar{\omega}^q}} \hat{y}_i^q \qquad \qquad \forall i \in I \label{cons:syG1t}\\
+		& G_i \geq \sum_{q \in \mathcal{Q}_i, H^\omega \leq H^{\underbar{\omega}^q}} \hat{y}_i^q \qquad \qquad \forall i \in I \label{cons:syG1t}\\
 		& G_i \leq 1 - \sum_{q \in \mathcal{Q}_i, H^\omega \geq H^{\bar{\omega}^q}} \hat{y}_i^q \qquad \qquad \forall i \in I \label{cons:syG2t}\\
 		& \text{Constraints~\eqref{cons:stG1}-\eqref{cons:subH}}\\
 		& 0 \leq x_{ij} \leq 1 \qquad \qquad \forall \,i \in I, j \in J_i\\
@@ -397,76 +397,124 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 		& 0 \leq G_i \leq 1. \qquad \qquad \forall \,i \in I. \label{cons:G01t}
 		\end{align}
 	\end{subequations}
-	Suppose we solve the subproblems \((S_P^\omega)\) for every \(\omega \in \Omega\) and generate a linear cut indexed by \(\ell\), where coefficients \(\pi,\lambda\) and \(\gamma\) can be calculated based on the dual variables obtained:
+	Suppose we solve the subproblems \((S_{\mathcal{P}}^\omega)\) for every \(\omega \in \Omega\) and generate a linear cut indexed by \(\ell\), where coefficients \(\pi,\lambda\) and \(\gamma\) can be calculated based on the dual variables obtained:
 	\begin{equation} \label{cons:cut}
 		\theta^\omega \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) + \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_{i,q}^{\omega,\ell} \left( y_i^{q} - \hat{y}_i^{q,\ell} \right).
 	\end{equation}
 	Since the subproblem is a linear relaxation, \(\theta^\omega\) is a lower approximation of \(f^\omega\) for the current partition. However, since the validity result depends on the current partition, the cut needs to be modified once the partition is updated to retain the validity result. We assume that the update only refines the partition for each \(i \in I\):
-	\begin{assumption}
-		For two partitions \(\mathcal{P}^1_i\) and \(\mathcal{P}^2_i\), indexed by \(\mathcal{Q}^1_i\) and \(\mathcal{Q}^2_i\) respectively, where \(\mathcal{P}^2_i\) is used in a later iteration than \(\mathcal{P}^1_i\), we have:
+	\begin{definition} \label{definition:refinement}
+		For two partitions \(\mathcal{P}^1_i\) and \(\mathcal{P}^2_i\), indexed by \(\mathcal{Q}^1_i\) and \(\mathcal{Q}^2_i\) respectively, where \(\mathcal{P}^2_i\) is a refinement of \(\mathcal{P}^1_i\), we have:
 		\begin{equation*}
 		\forall q^2 \in \mathcal{Q}^2_i, \exists q^1 \in \mathcal{Q}^1_i \text{ s.t. } \bar{\omega}^{q^1} \geq \bar{\omega}^{q^2} \text{ and } \underbar{\omega}^{q^1} \leq \underbar{\omega}^{q^1}.
 		\end{equation*}
-	\end{assumption}
-	\noi Suppose at the current iteration for each \(i \in I\), the partition is \(\mathcal{P}_i\) indexed by \(\mathcal{Q}_i\), cut~\eqref{cons:cut} can be updated to:
+	\end{definition}
+	\noi Suppose at the current iteration for each \(i \in I\), the partition is \(\mathcal{P}_i\) indexed by \(\mathcal{Q}_i\), and this partition is updated from past partitions by only a sequence of refinement defined in Definition~\ref{definition:refinement}, cut~\eqref{cons:cut} can be updated to the following form so that the \(y\) variable has a proper dimension matching the current partition:
 	\begin{align} \label{cons:updatedcut}
 		& \theta^\omega \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) + \nonumber \\
-		& \qquad \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_{i,q}^{\omega,\ell} \left( \sum_{\tilde{q} \in \mathcal{Q}_i, H^{\bar{\omega}^{\tilde{q}}} \leq H^{\bar{\omega}^{q,\ell}},H^{\underbar{\omega}^{\tilde{q}}} \geq H^{\bar{\omega}^{q,\ell}} }y_i^{\tilde{q}} - \hat{y}_i^{q,\ell} \right) \nonumber\\
-		& \qquad \forall \ell = 1,2, \dots,
+		& \qquad \sum_{i \in I} \sum_{\tilde{q} \in \mathcal{Q}^{\ell}_i} \gamma_{i,\tilde{q}}^{\omega,\ell} \left( \sum_{q \in \mathcal{Q}_i, H^{\bar{\omega}^{q}} \leq H^{\bar{\omega}^{\tilde{q},\ell}},H^{\underbar{\omega}^{q}} \geq H^{\bar{\omega}^{\tilde{q},\ell}} }y_i^{q} - \hat{y}_i^{\tilde{q},\ell} \right) \qquad \forall \ell = 1,2, \dots.
 	\end{align}
-	and we prove the validity of this updated cut:
-	\begin{proposition}
-		With constraint~\eqref{cons:updatedcut}, \(\theta^\omega\) is a valid lower approximation of \(f^\omega\) for all \(\omega \in \Omega\).
+	We show that, given a partition, \(\mathcal{P}\), which is updated from sequential refinement, \(\mathcal{P}^\ell, \ell = 1,2,\dots\), the cut~\eqref{cons:updatedcut} is a valid lower approximation for function \(g\):
+	\begin{proposition} \label{prop:validity}
+		Suppose we have a partition, \(\mathcal{P}\), which is indexed by sets \(\mathcal{Q}\), and the sequence of partitions, \(\{\mathcal{P}^\ell\}_{\ell = 1}\), each of which is indexed by sets \(\mathcal{Q}^\ell\). Assuming \(\mathcal{P}\) is a refinement of \(\mathcal{P}^\ell\) for every \(\ell = 1,2, \dots\), for any \(\omega \in \Omega\), we have
+		\begin{align} \label{cons:validlb}
+			&g^\omega_{\mathcal{P}}(t,x,y) \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) + \nonumber \\ 
+			& \qquad \qquad \sum_{i \in I} \sum_{\tilde{q} \in \mathcal{Q}^{\ell}_i} \gamma_{i,\tilde{q}}^{\omega,\ell} \left( \sum_{q \in \mathcal{Q}_i, H^{\bar{\omega}^{q}} \leq H^{\bar{\omega}^{\tilde{q},\ell}},H^{\underbar{\omega}^{q}} \geq H^{\bar{\omega}^{\tilde{q},\ell}} }y_i^{q} - \hat{y}_i^{\tilde{q},\ell} \right) \qquad \forall \ell = 1,2, \dots. 
+		\end{align}
+		at any given feasible \((t,x,y)\).
 	\end{proposition}
 	\begin{proof}
-		content...
+		We denote the recourse function corresponding to the partition \(\mathcal{P}^{\ell}\) as \(g^\omega_{\mathcal{P}^\ell}(t,x,y)\), where \(y\) has the correct dimension according to \(\mathcal{P}^\ell\). We first prove that 
+		\begin{equation} \label{cons:gglb}
+			g^\omega_{\mathcal{P}}(t,x,y) \geq g^{\omega}_{\mathcal{P}^\ell}(t,x,\tilde{y}) \qquad \forall \ell = 1,2,\dots
+		\end{equation}
+		where \[\tilde{y}_i^{\tilde{q}} = \sum_{q \in \mathcal{Q}_i, H^{\bar{\omega}^{q}} \leq H^{\bar{\omega}^{\tilde{q},\ell}},H^{\underbar{\omega}^{q}} \geq H^{\bar{\omega}^{\tilde{q},\ell}} }y_i^{q} \qquad  \forall i \in I, \tilde{q} \in \mathcal{Q}^\ell_i\]
+		Suppose for an \(\omega \in \Omega\) and a \((t,x,y)\), we solve the problem \(S_{\mathcal{P}}^\omega\) and obtain the optimal solution \((t^{\omega,*},x^{\omega,*},G^{\omega,*},F^{\omega,*})\). It is easy to see that by transforming \(F^{\omega,*}\) to \(\tilde{F}^{\omega,*}\) with \[\tilde{F}^{\omega,*,\tilde{q}}_i = \sum_{q \in \mathcal{Q}_i, H^{\bar{\omega}^{q}} \leq H^{\bar{\omega}^{\tilde{q},\ell}},H^{\underbar{\omega}^{q}} \geq H^{\bar{\omega}^{\tilde{q},\ell}} }F_i^{\omega,*,q} \qquad  \forall i \in I, \tilde{q} \in \mathcal{Q}^\ell_i,\]
+		we obtain a feasible solution \((t^{\omega,*},x^{\omega,*},G^{\omega,*},\tilde{F}^{\omega,*})\) to the recourse problem corresponding to the partition \(\mathcal{P}^\ell\). Therefore, inequality~\eqref{cons:gglb}. Furthermore, the cut generated at partition \(\mathcal{P}^\ell\) is
+		\[\theta^\omega \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) + \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_{i,q}^{\omega,\ell} \left( y_i^{q} - \hat{y}_i^{q,\ell} \right),\]
+		 which means that for any feasible \((t,x,\tilde{y})\), we have 
+		 \begin{equation} \label{cons:validglb}
+		 	g^\omega_{\mathcal{P}^\ell}(t,x,\tilde{y}) \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) + \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_{i,q}^{\omega,\ell} \left( \tilde{y}_i^{q} - \hat{y}_i^{q,\ell} \right).
+		 \end{equation}
+		 By substituting \(\tilde{y}\) by \(y\) and combining inequalities~\eqref{cons:gglb} and~\eqref{cons:validglb}, we obtain the result of~\eqref{cons:validlb}.
 	\end{proof}
-	\noi Here we present the modified master problem with valid cuts~\eqref{cons:updatedcut}:
+	\noi Proposition~\ref{prop:validity} states that if we perform a proper modification on the \(y\) variables to all cuts generated in the past, the modified cuts~\eqref{cons:updatedcut} will be a valid lower approximation for the current recourse function. Therefore, we incorporate the modified cuts~\eqref{cons:updatedcut} in our master problem, given a partition \(\mathcal{P}\) indexed by \(\mathcal{Q}\), which is shown as follows:
 	\begin{subequations} \label{prob:masterTightened}
 		\begin{align}
-		(M_P) \quad z_P^* = \min \quad &p^0 t_T + \sum_{\omega \in \Omega} p^\omega \theta^{\omega}\\
+		(M_{\mathcal{P}}) \quad z_{\mathcal{P}}^* = \min \quad &p^0 t_T + \sum_{\omega \in \Omega} p^\omega \theta^{\omega}\\
 		\text{s.t.} \quad & t_k - t_i \geq D_{i}(1 - \sum_{j \in J_i} x_{ij} e_{ij}) \qquad \qquad \forall \,i \in I, (i,k) \in \mathcal{A} \label{cons:MpSep}\\
 		& \sum_{i \in I} \sum_{j \in J_i} b_{ij}x_{ij} \leq B  \label{cons:MpBudget}\\
 		& \sum_{j \in J_i} x_{ij} \leq 1  \qquad \qquad \forall \,i \in I \label{cons:MpSingleBudget}\\
 		& \sum_{q \in \mathcal{Q}_i} H^{\underbar{\omega}^q} y_i^{q} \leq t_i \leq \sum_{q \in \mathcal{Q}_i} H^{\bar{\omega}^q} y_i^{q} \qquad \qquad \forall i \in I\\
-		& \sum_{q \in \mathcal{Q}_i} y^q_i = 1 \qquad \qquad \forall i \in I \\
+		& \sum_{q \in \mathcal{Q}_i} y^q_i = 1 \qquad \qquad \forall i \in I \label{cons:MpY1}\\
 		& \theta^\omega \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) \nonumber \\
-		&\qquad + \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_{i,q}^{\omega,\ell} \left( \sum_{\tilde{q} \in \mathcal{Q}_i, \bar{H}_i^{\tilde{q}} \leq \bar{H}_i^{\ell,q},\underbar{H}_i^{\tilde{q}} \geq \underbar{H}_i^{\ell,q} }y_i^{\tilde{q}} - \hat{y}_i^{q,\ell} \right) \nonumber \\
+		&\qquad + \sum_{i \in I} \sum_{\tilde{q} \in \mathcal{Q}^{\ell}_i} \gamma_{i,\tilde{q}}^{\omega,\ell} \left( \sum_{q \in \mathcal{Q}_i, \bar{H}_i^{q} \leq \bar{H}_i^{\ell,\tilde{q}},\underbar{H}_i^{q} \geq \underbar{H}_i^{\ell,\tilde{q}} }y_i^{q} - \hat{y}_i^{\tilde{q},\ell} \right) \nonumber \\
 		& \qquad  \forall \omega \in \Omega, \ell = 1, 2, \dots\\
 		& y_i^q \in \{0,1\} \qquad \qquad \forall i \in I, q \in \mathcal{Q}_i\\
 		& t_i \geq 0 \qquad \qquad \forall \,i \in I\\
 		& 0 \leq x_{ij} \leq 1 \qquad \qquad \forall \,i \in I, j \in J_i.
 		\end{align}
 	\end{subequations}
-	The decomposition algorithm is presented as follows:
+	We can see that if we keep refining the partition, the generated cuts will become tighter and we will be able to provide an improving lower bound as it progresses. The decomposition algorithm is presented as follows:
 	\begin{algorithm}
-		\caption{Decomposition algorithm for model~\eqref{prob:extensive}}
+		\caption{Decomposition algorithm to solve problem~\eqref{prob:extensive}}
 		\label{alg:Cut}
 		\begin{algorithmic}[1]
-			\State Initialize with cut iteration number \(\ell := 0\), lower bound \(LB := 0\), upper bound \(UB := +\infty\), initial partition \(\mathcal{P}^\ell\) with its indexed set \(\mathcal{Q}^\ell\), and specified tolerance \(\epsilon > 0\) and \(\delta > 0\);
+			\State Initialize with cut iteration number \(\ell = 0\), lower bound \(LB = 0\), upper bound \(UB = +\infty\), initial partition \(\mathcal{P}^\ell\) with its indexed set \(\mathcal{Q}^\ell\), and specified tolerance \(\epsilon > 0\) and \(\delta > 0\);
 			\While{\(\frac{UB - LB}{UB} > \epsilon\)} 
-			\State Solve master problem \((M_P)\) and obtain solution \(\hat{t}^{\ell}, \hat{x}^{\ell}, \hat{y}^{\ell}, \hat{\theta}^{\ell}\) and optimal value \(z_{P}^*\);
-			\State Update \(LB = z_{P}^*\) if \(z_{P}^* > LB\);
+			\State Solve master problem \((M_{\mathcal{P}})\) and obtain solution \(\hat{t}^{\ell}, \hat{x}^{\ell}, \hat{y}^{\ell}, \hat{\theta}^{\ell}\) and optimal value \(z_{P}^*\);
+			\If{\(z_{P}^* > LB\)}
+			\State Update \(LB = z_{P}^*\);
+			\EndIf
 			\State For each \(\omega \in \Omega\), solve problem \((S^\omega)\) and obtain \(f^{\omega}(\hat{t},\hat{x})\). 
-			\State Calculate \(z^* = p^0 \hat{t}_T + \sum_{\omega \in \Omega} p^\omega f^{\omega}(\hat{t},\hat{x})\) and update \(UB := z^*\) if \(z^* < UB\);
-			\State For each \(\omega \in \Omega\), solve problem \((S_P^\omega)\) given \(\hat{t}^{\ell}, \hat{x}^{\ell}, \hat{y}^{\ell}, \hat{\theta}^{\ell}\) and obtain optimal value \(v^{\omega,\ell}\) and coefficients \(\pi^{\omega,\ell}, \lambda^{\omega,\ell}, \gamma^{\omega,\ell}\);
-			\If{\(z^*_P \geq p^0 \hat{t}_T + \sum_{\omega \in \Omega} p^\omega v^{\omega,\ell} - \delta\)}
-			\State Obtain optimal value \(V^*\); 
+			\State Calculate \(z^* = p^0 \hat{t}^\ell_T + \sum_{\omega \in \Omega} p^\omega f^{\omega}(\hat{t}^\ell,\hat{x}^\ell)\)
+			\If{\(z^* < UB\)} 
+			\State Update \(UB := z^*\) and record the best incumbent solution as \(t^* = \hat{t}^\ell, x^* = \hat{x}^\ell\) and \(y^* = \hat{y}^\ell\);
+			\EndIf
+			\State For each \(\omega \in \Omega\), solve problem \((S_{\mathcal{P}}^\omega)\) given \(\hat{t}^{\ell}, \hat{x}^{\ell}, \hat{y}^{\ell}, \hat{\theta}^{\ell}\) and obtain optimal value \(v^{\omega,\ell}\) and coefficients \(\pi^{\omega,\ell}, \lambda^{\omega,\ell}, \gamma^{\omega,\ell}\);
+			\If{\(z^*_P < p^0 \hat{t}_T + \sum_{\omega \in \Omega} p^\omega v^{\omega,\ell} - \delta\)}
+			\State Add the cuts of form~\eqref{cons:cut} to the master problem;
+			\State Keep \(\mathcal{P}^{\ell + 1} = \mathcal{P}^\ell\) and \(\mathcal{Q}^{\ell + 1} = \mathcal{Q}^\ell\); 
+			\State Update \(\ell = \ell + 1\);
 			\Else
-			\State Stop and return the status of infeasibility;
+			\State Refine the partition and obtain the new partition \(\mathcal{P}^{\ell + 1}\) and its indexed sets \(\mathcal{Q}^{\ell + 1}\);
+			\State Update \(\ell = \ell + 1\);
+			\State Update the previously generated cuts in the master problem to the form of~\eqref{cons:updatedcut};
 			\EndIf
 			\vspace{0.1cm}
 			\EndWhile{\textbf{end while}}
-			\State Output \(V^*\) as a lower bound on the optimal value of model~\eqref{prob:extensive}, and output \(\hat{s}^{p,k}, \hat{s}^{q,k}\) as an \(\epsilon\)-feasible solution.
+			\State Output \(UB\) as the optimal value of model~\eqref{prob:extensive}, and \(t^*, x^*,y^*\) as the optimal solution.
 		\end{algorithmic}
 	\end{algorithm}
-
-	\textcolor{blue}{
-	\begin{itemize}
-		\item algorithm
-		\item end points of each partition
-		\item proof of convergence if we have \(y_i^q\) for every \(\omega\)
-	\end{itemize}}
+	Finally we prove Algorithm~\ref{alg:Cut} converges in finite number of iterations. Since every partition update is a refinement and we have a finite set of scenario \(\Omega\), we can prove the finite convergence of Algorithm~\ref{alg:Cut} as long as with the finest partition we reach the optimum of problem~\eqref{prob:extensive}.
+	\begin{proposition} \label{prop:finestPar}
+		If a partition \(\hat{\mathcal{P}}\) has indexed sets \(\hat{\mathcal{Q}}\) and for each \(i \in I\), \(|\hat{\mathcal{Q}}_i| = |\Omega|\) and \(\bar{\omega}^q = \underbar{\omega}^q + 1,\ \forall q \in \hat{\mathcal{Q}}_i\), we have \[z^* = \min_{(t,x,y) \in \mathbb{X}}\ t_T + \sum_{\omega \in \Omega} g^\omega_{\hat{\mathcal{P}}}(t,x,y),\]
+		where 
+		\begin{equation*}
+			\mathbb{X} = \left\{(t,x,y) \left| 
+			\begin{aligned}
+			& \eqref{cons:MpSep}-\eqref{cons:MpY1}\\ 
+			&y_i^q \in \{0,1\} \qquad \forall i \in I, q \in \hat{\mathcal{Q}}_i\\
+			& t_i \geq 0 \qquad \forall i \in I\\
+			& 0 \leq x_{ij} \leq 1 \qquad \forall i \in I, j \in J_i
+			\end{aligned}
+			\right. \right\}.
+		\end{equation*}
+	\end{proposition}
+	\begin{proof}
+		First we can consider the subproblem \((S_\mathcal{P}^\omega)\) as a partial linear relaxation of the original extensive formulation. So \(z^* \leq z^*_\mathcal{P}\) is automatically true.\\
+		\newline
+		Next we prove that, given the partition in Proposition~\ref{prop:finestPar}, we can construct a feasible solution, \((t^*,x^*,G^*)\), to the extensive formulation~\eqref{prob:extensive} with the same objective value from the optimal solution, \((\hat{t},\hat{x},\hat{y})\), to the problem
+		\[\min_{(t,x,y) \in \mathbb{X}}\ t_T + \sum_{\omega \in \Omega} g^\omega_{\hat{\mathcal{P}}}(t,x,y).\]
+		Suppose for \(i \in I\), we denote the index of partition where \(y\) variable takes value \(1\) as \(q_i\). Since \(\bar{\omega}^q = \underbar{\omega}^q + 1,\ \forall q \in \hat{\mathcal{Q}}_i\), either \(q_i \in \{q \in \hat{\mathcal{Q}}_i \mid H^\omega \leq H^{\underbar{\omega}^q}\}\) or \(q_i \in \{q \in \hat{\mathcal{Q}}_i \mid H^\omega \geq H^{\bar{\omega}^q}\}\) is true. Thus, constraints~\eqref{cons:syG1t} and~\eqref{cons:syG2t} enforce that \(G_i\) in the problem \((S_{\hat{\mathcal{P}}}^\omega)\) takes binary value because the right-hand side expressions of those two constraints must be \(0\) or \(1\) simultaneously. This means that although subproblems are linear programs, the integrality is implied. Therefore, when we obtain the optimal solution \(\hat{G}^\omega\) from solving problems \((S_{\hat{\mathcal{P}}}^\omega)\) for each \(\omega \in \Omega\), solution \((\hat{t},\hat{x},\hat{G})\) will be feasible for the extensive formulation because \((\hat{t},\hat{x},\hat{y}) \in \mathbb{X}\) and \(G\) variables satisfy the constraints~\eqref{cons:stG1}-\eqref{cons:subH} and binary constraints. This result is equivalent to \(z_{\hat{\mathcal{P}}}^* \geq z^*\). Combining the results above we conclude that \(z^* = \min_{(t,x,y) \in \mathbb{X}}\ t_T + \sum_{\omega \in \Omega} g^\omega_{\hat{\mathcal{P}}}(t,x,y).\)
+	\end{proof}
+	\begin{theorem} \label{thm:converge}
+		Algorithm~\ref{alg:Cut} terminates in finite number of iteration for any \(\epsilon \geq 0\). 
+	\end{theorem}
+	\begin{proof}
+		From Proposition~\ref{prop:finestPar} we know that with the finest partition \(\hat{\mathcal{P}}\) where for each \(i \in I\), \(|\hat{\mathcal{Q}}_i| = |\Omega|\) and \(\bar{\omega}^q = \underbar{\omega}^q + 1,\ \forall q \in \hat{\mathcal{Q}}_i\), solving the problem \(\min_{(t,x,y) \in \mathbb{X}}\ t_T + \sum_{\omega \in \Omega} g^\omega_{\hat{\mathcal{P}}}(t,x,y)\) is equivalent to solving the extensive formulation. Since there are only finite number of scenarios, it takes finite number of steps of refinement to reach the finest partition. \\
+		\newline
+		For each subproblem, there is only a finite number of possible values of dual variables because each corresponds to one of the finitely many different bases. This means that, for any partition \(\mathcal{P}\), the recourse function \(g^\omega_{\mathcal{P}}\) can be represented by finitely many linear cuts. Therefore, in algorithm~\ref{alg:Cut}, only a finite number of cuts are added for a finite number of partitions before \(UB = z^*\) and \(LB = z^*_{\hat{\mathcal{P}}}\) is achieved, a.k.a. \(\frac{UB - LB}{UB} = 0\).
+	\end{proof}
 	\begin{comment}
 	\textcolor{blue}{ The materials above are the most important idea I want to convey in this section. Here are some additional results we have discussed but I haven't compiled to \LaTeX \ yet. Time allowing, I can add some stuff in maybe tonight or this coming week.
 		\begin{itemize}
