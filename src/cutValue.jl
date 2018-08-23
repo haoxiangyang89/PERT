@@ -1,4 +1,4 @@
-function cutValue(pData,disData,text,xext,gext,cutSet)
+function cutValue(pData,disData,text,xext,gext,θext,cutSet)
     H = Dict();
     H[0] = 0;
     H[length(Ω)+1] = Tmax;
