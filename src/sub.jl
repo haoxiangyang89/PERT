@@ -590,7 +590,7 @@ function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
     @constraint(sp, GyRelax2[i in pData.II,par in 1:length(divSet[i])], Gy[i,par] <= yhat[i,par]);
     @constraint(sp, GyRelax3[i in pData.II,par in 1:length(divSet[i])], Gy[i,par] >= G[i] + yhat[i,par] - 1);
 
-    @constraint(sp, GCons1[i in pData.II],dDω.H*G[i] - sum(H[divSet[i][par].endH]*Gy[i,par] for par in 1:length(divSet[i])) <= dDω.H*G[i] - that[i]);
+    @constraint(sp, GCons1[i in pData.II],dDω.H*G[i] - sum(H[divSet[i][par].endH]*Gy[i,par] for par in 1:length(divSet[i])) <= dDω.H - that[i]);
     @constraint(sp, GCons2[i in pData.II],sum(H[divSet[i][par].startH]*Gy[i,par] for par in 1:length(divSet[i])) - dDω.H*G[i] >= -that[i] + sum(yhat[i,par]*H[divSet[i][par].startH] for par in 1:length(divSet[i])));
     @constraint(sp, GFixed0[i in pData.II],G[i] >= sum(yhat[i,par] for par in 1:length(divSet[i]) if ωCurr <= divSet[i][par].startH));
     @constraint(sp, GFixed1[i in pData.II],G[i] <= 1 - sum(yhat[i,par] for par in 1:length(divSet[i]) if ωCurr >= divSet[i][par].endH));
