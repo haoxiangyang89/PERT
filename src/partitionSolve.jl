@@ -134,7 +134,6 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
             end
             if ωTightCounter == length(Ω)
                 keepIter = false;
-                push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
                 for i in pData.II
                     tlb[i] = that[i];
                     for j in pData.Ji[i]
@@ -147,6 +146,8 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
                 for ω in Ω
                     θlb[ω] = θhat[ω];
                 end
+            else
+                push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
             end
         end
 
