@@ -132,9 +132,9 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
                     ωTightCounter += 1;
                 end
             end
-            push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
             if ωTightCounter == length(Ω)
                 keepIter = false;
+                push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
                 for i in pData.II
                     tlb[i] = that[i];
                     for j in pData.Ji[i]
