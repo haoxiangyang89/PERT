@@ -625,7 +625,7 @@ function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
     πdict = Dict();             # dual for t
     γdict = Dict();             # dual for y
     for i in pData.II
-        πdict[i] = -getdual(sp[:GCons1][i]) + getdual(sp[:GCons2][i]) +
+        πdict[i] = -getdual(sp[:GCons1][i]) - getdual(sp[:GCons2][i]) +
             (getdual(sp[:tFnAnt1][i]) + getdual(sp[:tFnAnt2][i]));
         for j in pData.Ji[i]
             λdict[i,j] = (getdual(sp[:xFnAnt1][i,j]) + getdual(sp[:xFnAnt2][i,j]));
