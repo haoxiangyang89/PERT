@@ -13,6 +13,7 @@ addprocs(20);
 @everywhere include("branchFunc.jl");
 @everywhere include("detForm.jl");
 @everywhere include("extForm.jl");
+@everywhere include("expModel.jl");
 @everywhere include("ubCalFunc.jl");
 @everywhere include("tighten.jl");
 @everywhere include("partition_LP.jl");
@@ -26,19 +27,56 @@ kInputAdd = "/home/haoxiang/PERT_tests/14_ExponentialD_LogNormalH/test_14_K.csv"
 
 pData = readInP(pInputAdd,kInputAdd);
 nameD,dparams = readInUnc(ϕInputAdd);
-disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500,1 - pData.p0);
+disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,50,1 - pData.p0);
 disData = orderdisData(disData,Ω);
 
+# deterministic solution
+tdet,xdet,fdet = detBuild(pData);
+ubdet = ubCal(pData,disData,Ω,xdet,tdet,999999);
+
+# expected solution
+eH = exp(log(35)+1/2*0.5^2);
+ed = Dict();
+for i in pData.II
+    if i == 0
+        ed[i] = 0;
+    else
+        ed[i] = dparams[i][1];
+    end
+end
+texp,xexp,fexp,Gexp,mexp = expModel(pData,eH,ed);
+ubexp = ubCal(pData,disData,Ω,xexp,texp,999999);
+
+# our decomposition method
 tic();
-tbest,xbest,lbCost,ubCost = partitionSolve(pData,disData,0.01);
+tbest,xbest,lbCost,ubCost = partitionSolve(pData,disData,0.001);
 timedecomp = toc();
 gapdecomp = (ubCost - lbCost)/ubCost;
 
+# extensive formulation
 tic();
 text,xext,fext,gext,mp = extForm_cheat(pData,disData,Ω,1e-2,999999);
 timeext = toc();
+θext = Dict();
+for ω in Ω
+    θext[ω] = getvalue(mp[:t][0,ω]);
+end
 ubmp = mp.objVal;
 lbmp = mp.objBound;
 gapext = (mp.objVal - mp.objBound)/mp.objVal;
-dDict = [tbest,xbest,lbCost,ubCost,gapdecomp,timedecomp,text,xext,fext,gext,ubmp,lbmp,gapext,timeext];
+ubext = ubCal(pData,disData,Ω,xext,text,999999);
+dDict = [tdet,xdet,fdet,texp,xexp,fexp,Gexp,
+            tbest,xbest,lbCost,ubCost,gapdecomp,timedecomp,
+            text,xext,fext,gext,ubmp,lbmp,gapext,timeext];
 save("test_Ext_time.jld","dDict",dDict);
+
+############################################
+ubList = [];
+for n in 1:30
+    disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500,1 - pData.p0);
+    disData = orderdisData(disData,Ω);
+    ubdet = ubCal(pData,disData,Ω,xdet,tdet,999999);
+    ubexp = ubCal(pData,disData,Ω,xexp,texp,999999);
+    ubext = ubCal(pData,disData,Ω,xext,text,999999);
+    push!(ubList,[ubdet,ubexp,ubext]);
+end

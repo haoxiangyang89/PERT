@@ -126,7 +126,7 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
             for ω in Ω
                 if vk[ω] - θhat[ω] > 1e-5
                     cutDual[ω] = [vk[ω],πdict[ω],λdict[ω],γdict[ω]];
-                    mp = addtxCut(pData,ω,mp,πdict,λdict,γdict,vk,that,xhat,yhat,divSet);
+                    mp = addtxyCut(pData,ω,mp,πdict[ω],λdict[ω],γdict[ω],vk[ω],that,xhat,yhat,divSet);
                 else
                     cutDual[ω] = [];
                     ωTightCounter += 1;

@@ -54,3 +54,13 @@ type partType
   startH :: Int64
   endH :: Int64
 end
+
+type treeNode
+  nodeID :: Int64
+  objV :: Float64
+  sol :: Array{Any,1}
+  parent :: Int64
+  childSet :: Array{Int64,1}
+  zeroSet :: Array{Any,1}
+  oneSet :: Array{Any,1}
+end
