@@ -9,16 +9,16 @@ function solveLR(pData,dDω,cutSetω,tm,xm,M,returnDual = 0)
     @variable(sp, 0 <= s[i in pData.II,j in pData.Ji[i]] <= 1);
 
     # add the basic sub problem constraints
-    @constraint(sp, FCons[i in pData.II],dDω.H - (1 - G[i])*M[i] <= that[i]);
-    @constraint(sp, GCons[i in pData.II],dDω.H + G[i]*M[i] >= that[i]);
+    @constraint(sp, FCons[i in pData.II],dDω.H - (1 - G[i])*M <= that[i]);
+    @constraint(sp, GCons[i in pData.II],dDω.H + G[i]*M >= that[i]);
 
     # add the predecessors and the successors logic constraints
     @constraint(sp, GSuccessors[i in pData.II, k in pData.Succ[i]], G[i] <= G[k]);
 
     # add the basic sub problem constraints
     @constraint(sp, tGbound[i in pData.II],t[i] >= dDω.H*G[i]);
-    @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*M[i] >= that[i]);
-    @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*M[i] <= that[i]);
+    @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*M >= that[i]);
+    @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*M <= that[i]);
     @constraint(sp, xFnAnt1[i in pData.II, j in pData.Ji[i]],x[i,j] + G[i] >= xhat[i,j]);
     @constraint(sp, xFnAnt2[i in pData.II, j in pData.Ji[i]],x[i,j] - G[i] <= xhat[i,j]);
 
@@ -72,10 +72,10 @@ function solveLR(pData,dDω,cutSetω,tm,xm,M,returnDual = 0)
         λDict = Dict();
         for i in pData.II
             πDict[i] = getdual(FCons[i]) + getdual(GCons[i]) + getdual(tFnAnt1[i]) + getdual(tFnAnt2[i]) +
-                sum(getdual(cuts[nc])*cutSetω[nc][1][i] for nc in 1:length(cutSetω)));
+                sum(getdual(cuts[nc])*cutSetω[nc][1][i] for nc in 1:length(cutSetω));
             for j in pData.Ji[i]
                 λDict[i,j] = getdual(xFnAnt1[i]) + getdual(xFnAnt2[i]) +
-                    sum(getdual(cuts[nc])*cutSetω[nc][2][i,j] for nc in 1:length(cutSetω)));
+                    sum(getdual(cuts[nc])*cutSetω[nc][2][i,j] for nc in 1:length(cutSetω));
             end
         end
         return πDict,λDict,v,sp;
@@ -92,16 +92,16 @@ function solveLR01(pData,dDω,cutSetω,tm,xm,zeroSet,oneSet,M)
     @variable(sp, 0 <= s[i in pData.II,j in pData.Ji[i]] <= 1);
 
     # add the basic sub problem constraints
-    @constraint(sp, FCons[i in pData.II],dDω.H - (1 - G[i])*M[i] <= that[i]);
-    @constraint(sp, GCons[i in pData.II],dDω.H + G[i]*M[i] >= that[i]);
+    @constraint(sp, FCons[i in pData.II],dDω.H - (1 - G[i])*M <= that[i]);
+    @constraint(sp, GCons[i in pData.II],dDω.H + G[i]*M >= that[i]);
 
     # add the predecessors and the successors logic constraints
     @constraint(sp, GSuccessors[i in pData.II, k in pData.Succ[i]], G[i] <= G[k]);
 
     # add the basic sub problem constraints
     @constraint(sp, tGbound[i in pData.II],t[i] >= dDω.H*G[i]);
-    @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*M[i] >= that[i]);
-    @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*M[i] <= that[i]);
+    @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*M >= that[i]);
+    @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*M <= that[i]);
     @constraint(sp, xFnAnt1[i in pData.II, j in pData.Ji[i]],x[i,j] + G[i] >= xhat[i,j]);
     @constraint(sp, xFnAnt2[i in pData.II, j in pData.Ji[i]],x[i,j] - G[i] <= xhat[i,j]);
 
@@ -111,8 +111,8 @@ function solveLR01(pData,dDω,cutSetω,tm,xm,zeroSet,oneSet,M)
     @constraint(sp, xGlin3[i in pData.II, j in pData.Ji[i]], s[i,j] >= x[i,j] - 1 + G[i]);
 
     # G binary constraints
-    @constraint(sp, GBin0[i in pData.II; if i in zeroSet], G[i] == 0);
-    @constraint(sp, GBin1[i in pData.II; if i in oneSet], G[i] == 1);
+    @constraint(sp, GBin0[i in pData.II; i in zeroSet], G[i] == 0);
+    @constraint(sp, GBin1[i in pData.II; i in oneSet], G[i] == 1);
 
     @constraint(sp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(sp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
@@ -160,7 +160,7 @@ end
 # create the B&B tree for the subproblem
 function BBprocess(pData,dDω,cutSetω,tm,xm,nTree,M)
     tree = [];
-    ts,xs,gs,ss,vs,sp = solveLR(pData,dDω,cutSetω,tm,xm,M,0)
+    ts,xs,gs,ss,vs,sp = solveLR(pData,dDω,cutSetω,tm,xm,M,0);
     nID = 1;
     nodeLP = treeNode(nID,vs,[ts,xs,gs],-1,[],[],[]);
     push!(tree,nodeLP);
@@ -295,7 +295,7 @@ function getDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
         sum(μcut[l,n]*cutSetω[l][4][i,j] for l in 1:length(cutSetω)) >= 0);
     @constraint(dp, gConstr[i in pData.II, n in nSet], -γg[i] + sum(dDω.d[i]*μsep[k,n] - μgg[k,n] for k in pData.K if k[1] == i) +
         sum(μsg1[i,j,n] - μsg2[i,j,n] - μsg3[i,j,n] for j in pData.Ji[i]) + sum(μgg[k,n] for k in pData.K if k[2] == i) - dDω.H*μtGB[i,n] -
-        M[i]*μtG1[i,n] + M[i]*μtG2[i,n] + sum(-μxG1[i,j,n] + μxG2[i,j,n] for j in pData.Ji[i]) - Mt[i]*μAnt1[i,n] + Mt[i]*μAnt2[i,n] -
+        M*μtG1[i,n] + M*μtG2[i,n] + sum(-μxG1[i,j,n] + μxG2[i,j,n] for j in pData.Ji[i]) - Mt[i]*μAnt1[i,n] + Mt[i]*μAnt2[i,n] -
         μgub[i,n] + μglb[i,n] + sum(μcut[l,n]*cutSetω[l][5][i] for l in 1:length(cutSetω)) >= 0);
     @constraint(dp, sConstr[i in pData.II, j in pData.Ji[i], n in nSet], -νs[i,j] + sum(μsep[k,n]*dDω.d[i]*pData.eff[i,j] for k in pData.K if k[1] == i) -
         μsg1[i,j,n] - μsg2[i,j,n] + μsg3[i,j,n] - μsub[i,j,n] + sum(μcut[l,n]*cutSetω[l][6][i,j] for l in 1:length(cutSetω)) >= 0);
@@ -305,7 +305,7 @@ function getDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
     @constraint(dp, xhatConstr[i in pData.II, j in pData.Ji[i], n in nSet], -λxhat[i,j] - sum(pData.D[i]*pData.eff[i,j]*μsephat[k,n] for k in pData.K if k[1] == i) -
         μxhatlim[i,n] - μbudgethat[n] + μxG1[i,j,n] + μxG2[i,j,n] - μxhatub[i,j,n] + sum(μcut[l,n]*cutSetω[l][2][i,j] for l in 1:length(cutSetω)) >= 0);
     @constraint(dp, aConstr[n in nSet], sum(pData.D[k[1]]*(μsep[k,n] + μsephat[k,n]) for k in pData.K) + pData.B*(μbudget[n] + μbudgethat[n]) +
-        sum(μxlim[i,n] + μxhatlim[i,n] + (M[i] - dDω.H)*μAnt1[i,n] + dDω.H*μAnt2[i,n] + M[i]*μtub[i,n] + gub[i,n]*μgub[i,n] - glb[i,n]*μglb[i,n] +
+        sum(μxlim[i,n] + μxhatlim[i,n] + (M - dDω.H)*μAnt1[i,n] + dDω.H*μAnt2[i,n] + M*μtub[i,n] + gub[i,n]*μgub[i,n] - glb[i,n]*μglb[i,n] +
         Mt[i]*μthatub[i,n] for i in pData.II) - μasum - sum(μcut[l,n]*cutSetω[l][7] for l in 1:length(cutSetω)) +
         sum(sum(μsg2[i,j,n] + μsg3[i,j,n] + μsub[i,j,n] + μxub[i,j,n] + μxhatub[i,j,n] for j in pData.Ji[i]) for i in pData.II) >= 0);
 
@@ -399,9 +399,10 @@ function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ)
         end
 
         # check if the stopping criterion is met
-        if (ubCost - lbCost)/ubCost > ϵ
+        if (UB - LB)/UB > ϵ
             # for each scenario, generate disjunctive cuts using BB-D algorithm
             for ω in Ω
+                dDω = disData[ω];
                 # if the solution is not binary, obtain a B&B tree and add disjunctive cuts
                 leafω = BBprocess(pData,dDω,cutSet[ω],tm,xm,nTree,Tmax1);
                 cutSet[ω] = updateCut(pData,dDω,cutSet[ω],leafω,tm,xm,Tmax1,Tmax);

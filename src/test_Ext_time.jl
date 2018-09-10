@@ -27,12 +27,12 @@ kInputAdd = "/home/haoxiang/PERT_tests/14_ExponentialD_LogNormalH/test_14_K.csv"
 
 pData = readInP(pInputAdd,kInputAdd);
 nameD,dparams = readInUnc(ϕInputAdd);
-disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,50,1 - pData.p0);
+disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,5,1 - pData.p0);
 disData = orderdisData(disData,Ω);
 
 # deterministic solution
 tdet,xdet,fdet = detBuild(pData);
-ubdet = ubCal(pData,disData,Ω,xdet,tdet,999999);
+ubdet = ubCalP(pData,disData,Ω,xdet,tdet,999999);
 
 # expected solution
 eH = exp(log(35)+1/2*0.5^2);
@@ -45,7 +45,7 @@ for i in pData.II
     end
 end
 texp,xexp,fexp,Gexp,mexp = expModel(pData,eH,ed);
-ubexp = ubCal(pData,disData,Ω,xexp,texp,999999);
+ubexp = ubCalP(pData,disData,Ω,xexp,texp,999999);
 
 # our decomposition method
 tic();
