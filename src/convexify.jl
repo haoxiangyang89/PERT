@@ -158,6 +158,28 @@ function solveLR01(pData,dDω,cutSetω,tm,xm,zeroSet,oneSet,M)
     return tDict,xDict,gDict,sDict,v,spst;
 end
 
+function maxGfrac(pData,G)
+    maxFrac = 1;
+    fracInd = -1;
+    for i in pData.II
+        fracI = max(G[i], 1 - G[i]);
+        if fracI < maxFrac
+            maxFrac = fracI;
+            fracInd = i
+        end
+    end
+    return maxFrac,fracInd;
+end
+
+function middleGfrac(pData,G)
+    GList = sort(collect(G), by=x->x[2]);
+    loc = Int64(round(length(pData.II)/2));
+    middleFrac = GList[loc][2];
+    fracInd = GList[loc][1];
+
+    return middleFrac,fracInd;
+end
+
 # create the B&B tree for the subproblem
 function BBprocess(pData,dDω,cutSetω,tm,xm,nTree,M)
     tree = [];
@@ -188,15 +210,8 @@ function BBprocess(pData,dDω,cutSetω,tm,xm,nTree,M)
             # if it is not binary, split the node into two
             if currentNode.objV <= UB
                 # find the entry to split
-                maxFrac = 1;
-                fracInd = -1;
-                for i in pData.II
-                    fracI = max(currentNode.sol[3][i], 1 - currentNode.sol[3][i]);
-                    if fracI < maxFrac
-                        maxFrac = fracI;
-                        fracInd = i
-                    end
-                end
+                # maxFrac,fracInd = maxGfrac(pData,currentNode.sol[3]);
+                middleFrac,fracInd = middleGfrac(pData,currentNode.sol[3]);
 
                 # split to two nodes
                 node1zeroSet = copy(currentNode.zeroSet);
