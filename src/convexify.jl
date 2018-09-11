@@ -179,7 +179,11 @@ function middleGfrac(pData,G)
         end
     end
     GList = sort(GList, by=x->x[2]);
-    loc = Int64(round(length(GList)/2));
+    if isodd(length(GList))
+        loc = Int64((length(GList) + 1)/2);
+    else
+        loc = Int64(length(GList)/2);
+    end
     middleFrac = GList[loc][2];
     fracInd = GList[loc][1];
 
