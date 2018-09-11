@@ -49,7 +49,7 @@ ubexp = ubCalP(pData,disData,Ω,xexp,texp,999999);
 
 # our decomposition method
 tic();
-tbest,xbest,lbCost,ubCost = partitionSolve(pData,disData,0.001);
+tbest,xbest,lbCost,ubCost = partitionSolve(pData,disData,0.01);
 timedecomp = toc();
 gapdecomp = (ubCost - lbCost)/ubCost;
 
@@ -65,7 +65,7 @@ ubmp = mp.objVal;
 lbmp = mp.objBound;
 gapext = (mp.objVal - mp.objBound)/mp.objVal;
 ubext = ubCal(pData,disData,Ω,xext,text,999999);
-dDict = [tdet,xdet,fdet,texp,xexp,fexp,Gexp,
+dDict = [tdet,xdet,fdet,ubdet,texp,xexp,fexp,Gexp,ubexp,
             tbest,xbest,lbCost,ubCost,gapdecomp,timedecomp,
             text,xext,fext,gext,ubmp,lbmp,gapext,timeext];
 save("test_Ext_time.jld","dDict",dDict);

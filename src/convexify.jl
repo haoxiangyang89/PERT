@@ -9,18 +9,18 @@ function solveLR(pData,dDω,cutSetω,tm,xm,M,returnDual = 0)
     @variable(sp, 0 <= s[i in pData.II,j in pData.Ji[i]] <= 1);
 
     # add the basic sub problem constraints
-    @constraint(sp, FCons[i in pData.II],dDω.H - (1 - G[i])*M <= that[i]);
-    @constraint(sp, GCons[i in pData.II],dDω.H + G[i]*M >= that[i]);
+    @constraint(sp, FCons[i in pData.II],dDω.H - (1 - G[i])*M <= tm[i]);
+    @constraint(sp, GCons[i in pData.II],dDω.H + G[i]*M >= tm[i]);
 
     # add the predecessors and the successors logic constraints
     @constraint(sp, GSuccessors[i in pData.II, k in pData.Succ[i]], G[i] <= G[k]);
 
     # add the basic sub problem constraints
     @constraint(sp, tGbound[i in pData.II],t[i] >= dDω.H*G[i]);
-    @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*M >= that[i]);
-    @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*M <= that[i]);
-    @constraint(sp, xFnAnt1[i in pData.II, j in pData.Ji[i]],x[i,j] + G[i] >= xhat[i,j]);
-    @constraint(sp, xFnAnt2[i in pData.II, j in pData.Ji[i]],x[i,j] - G[i] <= xhat[i,j]);
+    @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*M >= tm[i]);
+    @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*M <= tm[i]);
+    @constraint(sp, xFnAnt1[i in pData.II, j in pData.Ji[i]],x[i,j] + G[i] >= xm[i,j]);
+    @constraint(sp, xFnAnt2[i in pData.II, j in pData.Ji[i]],x[i,j] - G[i] <= xm[i,j]);
 
     # linearize the bilinear term of x[i,j]*G[i]
     @constraint(sp, xGlin1[i in pData.II, j in pData.Ji[i]], s[i,j] <= G[i]);
@@ -82,6 +82,7 @@ function solveLR(pData,dDω,cutSetω,tm,xm,M,returnDual = 0)
     end
 end
 
+# solve the linear relaxation with binary restrictions from the tree
 function solveLR01(pData,dDω,cutSetω,tm,xm,zeroSet,oneSet,M)
     sp = Model(solver = GurobiSolver(OutputFlag = 0));
 
@@ -403,11 +404,12 @@ function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ)
             # for each scenario, generate disjunctive cuts using BB-D algorithm
             for ω in Ω
                 dDω = disData[ω];
+                cutSetω = cutSet[ω];
                 # if the solution is not binary, obtain a B&B tree and add disjunctive cuts
-                leafω = BBprocess(pData,dDω,cutSet[ω],tm,xm,nTree,Tmax1);
-                cutSet[ω] = updateCut(pData,dDω,cutSet[ω],leafω,tm,xm,Tmax1,Tmax);
+                leafω = BBprocess(pData,dDω,cutSetω,tm,xm,nTree,Tmax1);
+                cutSet[ω] = updateCut(pData,dDω,cutSetω,leafω,tm,xm,Tmax1,Tmax);
                 # generate master cuts
-                πlr,λlr,vlr,slr = solveLR(pData,dDω,cutSet[ω],tm,xm,Tmax1,1);
+                πlr,λlr,vlr,slr = solveLR(pData,dDω,cutSetω,tm,xm,Tmax1,1);
                 mp = addtxCut(pData,ω,mp,πlr,λlr,vlr,tm,xm);
             end
         else
