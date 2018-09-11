@@ -59,7 +59,7 @@ function solveLR(pData,dDω,cutSetω,tm,xm,M,returnDual = 0)
         sDict = Dict();
         for i in pData.II
             tDict[i] = getvalue(sp[:t][i]);
-            gDict[i] = getvalue(sp[:g][i]);
+            gDict[i] = getvalue(sp[:G][i]);
             for j in pData.Ji[i]
                 xDict[i,j] = getvalue(sp[:x][i,j]);
                 sDict[i,j] = getvalue(sp[:s][i,j]);
