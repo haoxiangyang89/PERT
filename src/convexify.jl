@@ -220,8 +220,10 @@ function BBprocess(pData,dDω,cutSetω,tm,xm,nTree,M)
                 ts1,xs1,gs1,ss1,vs1,spst1 = solveLR01(pData,dDω,cutSetω,tm,xm,node1zeroSet,node1oneSet,M);
                 if spst1 == :Optimal
                     nID += 1;
-                    node1 = treeNode(nID,vs1,[ts1,xs1,gs1,ss1],currentNode.nID,[],node1zeroSet,node1oneSet);
+                    node1 = treeNode(nID,vs1,[ts1,xs1,gs1,ss1],currentNode.nodeID,[],node1zeroSet,node1oneSet);
                     push!(currentNode.childSet,nID);
+                    push!(tree,node1);
+                    push!(activeNode,node1);
                 end
 
                 node2zeroSet = copy(currentNode.zeroSet);
@@ -230,8 +232,10 @@ function BBprocess(pData,dDω,cutSetω,tm,xm,nTree,M)
                 ts2,xs2,gs2,ss2,vs2,spst2 = solveLR01(pData,dDω,cutSetω,tm,xm,node2zeroSet,node2oneSet,M);
                 if spst2 == :Optimal
                     nID += 1;
-                    node2 = treeNode(nID,vs2,[ts2,xs2,gs2,ss2],currentNode.nID,[],node2zeroSet,node2oneSet);
+                    node2 = treeNode(nID,vs2,[ts2,xs2,gs2,ss2],currentNode.nodeID,[],node2zeroSet,node2oneSet);
                     push!(currentNode.childSet,nID);
+                    push!(tree,node2);
+                    push!(activeNode,node2);
                 end
             end
         end
