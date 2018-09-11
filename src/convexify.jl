@@ -259,7 +259,7 @@ function BBprocess(pData,dDω,cutSetω,tm,xm,nTree,M)
     return leafNodes;
 end
 
-function getDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
+function genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
     dp = Model(solver = GurobiSolver(OutputFlag));
     # the number of disjunctive sections
     noT = length(leafNodes);
