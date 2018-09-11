@@ -43,7 +43,7 @@ function solveLR(pData,dDω,cutSetω,tm,xm,M,returnDual = 0)
         v = cutSetω[nc][7];
         # add the disjunctive cuts here
         cuts[nc] = @constraint(sp, v - sum(π[i]*t[i] + γ[i]*G[i] + sum(λ[i,j]*x[i,j] + γg[i,j]*s[i,j] for j in pData.Ji[i]) for i in pData.II)
-            <= sum(π0[i]*that[i] + sum(λ0[i,j]*xhat[i,j] for j in pData.Ji[i]) for i in pData.II));
+            <= sum(π0[i]*tm[i] + sum(λ0[i,j]*xm[i,j] for j in pData.Ji[i]) for i in pData.II));
     end
 
     @objective(sp, Min, t[0]);
@@ -93,18 +93,18 @@ function solveLR01(pData,dDω,cutSetω,tm,xm,zeroSet,oneSet,M)
     @variable(sp, 0 <= s[i in pData.II,j in pData.Ji[i]] <= 1);
 
     # add the basic sub problem constraints
-    @constraint(sp, FCons[i in pData.II],dDω.H - (1 - G[i])*M <= that[i]);
-    @constraint(sp, GCons[i in pData.II],dDω.H + G[i]*M >= that[i]);
+    @constraint(sp, FCons[i in pData.II],dDω.H - (1 - G[i])*M <= tm[i]);
+    @constraint(sp, GCons[i in pData.II],dDω.H + G[i]*M >= tm[i]);
 
     # add the predecessors and the successors logic constraints
     @constraint(sp, GSuccessors[i in pData.II, k in pData.Succ[i]], G[i] <= G[k]);
 
     # add the basic sub problem constraints
     @constraint(sp, tGbound[i in pData.II],t[i] >= dDω.H*G[i]);
-    @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*M >= that[i]);
-    @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*M <= that[i]);
-    @constraint(sp, xFnAnt1[i in pData.II, j in pData.Ji[i]],x[i,j] + G[i] >= xhat[i,j]);
-    @constraint(sp, xFnAnt2[i in pData.II, j in pData.Ji[i]],x[i,j] - G[i] <= xhat[i,j]);
+    @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*M >= tm[i]);
+    @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*M <= tm[i]);
+    @constraint(sp, xFnAnt1[i in pData.II, j in pData.Ji[i]],x[i,j] + G[i] >= xm[i,j]);
+    @constraint(sp, xFnAnt2[i in pData.II, j in pData.Ji[i]],x[i,j] - G[i] <= xm[i,j]);
 
     # linearize the bilinear term of x[i,j]*G[i]
     @constraint(sp, xGlin1[i in pData.II, j in pData.Ji[i]], s[i,j] <= G[i]);
@@ -131,7 +131,7 @@ function solveLR01(pData,dDω,cutSetω,tm,xm,zeroSet,oneSet,M)
         v = cutSetω[nc][7];
         # add the disjunctive cuts here
         cuts[nc] = @constraint(sp, v - sum(π[i]*t[i] + γ[i]*G[i] + sum(λ[i,j]*x[i,j] + γg[i,j]*s[i,j] for j in pData.Ji[i]) for i in pData.II)
-            <= sum(π0[i]*that[i] + sum(λ0[i,j]*xhat[i,j] for j in pData.Ji[i]) for i in pData.II));
+            <= sum(π0[i]*tm[i] + sum(λ0[i,j]*xm[i,j] for j in pData.Ji[i]) for i in pData.II));
     end
 
     @objective(sp, Min, t[0]);
@@ -181,18 +181,18 @@ function BBprocess(pData,dDω,cutSetω,tm,xm,nTree,M)
         end
         if gBin
             # if it is binary, update the upper bound
-            if vs < UB
-                UB = vs;
+            if currentNode.objV < UB
+                UB = currentNode.objV;
             end
         else
             # if it is not binary, split the node into two
-            if vs <= UB
+            if currentNode.objV <= UB
                 # find the entry to split
-                maxFrac = 0;
+                maxFrac = 1;
                 fracInd = -1;
                 for i in pData.II
                     fracI = max(currentNode.sol[3][i], 1 - currentNode.sol[3][i]);
-                    if fracI > maxFrac
+                    if fracI < maxFrac
                         maxFrac = fracI;
                         fracInd = i
                     end
