@@ -172,8 +172,14 @@ function maxGfrac(pData,G)
 end
 
 function middleGfrac(pData,G)
-    GList = sort(collect(G), by=x->x[2]);
-    loc = Int64(round(length(pData.II)/2));
+    GList = []
+    for i in pData.II
+        if (G[i] > 1e-5)&(G[i] < 1 - 1e-5)
+            push!(GList,(i,G[i]));
+        end
+    end
+    GList = sort(GList, by=x->x[2]);
+    loc = Int64(round(length(GList)/2));
     middleFrac = GList[loc][2];
     fracInd = GList[loc][1];
 
