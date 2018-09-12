@@ -260,7 +260,7 @@ function BBprocess(pData,dDω,cutSetω,tm,xm,nTree,M)
 end
 
 function genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
-    dp = Model(solver = GurobiSolver(OutputFlag));
+    dp = Model(solver = GurobiSolver());
     # the number of disjunctive sections
     noT = length(leafNodes);
     nSet = 1:noT;
@@ -372,7 +372,7 @@ function updateCut(pData,dDω,cutSetω,leafNodes,tm,xm,M,Mt)
     inSet = false;
     while !inSet
         # obtain the current sub solution with generated cuts
-        ts,xs,gs,ss,vs,sps = solveLR(pData,dDω,cutSetω,tm,xm,M)
+        ts,xs,gs,ss,vs,sps = solveLR(pData,dDω,cutSetω,tm,xm,M);
         # while the current solution is not within disjunctive set
         v,π,λ,γ,γg,π0,λ0 = genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt);
         if v == 0
