@@ -320,19 +320,19 @@ function genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
     @constraint(dp, tConstr[i in pData.II, n in nSet], -πt[i] + sum(μsep[k,n] for k in pData.K if k[1] == i) -
         sum(μsep[k,n] for k in pData.K if k[2] == i) + μtGB[i,n] - μtG1[i,n] - μtG2[i,n] - μtub[i,n] +
         sum(μcut[l,n]*cutSetω[l][3][i] for l in 1:length(cutSetω)) >= 0);
-    @constraint(dp, xConstr[i in pData.II, j in pData.Ji[i], n in nSet], -λx[i,j] - sum(pData.D[i]*pData.eff[i,j]*μsep[k,n] for k in pData.K if k[1] == i) -
+    @constraint(dp, xConstr[i in pData.II, j in pData.Ji[i], n in nSet], -λx[i,j] - sum(pData.D[i]*pData.eff[i][j]*μsep[k,n] for k in pData.K if k[1] == i) -
         μxlim[i,n] - μbudget[n] + μsg2[i,j,n] - μsg3[i,j,n] - μxG1[i,j,n] - μxG2[i,j,n] - μxub[i,j,n] +
         sum(μcut[l,n]*cutSetω[l][4][i,j] for l in 1:length(cutSetω)) >= 0);
     @constraint(dp, gConstr[i in pData.II, n in nSet], -γg[i] + sum(dDω.d[i]*μsep[k,n] - μgg[k,n] for k in pData.K if k[1] == i) +
         sum(μsg1[i,j,n] - μsg2[i,j,n] - μsg3[i,j,n] for j in pData.Ji[i]) + sum(μgg[k,n] for k in pData.K if k[2] == i) - dDω.H*μtGB[i,n] -
         M*μtG1[i,n] + M*μtG2[i,n] + sum(-μxG1[i,j,n] + μxG2[i,j,n] for j in pData.Ji[i]) - Mt[i]*μAnt1[i,n] + Mt[i]*μAnt2[i,n] -
         μgub[i,n] + μglb[i,n] + sum(μcut[l,n]*cutSetω[l][5][i] for l in 1:length(cutSetω)) >= 0);
-    @constraint(dp, sConstr[i in pData.II, j in pData.Ji[i], n in nSet], -νs[i,j] + sum(μsep[k,n]*dDω.d[i]*pData.eff[i,j] for k in pData.K if k[1] == i) -
+    @constraint(dp, sConstr[i in pData.II, j in pData.Ji[i], n in nSet], -νs[i,j] + sum(μsep[k,n]*dDω.d[i]*pData.eff[i][j] for k in pData.K if k[1] == i) -
         μsg1[i,j,n] - μsg2[i,j,n] + μsg3[i,j,n] - μsub[i,j,n] + sum(μcut[l,n]*cutSetω[l][6][i,j] for l in 1:length(cutSetω)) >= 0);
     @constraint(dp, thatConstr[i in pData.II, n in nSet], -πthat[i] + sum(μsephat[k,n] for k in pData.K if k[1] == i) -
         sum(μsephat[k,n] for k in pData.K if k[2] == i) + μtG1[i,n] + μtG2[i,n] + μAnt1[i,n] - μAnt2[i,n] + μthatub[i,n] +
         sum(μcut[l,n]*cutSetω[l][1][i] for l in 1:length(cutSetω)) >= 0);
-    @constraint(dp, xhatConstr[i in pData.II, j in pData.Ji[i], n in nSet], -λxhat[i,j] - sum(pData.D[i]*pData.eff[i,j]*μsephat[k,n] for k in pData.K if k[1] == i) -
+    @constraint(dp, xhatConstr[i in pData.II, j in pData.Ji[i], n in nSet], -λxhat[i,j] - sum(pData.D[i]*pData.eff[i][j]*μsephat[k,n] for k in pData.K if k[1] == i) -
         μxhatlim[i,n] - μbudgethat[n] + μxG1[i,j,n] + μxG2[i,j,n] - μxhatub[i,j,n] + sum(μcut[l,n]*cutSetω[l][2][i,j] for l in 1:length(cutSetω)) >= 0);
     @constraint(dp, aConstr[n in nSet], sum(pData.D[k[1]]*(μsep[k,n] + μsephat[k,n]) for k in pData.K) + pData.B*(μbudget[n] + μbudgethat[n]) +
         sum(μxlim[i,n] + μxhatlim[i,n] + (M - dDω.H)*μAnt1[i,n] + dDω.H*μAnt2[i,n] + M*μtub[i,n] + gub[i,n]*μgub[i,n] - glb[i,n]*μglb[i,n] +
