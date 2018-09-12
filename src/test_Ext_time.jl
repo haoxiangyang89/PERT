@@ -20,6 +20,7 @@ addprocs(20);
 @everywhere include("partition_LR.jl");
 @everywhere include("part_tight.jl");
 @everywhere include("partitionSolve.jl");
+@everywhere include("convexify.jl");
 
 pInputAdd = "/home/haoxiang/PERT_tests/14_ExponentialD_LogNormalH/test_14_P.csv";
 kInputAdd = "/home/haoxiang/PERT_tests/14_ExponentialD_LogNormalH/test_14_K.csv";
@@ -49,7 +50,7 @@ ubexp = ubCalP(pData,disData,Ω,xexp,texp,999999);
 
 # our decomposition method
 tic();
-tbest,xbest,lbCost,ubCost = partitionSolve(pData,disData,0.01);
+tbest,xbest,lbCost,ubCost = partitionSolve(pData,disData,0.001);
 timedecomp = toc();
 gapdecomp = (ubCost - lbCost)/ubCost;
 
