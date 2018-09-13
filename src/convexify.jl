@@ -285,7 +285,7 @@ function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ)
     # while it has not reached the optimum
     stopBool = false;
     masterCuts = [];
-    mp = createMaster(pData,disData,Ω);
+    mp = createMaster(pData,disData,Ω,Tmax);
     LB = -Inf;
     UB = Inf;
     xbest = Dict();

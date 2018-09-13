@@ -1,9 +1,9 @@
-function createMaster(pData,disData,Ω)
+function createMaster(pData,disData,Ω,Tmax = 999999)
     mp = Model(solver = GurobiSolver(OutputFlag = 0));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
-      t[i in pData.II] >= 0
+      0 <= t[i in pData.II] <= Tmax
     end);
     @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
