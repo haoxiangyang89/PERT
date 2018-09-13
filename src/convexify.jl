@@ -269,11 +269,11 @@ function updateCut(pData,dDω,cutSetω,leafNodes,tm,xm,M,Mt)
         # obtain the current sub solution with generated cuts
         ts,xs,gs,ss,vs,sps = solveLR(pData,dDω,cutSetω,tm,xm,M);
         # while the current solution is not within disjunctive set
-        v,π,λ,γ,ν,π0,λ0 = genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt);
+        vv,πv,λv,γv,νv,π0v,λ0v = genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt);
         if v == 0
             inSet = true;
         else
-            push!(cutSetω,π0,λ0,π,λ,γ,ν,v);
+            push!(cutSetω,π0v,λ0v,πv,λv,γv,νv,vv);
         end
     end
     return cutSetω;
