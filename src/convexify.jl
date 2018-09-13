@@ -36,16 +36,16 @@ function solveLR(pData,dDω,cutSetω,tm,xm,M,returnDual = 0)
 
     cuts = Dict();
     for nc in 1:length(cutSetω)
-        π0 = cutSetω[nc][1];
-        λ0 = cutSetω[nc][2];
-        π = cutSetω[nc][3];
-        λ = cutSetω[nc][4];
-        γ = cutSetω[nc][5];
-        γg = cutSetω[nc][6];
-        v = cutSetω[nc][7];
+        π0c = cutSetω[nc][1];
+        λ0c = cutSetω[nc][2];
+        πc = cutSetω[nc][3];
+        λc = cutSetω[nc][4];
+        γc = cutSetω[nc][5];
+        νc = cutSetω[nc][6];
+        vc = cutSetω[nc][7];
         # add the disjunctive cuts here
-        cuts[nc] = @constraint(sp, v - sum(π[i]*t[i] + γ[i]*G[i] + sum(λ[i,j]*x[i,j] + γg[i,j]*s[i,j] for j in pData.Ji[i]) for i in pData.II)
-            <= sum(π0[i]*tm[i] + sum(λ0[i,j]*xm[i,j] for j in pData.Ji[i]) for i in pData.II));
+        cuts[nc] = @constraint(sp, vc - sum(πc[i]*t[i] + γc[i]*G[i] + sum(λc[i,j]*xc[i,j] + νc[i,j]*s[i,j] for j in pData.Ji[i]) for i in pData.II)
+            <= sum(π0c[i]*tm[i] + sum(λ0c[i,j]*xm[i,j] for j in pData.Ji[i]) for i in pData.II));
     end
 
     @objective(sp, Min, t[0]);
@@ -124,16 +124,16 @@ function solveLR01(pData,dDω,cutSetω,tm,xm,zeroSet,oneSet,M)
 
     cuts = Dict();
     for nc in 1:length(cutSetω)
-        π0 = cutSetω[nc][1];
-        λ0 = cutSetω[nc][2];
-        π = cutSetω[nc][3];
-        λ = cutSetω[nc][4];
-        γ = cutSetω[nc][5];
-        γg = cutSetω[nc][6];
-        v = cutSetω[nc][7];
+        π0c = cutSetω[nc][1];
+        λ0c = cutSetω[nc][2];
+        πc = cutSetω[nc][3];
+        λc = cutSetω[nc][4];
+        γc = cutSetω[nc][5];
+        νc = cutSetω[nc][6];
+        vc = cutSetω[nc][7];
         # add the disjunctive cuts here
-        cuts[nc] = @constraint(sp, v - sum(π[i]*t[i] + γ[i]*G[i] + sum(λ[i,j]*x[i,j] + γg[i,j]*s[i,j] for j in pData.Ji[i]) for i in pData.II)
-            <= sum(π0[i]*tm[i] + sum(λ0[i,j]*xm[i,j] for j in pData.Ji[i]) for i in pData.II));
+        cuts[nc] = @constraint(sp, vc - sum(πc[i]*t[i] + γc[i]*G[i] + sum(λc[i,j]*xc[i,j] + νc[i,j]*s[i,j] for j in pData.Ji[i]) for i in pData.II)
+            <= sum(π0c[i]*tm[i] + sum(λ0c[i,j]*xm[i,j] for j in pData.Ji[i]) for i in pData.II));
     end
 
     @objective(sp, Min, t[0]);
@@ -270,10 +270,10 @@ function updateCut(pData,dDω,cutSetω,leafNodes,tm,xm,M,Mt)
         ts,xs,gs,ss,vs,sps = solveLR(pData,dDω,cutSetω,tm,xm,M);
         # while the current solution is not within disjunctive set
         vv,πv,λv,γv,νv,π0v,λ0v = genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt);
-        if v == 0
+        if vv == 0
             inSet = true;
         else
-            push!(cutSetω,π0v,λ0v,πv,λv,γv,νv,vv);
+            push!(cutSetω,(π0v,λ0v,πv,λv,γv,νv,vv));
         end
     end
     return cutSetω;
