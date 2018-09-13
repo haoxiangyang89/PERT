@@ -139,11 +139,11 @@ function genDisjunctiveP(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
     @variable(mp, xhatplus[i in pData.II, j in pData.Ji[i]] >= 0);
     @variable(mp, xhatminus[i in pData.II, j in pData.Ji[i]] >= 0);
 
-    @variable(mp, 0 <= a[n in nSet] <= 1);
+    @variable(mp, a[n in nSet] >= 0);
     @variable(mp, t[i in pData.II, n in nSet] >= 0);
     @variable(mp, that[i in pData.II, n in nSet] >= 0);
-    @variable(mp, x[i in pData.II, n in nSet] >= 0);
-    @variable(mp, xhat[i in pData.II, n in nSet] >= 0);
+    @variable(mp, x[i in pData.II, j in pData.Ji[i], n in nSet] >= 0);
+    @variable(mp, xhat[i in pData.II, j in pData.Ji[i], n in nSet] >= 0);
     @variable(mp, G[i in pData.II, n in nSet] >= 0);
     @variable(mp, s[i in pData.II, j in pData.Ji[i], n in nSet] >= 0);
 
@@ -155,12 +155,12 @@ function genDisjunctiveP(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
     @constraint(mp, sSum[i in pData.II, j in pData.Ji[i]], sum(s[i,j,n] for n in nSet) + splus[i,j] - sminus[i,j] == ss[i,j]);
     @constraint(mp, aSum, sum(a[n] for n in nSet) == 1);
 
-    @constraint(mp, sephat[k in pData.K, n in nSet], that[k[2],n] - that[k[1],n] >= pData.D[k[1]]*a[n] - sum(pData.eff[i][j]*pData.D[i]*xhat[i,j,n] for j in pData.Ji[i]));
+    @constraint(mp, sephat[k in pData.K, n in nSet], that[k[2],n] - that[k[1],n] >= pData.D[k[1]]*a[n] - sum(pData.eff[k[1]][j]*pData.D[k[1]]*xhat[k[1],j,n] for j in pData.Ji[k[1]]));
     @constraint(mp, xlimhat[i in pData.II, n in nSet], sum(xhat[i,j,n] for j in pData.Ji[i]) <= a[n]);
     @constraint(mp, budgethat[n in nSet], sum(sum(x[i,j,n] for j in pData.Ji[i]) for i in pData.II) <= pData.B*a[n]);
 
-    @constraint(mp, sep[k in pData.K, n in nSet], t[k[2],n] - t[k[1],n] >= a[n]*pData.D[i] + dDω.d[i]*G[i,n] -
-        sum(pData.D[i]*pData.eff[i][j]*x[i,j,n] + dDω.d[i]*pData.eff[i][j]*s[i,j,n] for j in pData.Ji[i]));
+    @constraint(mp, sep[k in pData.K, n in nSet], t[k[2],n] - t[k[1],n] >= a[n]*pData.D[k[1]] + dDω.d[k[1]]*G[k[1],n] -
+        sum(pData.D[k[1]]*pData.eff[k[1]][j]*x[k[1],j,n] + dDω.d[k[1]]*pData.eff[k[1]][j]*s[k[1],j,n] for j in pData.Ji[k[1]]));
     @constraint(mp, xlim[i in pData.II, n in nSet], sum(x[i,j,n] for j in pData.Ji[i]) <= a[n]);
     @constraint(mp, budget[n in nSet], sum(sum(x[i,j,n] for j in pData.Ji[i]) for i in pData.II) <= pData.B*a[n]);
     @constraint(mp, sGconstr1[i in pData.II, j in pData.Ji[i], n in nSet], s[i,j,n] <= G[i,n]);
@@ -186,6 +186,9 @@ function genDisjunctiveP(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
     @constraint(mp, sub[i in pData.II, j in pData.Ji[i], n in nSet], s[i,j,n] <= a[n]);
     @constraint(mp, Gub[i in pData.II, n in nSet], G[i,n] <= gub[i,n]*a[n]);
     @constraint(mp, Glb[i in pData.II, n in nSet], G[i,n] >= glb[i,n]*a[n]);
+
+    @objective(mp, Min, sum(tplus[i] + tminus[i] + Gplus[i] + Gminus[i] + thatplus[i] + thatminus[i] +
+        sum(xplus[i,j] + xminus[i,j] + xhatplus[i,j] + xhatminus[i,j] + splus[i,j] + sminus[i,j] for j in pData.Ji[i]) for i in pData.II));
 
     return mp;
 end
