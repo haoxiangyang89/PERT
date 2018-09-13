@@ -76,7 +76,7 @@ function solveLR(pData,dDω,cutSetω,tm,xm,M,returnDual = 0)
             πDict[i] = getdual(FCons[i]) + getdual(GCons[i]) + getdual(tFnAnt1[i]) + getdual(tFnAnt2[i]) +
                 sum(getdual(cuts[nc])*cutSetω[nc][1][i] for nc in 1:length(cutSetω));
             for j in pData.Ji[i]
-                λDict[i,j] = getdual(xFnAnt1[i]) + getdual(xFnAnt2[i]) +
+                λDict[i,j] = getdual(xFnAnt1[i,j]) + getdual(xFnAnt2[i,j]) +
                     sum(getdual(cuts[nc])*cutSetω[nc][2][i,j] for nc in 1:length(cutSetω));
             end
         end
