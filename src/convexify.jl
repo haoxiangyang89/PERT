@@ -26,7 +26,7 @@ function solveLR(pData,dDω,cutSetω,tm,xm,M,returnDual = 0)
 
     # linearize the bilinear term of x[i,j]*G[i]
     @constraint(sp, xGlin1[i in pData.II, j in pData.Ji[i]], s[i,j] <= G[i]);
-    @constraint(sp, xGlin2[i in pData.II, j in pData.Ji[i]], s[i,j] <= x[i,j] + 1 - G[i]);
+    @constraint(sp, xGlin2[i in pData.II, j in pData.Ji[i]], s[i,j] <= x[i,j]);
     @constraint(sp, xGlin3[i in pData.II, j in pData.Ji[i]], s[i,j] >= x[i,j] - 1 + G[i]);
 
     @constraint(sp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
@@ -110,7 +110,7 @@ function solveLR01(pData,dDω,cutSetω,tm,xm,zeroSet,oneSet,M)
 
     # linearize the bilinear term of x[i,j]*G[i]
     @constraint(sp, xGlin1[i in pData.II, j in pData.Ji[i]], s[i,j] <= G[i]);
-    @constraint(sp, xGlin2[i in pData.II, j in pData.Ji[i]], s[i,j] <= x[i,j] + 1 - G[i]);
+    @constraint(sp, xGlin2[i in pData.II, j in pData.Ji[i]], s[i,j] <= x[i,j]);
     @constraint(sp, xGlin3[i in pData.II, j in pData.Ji[i]], s[i,j] >= x[i,j] - 1 + G[i]);
 
     # G binary constraints
@@ -334,7 +334,9 @@ function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ)
                 cutSet[ω] = updateCut(pData,dDω,cutSetω,leafω,tm,xm,Tmax1,Tmax);
                 # generate master cuts
                 πlr,λlr,vlr,slr = solveLR(pData,dDω,cutSetω,tm,xm,Tmax1,1);
-                mp = addtxCut(pData,ω,mp,πlr,λlr,vlr,tm,xm);
+                if θm[ω] < vlr - 1e-4
+                    mp = addtxCut(pData,ω,mp,πlr,λlr,vlr,tm,xm);
+                end
             end
         else
             stopBool = true;
