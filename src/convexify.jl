@@ -132,7 +132,7 @@ function solveLR01(pData,dDω,cutSetω,tm,xm,zeroSet,oneSet,M)
         νc = cutSetω[nc][6];
         vc = cutSetω[nc][7];
         # add the disjunctive cuts here
-        cuts[nc] = @constraint(sp, vc - sum(πc[i]*t[i] + γc[i]*G[i] + sum(λc[i,j]*xc[i,j] + νc[i,j]*s[i,j] for j in pData.Ji[i]) for i in pData.II)
+        cuts[nc] = @constraint(sp, vc - sum(πc[i]*t[i] + γc[i]*G[i] + sum(λc[i,j]*x[i,j] + νc[i,j]*s[i,j] for j in pData.Ji[i]) for i in pData.II)
             <= sum(π0c[i]*tm[i] + sum(λ0c[i,j]*xm[i,j] for j in pData.Ji[i]) for i in pData.II));
     end
 
