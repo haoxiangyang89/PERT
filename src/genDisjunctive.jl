@@ -1,5 +1,5 @@
 function genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt,returnOpt = 0)
-    dp = Model(solver = GurobiSolver());
+    dp = Model(solver = GurobiSolver(OutputFlag = 0));
     # the number of disjunctive sections
     noT = length(leafNodes);
     nSet = 1:noT;
@@ -132,7 +132,7 @@ function genDisjunctiveP(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt,re
         end
     end
 
-    mp = Model(solver = GurobiSolver());
+    mp = Model(solver = GurobiSolver(OutputFlag = 0));
 
     @variable(mp, tplus[i in pData.II] >= 0);
     @variable(mp, tminus[i in pData.II] >= 0);
