@@ -213,8 +213,7 @@ function checkFeas(pData,dDω,nodeZeroSet,nodeOneSet,M)
     @constraint(fp, durationConstr1[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]] + dDω.d[k[1]]*G[k[1]]
                       - sum(pData.D[k[1]]*pData.eff[k[1]][j]*x[k[1],j] + dDω.d[k[1]]*pData.eff[k[1]][j]*s[k[1],j] for j in pData.Ji[k[1]]));
     @constraint(fp, durationConstr2[k in pData.K], t0[k[2]] - t0[k[1]] >= pData.D[k[1]]*(1 - sum(pData.eff[k[1]][j]*x0[k[1],j] for j in pData.Ji[k[1]])));
-    @constraint(fp, GGcons1[i in pData.II], G[i] >= G[i + 1]);
-    @constraint(fp, GGcons2[i in pData.K], G[k[2]] >= G[k[1]]);
+    @constraint(fp, GGcons2[k in pData.K], G[k[2]] >= G[k[1]]);
     @constraint(fp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
     @constraint(fp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(fp, xConstr0[i in pData.II], sum(x0[i,j] for j in pData.Ji[i]) <= 1);
@@ -321,20 +320,24 @@ function BBprocess(pData,dDω,cutSetω,tm,xm,nTree,M)
 end
 
 # use the sub-B&B tree to update cuts
-function updateCut(pData,dDω,cutSetω,leafNodes,tm,xm,M,Mt)
+function updateCut(pData,dDω,cutSetω,leafNodes,tm,xm,M,Mt,cutLim = 100)
     # construct the disjunctive cuts from the B&B tree
     inSet = false;
-    while !inSet
+    cutNo = 0;
+    vioList = [];
+    while (!inSet)&(cutNo <= cutLim)
         # obtain the current sub solution with generated cuts
         ts,xs,gs,ss,vs,sps = solveLR(pData,dDω,cutSetω,tm,xm,M);
         # while the current solution is not within disjunctive set
-        # vv,viov,πv,λv,γv,νv,π0v,λ0v = genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt);
-        vv,viov,πv,λv,γv,νv,π0v,λ0v = genDisjunctiveP(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt);
+        vv,viov,πv,λv,γv,νv,π0v,λ0v = genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt);
+        #vv,viov,πv,λv,γv,νv,π0v,λ0v = genDisjunctiveP(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt);
         if viov < 1e-4
             inSet = true;
         else
             push!(cutSetω,(π0v,λ0v,πv,λv,γv,νv,vv));
         end
+        cutNo += 1;
+        push!(vioList,viov);
     end
     return cutSetω;
 end
@@ -377,7 +380,7 @@ function oneNormD(pData,sol1,sol2)
 end
 
 # convexification of the subproblem
-function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ)
+function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ = 1e-2,cutLim = 100)
     # while it has not reached the optimum
     stopBool = false;
     masterCuts = [];
@@ -427,7 +430,7 @@ function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ)
                 cutSetω = copy(cutSet[ω]);
                 # if the solution is not binary, obtain a B&B tree and add disjunctive cuts
                 leafω = BBprocess(pData,dDω,cutSetω,tm,xm,nTree,Tmax1);
-                cutSet[ω] = updateCut(pData,dDω,cutSetω,leafω,tm,xm,Tmax1,Tmax);
+                cutSet[ω] = updateCut(pData,dDω,cutSetω,leafω,tm,xm,Tmax1,Tmax,cutLim);
                 # generate master cuts
                 πlr,λlr,vlr,slr = solveLR(pData,dDω,cutSetω,tm,xm,Tmax1,1);
                 if θm[ω] < vlr - 1e-4
