@@ -73,10 +73,10 @@ function solveLR(pData,dDω,cutSetω,tm,xm,M,returnDual = 0)
         πDict = Dict();
         λDict = Dict();
         for i in pData.II
-            πDict[i] = getdual(FCons[i]) + getdual(GCons[i]) + getdual(tFnAnt1[i]) + getdual(tFnAnt2[i]) +
+            πDict[i] = getdual(FCons[i]) + getdual(GCons[i]) + getdual(tFnAnt1[i]) + getdual(tFnAnt2[i]) -
                 sum(getdual(cuts[nc])*cutSetω[nc][1][i] for nc in 1:length(cutSetω));
             for j in pData.Ji[i]
-                λDict[i,j] = getdual(xFnAnt1[i,j]) + getdual(xFnAnt2[i,j]) +
+                λDict[i,j] = getdual(xFnAnt1[i,j]) + getdual(xFnAnt2[i,j]) -
                     sum(getdual(cuts[nc])*cutSetω[nc][2][i,j] for nc in 1:length(cutSetω));
             end
         end
@@ -331,6 +331,7 @@ function updateCut(pData,dDω,cutSetω,leafNodes,tm,xm,M,Mt,cutLim = 100)
         # while the current solution is not within disjunctive set
         vv,viov,πv,λv,γv,νv,π0v,λ0v = genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt);
         #vv,viov,πv,λv,γv,νv,π0v,λ0v = genDisjunctiveP(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt);
+        #testCutS(pData,cutSetω,text,xext,texts,xexts,gexts,sexts);
         if viov < 1e-4
             inSet = true;
         else
@@ -395,6 +396,7 @@ function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ = 1e-2,cutLim = 100)
         cutSet[ω] = [];
     end
 
+    LBList = [];
     while !(stopBool)
         # solve the master problem and obtain the master solution
         solve(mp);
@@ -416,6 +418,7 @@ function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ = 1e-2,cutLim = 100)
         # update the lower bound and the upper bound
         if getobjectivevalue(mp) > LB
             LB = getobjectivevalue(mp);
+            push!(LBList,LB);
         end
         ubTemp,θInt = ubCalP(pData,disData,Ω,xm,tm,Tmax1,1);
         if ubTemp < UB
@@ -433,6 +436,11 @@ function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ = 1e-2,cutLim = 100)
                 cutSet[ω] = updateCut(pData,dDω,cutSetω,leafω,tm,xm,Tmax1,Tmax,cutLim);
                 # generate master cuts
                 πlr,λlr,vlr,slr = solveLR(pData,dDω,cutSetω,tm,xm,Tmax1,1);
+                # cutV = testCutM(pData,vlr,πlr,λlr,tm,xm,text,xext);
+                # actualV = subIntC(pData,disData[ω],xext,text,999999);
+                # if cutV > actualV
+                #     println(ω," ",cutV," ",actualV);
+                # end
                 if θm[ω] < vlr - 1e-4
                     mp = addtxCut(pData,ω,mp,πlr,λlr,vlr,tm,xm);
                 end
