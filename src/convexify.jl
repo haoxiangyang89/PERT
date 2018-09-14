@@ -291,14 +291,14 @@ end
 
 function testCutS(pData,cutSetω,tm,xm,ts,xs,gs,ss)
     for nc in 1:length(cutSetω)
-       rhsv = sum(cutSetω[nc][1][i]*tm[i] + cutSetω[nc][3][i]*ts[i] + cutSetω[nc][5][i]*gs[i] for i in pData.II);
+       rhsv = sum(cutSetω[nc][1][i]*tm[i] + cutSetω[nc][3][i]*ts[i] + cutSetω[nc][5][i]*gs[i] for i in pData.II) + cutSetω[nc][7];
        for i in pData.II
            for j in pData.Ji[i]
                rhsv += cutSetω[nc][2][i,j]*xm[i,j] + cutSetω[nc][4][i,j]*xs[i,j] + cutSetω[nc][6][i,j]*ss[i,j];
            end
        end
-       if cutSetω[nc][7] > rhsv
-           println(nc," ",cutSetω[nc][7]," ",rhsv);
+       if rhsv > 0
+           println(nc," ",rhsv);
        end
    end
 end
