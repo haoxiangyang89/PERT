@@ -56,15 +56,15 @@ gapdecomp = (ubCost - lbCost)/ubCost;
 
 # extensive formulation
 tic();
-text,xext,fext,gext,mp = extForm_cheat(pData,disData,Ω,1e-2,999999);
+text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-2,999999);
 timeext = toc();
 θext = Dict();
 for ω in Ω
     θext[ω] = getvalue(mp[:t][0,ω]);
 end
-ubmp = mp.objVal;
-lbmp = mp.objBound;
-gapext = (mp.objVal - mp.objBound)/mp.objVal;
+ubmp = mext.objVal;
+lbmp = mext.objBound;
+gapext = (mext.objVal - mext.objBound)/mext.objVal;
 ubext = ubCal(pData,disData,Ω,xext,text,999999);
 dDict = [tdet,xdet,fdet,ubdet,texp,xexp,fexp,Gexp,ubexp,
             tbest,xbest,lbCost,ubCost,gapdecomp,timedecomp,

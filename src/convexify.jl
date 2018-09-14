@@ -209,7 +209,7 @@ function BBprocess(pData,dDω,cutSetω,tm,xm,nTree,M)
 
         gBin = true;
         for i in pData.II
-            if (abs(currentNode.sol[3][i] - 1) > 1e-5)&(abs(currentNode.sol[3][i]) > 1e-5)
+            if (abs(currentNode.sol[3][i] - 1) > 1e-9)&(abs(currentNode.sol[3][i]) > 1e-9)
                 gBin = false;
             end
         end
