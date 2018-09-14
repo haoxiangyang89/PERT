@@ -100,13 +100,13 @@ function genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
             νDict[i,j] = -getvalue(dp[:νs][i,j]);
         end
     end
-    vo = v;
-    for i in pData.II
-        vo += πDict[i]*ts[i] + γDict[i]*gs[i] + πhatDict[i]*tm[i];
-        for j in pData.Ji[i]
-            vo += λDict[i,j]*xs[i,j] + νDict[i,j]*ss[i,j] + λhatDict[i,j]*xm[i,j]
-        end
-    end
+    vo = getvalue(dp[:μsum]);
+    # for i in pData.II
+    #     vo -= πDict[i]*ts[i] + γDict[i]*gs[i] + πhatDict[i]*tm[i];
+    #     for j in pData.Ji[i]
+    #         vo -= λDict[i,j]*xs[i,j] + νDict[i,j]*ss[i,j] + λhatDict[i,j]*xm[i,j]
+    #     end
+    # end
     return vo,v,πDict,λDict,γDict,νDict,πhatDict,λhatDict;
 end
 

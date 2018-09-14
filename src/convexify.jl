@@ -279,6 +279,29 @@ function updateCut(pData,dDω,cutSetω,leafNodes,tm,xm,M,Mt)
     return cutSetω;
 end
 
+function testCutM(pData,vc,πc,λc,tm,xm,ttest,xtest)
+    rhsv = vc + sum(πc[i]*(ttest[i] - tm[i]) for i in pData.II);
+    for i in pData.II
+        for j in pData.Ji[i]
+            rhsv += λc[i,j]*(xtest[i,j] - xm[i,j]);
+        end
+    end
+    return rhsv;
+end
+
+function testCutS(pData,cutSetω,tm,xm,ts,xs,gs,ss)
+    for nc in 1:length(cutSetω)
+       rhsv = sum(cutSetω[nc][1][i]*tm[i] + cutSetω[nc][3][i]*ts[i] + cutSetω[nc][5][i]*gs[i] for i in pData.II);
+       for i in pData.II
+           for j in pData.Ji[i]
+               rhsv += cutSetω[nc][2][i,j]*xm[i,j] + cutSetω[nc][4][i,j]*xs[i,j] + cutSetω[nc][6][i,j]*ss[i,j];
+           end
+       end
+       if cutSetω[nc][7] > rhsv
+           println(nc," ",cutSetω[nc][7]," ",rhsv);
+       end
+   end
+end
 
 # convexification of the subproblem
 function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ)

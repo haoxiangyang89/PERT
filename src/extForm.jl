@@ -1,6 +1,23 @@
 # This is the extensive formulation of PERT (1st case)
 # the disruption does not affect the activities that have not been started
 
+function obtainExtSols(mext,ω)
+    solve(mext);
+    texts = Dict();
+    xexts = Dict();
+    gexts = Dict();
+    sexts = Dict();
+    for i in pData.II
+        texts[i] = getvalue(mext[:t][i,ω]);
+        gexts[i] = getvalue(mext[:G][i,ω]);
+        for j in pData.Ji[i]
+            xexts[i,j] = getvalue(mext[:x][i,j,ω]);
+            sexts[i,j] = getvalue(mext[:s][i,j,ω]);
+        end
+    end
+    return texts,xexts,gexts,sexts;
+end
+
 function extForm(pData,disData,Ω,TL = Inf)
     M = Dict();
     for ω in Ω
