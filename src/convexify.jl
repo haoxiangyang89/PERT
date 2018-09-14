@@ -176,7 +176,7 @@ end
 function middleGfrac(pData,G)
     GList = []
     for i in pData.II
-        if (G[i] > 1e-5)&(G[i] < 1 - 1e-5)
+        if (G[i] > 1e-9)&(G[i] < 1 - 1e-9)
             push!(GList,(i,G[i]));
         end
     end
@@ -190,6 +190,47 @@ function middleGfrac(pData,G)
     fracInd = GList[loc][1];
 
     return middleFrac,fracInd;
+end
+
+# check the feasibility with given 0-1 constraints
+function checkFeas(pData,dDω,nodeZeroSet,nodeOneSet,M)
+    fp = Model(solver = GurobiSolver(OutputFlag = 0));
+
+    @variable(fp,t0[i in pData.II] >= 0);
+    @variable(fp,0 <= x0[i in pData.II, j in pData.Ji[i]] <= 1);
+    @variable(fp,t[i in pData.II] >= 0);
+    @variable(fp,0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);
+    @variable(fp,G[i in pData.II], Bin);
+    @variable(fp,0 <= s[i in pData.II, j in pData.Ji[i]] <= 1);
+
+    @constraint(fp, FConstr[i in pData.II], dDω.H - (1 - G[i])*M <= t0[i]);
+    @constraint(fp, GConstr[i in pData.II], dDω.H + G[i]*M >= t0[i]);
+    @constraint(fp, tConstr1[i in pData.II], t[i] + G[i]*M >= t0[i]);
+    @constraint(fp, tConstr2[i in pData.II], t[i] - G[i]*M <= t0[i]);
+    @constraint(fp, tConstr3[i in pData.II], t[i] >= dDω.H * G[i]);
+    @constraint(fp, xConstr1[i in pData.II, j in pData.Ji[i]], x[i,j] + G[i] >= x0[i,j]);
+    @constraint(fp, xConstr2[i in pData.II, j in pData.Ji[i]], x[i,j] - G[i] <= x0[i,j]);
+    @constraint(fp, durationConstr1[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]] + dDω.d[k[1]]*G[k[1]]
+                      - sum(pData.D[k[1]]*pData.eff[k[1]][j]*x[k[1],j] + dDω.d[k[1]]*pData.eff[k[1]][j]*s[k[1],j] for j in pData.Ji[k[1]]));
+    @constraint(fp, durationConstr2[k in pData.K], t0[k[2]] - t0[k[1]] >= pData.D[k[1]]*(1 - sum(pData.eff[k[1]][j]*x0[k[1],j] for j in pData.Ji[k[1]])));
+    @constraint(fp, GGcons1[i in pData.II], G[i] >= G[i + 1]);
+    @constraint(fp, GGcons2[i in pData.K], G[k[2]] >= G[k[1]]);
+    @constraint(fp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+    @constraint(fp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(fp, xConstr0[i in pData.II], sum(x0[i,j] for j in pData.Ji[i]) <= 1);
+    @constraint(fp, budgetConstr0, sum(sum(pData.b[i][j]*x0[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(fp, Slinear1[i in pData.II, j in pData.Ji[i]], s[i,j] <= G[i]);
+    @constraint(fp, Slinear2[i in pData.II, j in pData.Ji[i]], s[i,j] <= x[i,j]);
+    @constraint(fp, Slinear3[i in pData.II, j in pData.Ji[i]], s[i,j] >= x[i,j] - 1 + G[i]);
+
+    @objective(fp,Min,1);
+
+    fpstatus = solve(fp);
+    if fpstatus == :Optimal
+        return true;
+    else
+        return false;
+    end
 end
 
 # create the B&B tree for the subproblem
@@ -236,6 +277,15 @@ function BBprocess(pData,dDω,cutSetω,tm,xm,nTree,M)
                     push!(currentNode.childSet,nID);
                     push!(tree,node1);
                     push!(activeNode,node1);
+                else
+                    # if fathomed, still needs to be counted as a leaf node
+                    # but need to check the feasibility first
+                    if checkFeas(pData,dDω,node1zeroSet,node1oneSet,M)
+                        nID += 1;
+                        node1 = treeNode(nID,Inf,[],currentNode.nodeID,[],node1zeroSet,node1oneSet);
+                        push!(currentNode.childSet,nID);
+                        push!(tree,node1);
+                    end
                 end
 
                 node2zeroSet = copy(currentNode.zeroSet);
@@ -248,6 +298,15 @@ function BBprocess(pData,dDω,cutSetω,tm,xm,nTree,M)
                     push!(currentNode.childSet,nID);
                     push!(tree,node2);
                     push!(activeNode,node2);
+                else
+                    # if fathomed, still needs to be counted as a leaf node
+                    # but need to check the feasibility first
+                    if checkFeas(pData,dDω,node2zeroSet,node2oneSet,M)
+                        nID += 1;
+                        node2 = treeNode(nID,Inf,[],currentNode.nodeID,[],node2zeroSet,node2oneSet);
+                        push!(currentNode.childSet,nID);
+                        push!(tree,node2);
+                    end
                 end
             end
         end
@@ -304,6 +363,19 @@ function testCutS(pData,cutSetω,tm,xm,ts,xs,gs,ss)
    end
 end
 
+function oneNormD(pData,sol1,sol2)
+    # solution contains:
+    # 1: tm, 2: xm, 3: ts, 4: xs, 5: gs, 6: ss
+    dis1 = 0;
+    for i in pData.II
+        dis1 += abs(sol1[1][i] - sol2[1][i]) + abs(sol1[3][i] - sol2[3][i]) + abs(sol1[5][i] - sol2[5][i]);
+        for j in pData.Ji[i]
+            dis1 += abs(sol1[2][i,j] - sol2[2][i,j]) + abs(sol1[4][i,j] - sol2[4][i,j]) + abs(sol1[6][i,j] - sol2[6][i,j]);
+        end
+    end
+    return dis1;
+end
+
 # convexification of the subproblem
 function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ)
     # while it has not reached the optimum
@@ -352,7 +424,7 @@ function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ)
             # for each scenario, generate disjunctive cuts using BB-D algorithm
             for ω in Ω
                 dDω = disData[ω];
-                cutSetω = cutSet[ω];
+                cutSetω = copy(cutSet[ω]);
                 # if the solution is not binary, obtain a B&B tree and add disjunctive cuts
                 leafω = BBprocess(pData,dDω,cutSetω,tm,xm,nTree,Tmax1);
                 cutSet[ω] = updateCut(pData,dDω,cutSetω,leafω,tm,xm,Tmax1,Tmax);
