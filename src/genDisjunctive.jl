@@ -181,8 +181,8 @@ function genDisjunctiveP(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
     @constraint(mp, tGAnt2[i in pData.II, n in nSet], -Mt*G[i,n] + that[i,n] <= dDω.H*a[n]);
 
     @constraint(mp, prevCuts[l in 1:length(cutSetω), n in nSet], a[n]*cutSetω[l][7] <=
-        sum(cutSetω[l][1][i]*that[i,n] + cutSetω[l][3][i]*t[i,n] + cutSetω[5][i]*G[i,n] +
-        sum(cutSetω[l][2][i,j]*xhat[i,j,n] + cutSetω[l][4][i,j]*x[i,j,n] + cutSetω[l][6]*s[i,j,n] for j in pData.Ji[i]) for i in pData.II));
+        sum(cutSetω[l][1][i]*tm[i,n] + cutSetω[l][3][i]*t[i,n] + cutSetω[5][i]*G[i,n] +
+        sum(cutSetω[l][2][i,j]*xm[i,j,n] + cutSetω[l][4][i,j]*x[i,j,n] + cutSetω[l][6]*s[i,j,n] for j in pData.Ji[i]) for i in pData.II));
 
     @constraint(mp, tub[i in pData.II, n in nSet], t[i,n] <= M*a[n]);
     @constraint(mp, thatub[i in pData.II, n in nSet], that[i,n] <= Mt*a[n]);
