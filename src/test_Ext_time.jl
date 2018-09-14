@@ -60,7 +60,7 @@ text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-2,999999);
 timeext = toc();
 θext = Dict();
 for ω in Ω
-    θext[ω] = getvalue(mp[:t][0,ω]);
+    θext[ω] = getvalue(mext[:t][0,ω]);
 end
 ubmp = mext.objVal;
 lbmp = mext.objBound;
