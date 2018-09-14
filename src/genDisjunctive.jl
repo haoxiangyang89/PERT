@@ -1,4 +1,4 @@
-function genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
+function genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt,returnOpt = 0)
     dp = Model(solver = GurobiSolver());
     # the number of disjunctive sections
     noT = length(leafNodes);
@@ -107,10 +107,14 @@ function genDisjunctive(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
     #         vo -= λDict[i,j]*xs[i,j] + νDict[i,j]*ss[i,j] + λhatDict[i,j]*xm[i,j]
     #     end
     # end
-    return vo,v,πDict,λDict,γDict,νDict,πhatDict,λhatDict;
+    if returnOpt == 0
+        return vo,v,πDict,λDict,γDict,νDict,πhatDict,λhatDict;
+    else
+        return vo,v,πDict,λDict,γDict,νDict,πhatDict,λhatDict,dp;
+    end
 end
 
-function genDisjunctiveP(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
+function genDisjunctiveP(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt,returnOpt = 0)
     noT = length(leafNodes);
     nSet = 1:noT;
     gub = Dict();
@@ -195,5 +199,30 @@ function genDisjunctiveP(pData,dDω,cutSetω,leafNodes,tm,xm,ts,xs,gs,ss,M,Mt)
     @objective(mp, Min, sum(tplus[i] + tminus[i] + Gplus[i] + Gminus[i] + thatplus[i] + thatminus[i] +
         sum(xplus[i,j] + xminus[i,j] + xhatplus[i,j] + xhatminus[i,j] + splus[i,j] + sminus[i,j] for j in pData.Ji[i]) for i in pData.II));
 
-    return mp;
+    solve(mp);
+
+    v = getobjectivevalue(mp);
+    πDict = Dict();
+    λDict = Dict();
+    γDict = Dict();
+    νDict = Dict();
+    πhatDict = Dict();
+    λhatDict = Dict();
+
+    for i in pData.II
+        πDict[i] = getdual(mp[:tSum][i]);
+        πhatDict[i] = getdual(mp[:thatSum][i]);
+        γDict[i] = getdual(mp[:GSum][i]);
+        for j in pData.Ji[i]
+            λDict[i,j] = getdual(mp[:xSum][i,j]);
+            λhatDict[i,j] = getdual(mp[:xhatSum][i,j]);
+            νDict[i,j] = getdual(mp[:sSum][i,j]);
+        end
+    end
+    vo = getdual(mp[:aSum]);
+    if returnOpt == 0
+        return vo,v,πDict,λDict,γDict,νDict,πhatDict,λhatDict;
+    else
+        return vo,v,πDict,λDict,γDict,νDict,πhatDict,λhatDict,mp;
+    end
 end
