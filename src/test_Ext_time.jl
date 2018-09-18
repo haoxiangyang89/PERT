@@ -1,35 +1,10 @@
 addprocs(20);
 # test sbb
-@everywhere using JuMP,Gurobi,CPLEX,Ipopt;
-@everywhere using Distributions,HDF5,JLD;
+@everywhere include("header.jl");
 
-@everywhere include("def.jl");
-@everywhere include("readIn.jl");
-@everywhere include("master.jl");
-@everywhere include("sub.jl");
-@everywhere include("cuts.jl");
-@everywhere include("iSolve.jl");
-@everywhere include("tighten.jl");
-@everywhere include("branchFunc.jl");
-@everywhere include("detForm.jl");
-@everywhere include("extForm.jl");
-@everywhere include("expModel.jl");
-@everywhere include("ubCalFunc.jl");
-@everywhere include("tighten.jl");
-@everywhere include("partition_LP.jl");
-@everywhere include("partition_LR.jl");
-@everywhere include("part_tight.jl");
-@everywhere include("partitionSolve.jl");
-@everywhere include("convexify.jl");
-
-pInputAdd = "/home/haoxiang/PERT_tests/14_ExponentialD_LogNormalH/test_14_P.csv";
-kInputAdd = "/home/haoxiang/PERT_tests/14_ExponentialD_LogNormalH/test_14_K.csv";
-ϕInputAdd = "/home/haoxiang/PERT_tests/14_ExponentialD_LogNormalH/test_14_Phi_full.csv";
-
-pData = readInP(pInputAdd,kInputAdd);
-nameD,dparams = readInUnc(ϕInputAdd);
-disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,5,1 - pData.p0);
-disData = orderdisData(disData,Ω);
+filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_ExponentialD_LogNormalH/"
+pData,disDataSet = genData(filePath,5);
+disData = disDataSet[1];
 
 # deterministic solution
 tdet,xdet,fdet = detBuild(pData);

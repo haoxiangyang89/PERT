@@ -1,4 +1,36 @@
-@everywhere include("piecewiseU.jl");
+function buildDistrn(nameDistr,paramDistr)
+    if nameDistr == "Exponential"
+        μ = paramDistr[1];
+        distrObj = Exponential(μ);
+    elseif nameDistr == "LogNormal"
+        μ = paramDistr[1];
+        σ = paramDistr[2];
+        distrObj = LogNormal(μ,σ);
+    elseif nameDistr == "Gamma"
+        α = paramDistr[1];
+        θ = paramDistr[2];
+        distrObj = Gamma(α,θ);
+    elseif nameDistr == "Uniform"
+        la = paramDistr[1];
+        ub = paramDistr[2];
+        distrObj = Uniform(la,ub+1e-10);
+    elseif nameDistr == "Normal"
+        μ = paramDistr[1];
+        σ = paramDistr[2];
+        distrObj = Normal(μ,σ);
+    elseif nameDistr == "PiecewiseU"
+        endPts = paramDistr[1];
+        mass = paramDistr[2];
+        distrObj = piecewiseUniformSampler(endPts,mass);
+    elseif nameDistr == "Singleton"
+        endPts = [paramDistr[1]];
+        mass = [1];
+        distrObj = piecewiseUniformSampler(endPts,mass);
+    end
+
+    return distrObj;
+end
+
 # This is the input function that reads in the project data
 function readInP(pInputAdd,kInputAdd)
     pRaw = readdlm(pInputAdd,',',header = false);
@@ -106,54 +138,11 @@ end
 function autoUGen(nameH, Hparams, nameD, dparams, Ωn, totalProb)
     disData = Dict();
     Ω = 1:Ωn;
-
-    if nameH == "Exponential"
-        μ = Hparams[1];
-        distrH = Exponential(μ);
-    elseif nameH == "LogNormal"
-        μ = Hparams[1];
-        σ = Hparams[2];
-        distrH = LogNormal(μ,σ);
-    elseif nameH == "Gamma"
-        α = Hparams[1];
-        θ = Hparams[2];
-        distrH = Gamma(α,θ);
-    elseif nameH == "Uniform"
-        la = Hparams[1];
-        ub = Hparams[2];
-        distrH = Uniform(la,ub+1e-10);
-    elseif nameH == "Normal"
-        μ = Hparams[1];
-        σ = Hparams[2];
-        distrH = Normal(μ,σ);
-    elseif nameH == "PiecewiseU"
-        endPts = Hparams[1];
-        mass = Hparams[2];
-        distrH = piecewiseUniformSampler(endPts,mass);
-    end
+    distrH = buildDistrn(nameH,Hparams);
 
     distrD = Dict();
     for i in keys(dparams)
-        if nameD == "Exponential"
-            μ = dparams[i][1];
-            distrD[i] = Exponential(μ);
-        elseif nameD == "LogNormal"
-            μ = dparams[i][1];
-            σ = dparams[i][2];
-            distrD[i] = LogNormal(μ,σ);
-        elseif nameD == "Gamma"
-            α = dparams[i][1];
-            θ = dparams[i][2];
-            distrD[i] = Gamma(α,θ);
-        elseif nameD == "Uniform"
-            la = dparams[i][1];
-            ub = dparams[i][2];
-            distrD[i] = Uniform(la,ub+1e-10);
-        elseif nameD == "Normal"
-            μ = dparams[i][1];
-            σ = dparams[i][2];
-            distrD[i] = Normal(μ,σ);
-        end
+        distrD[i] = buildDistrn(nameD,dparams[i]);
     end
 
     for ω in Ω
@@ -171,50 +160,12 @@ end
 # automatically uncertainty data generation: stratified
 function autoUGenStrata(nameH, Hparams, nameD, dparams, Ωt, Ωd, totalProb)
     disData = Dict();
-
-    if nameH == "Exponential"
-        μ = Hparams[1];
-        distrH = Exponential(μ);
-    elseif nameH == "LogNormal"
-        μ = Hparams[1];
-        σ = Hparams[2];
-        distrH = LogNormal(μ,σ);
-    elseif nameH == "Gamma"
-        α = Hparams[1];
-        θ = Hparams[2];
-        distrH = Gamma(α,θ);
-    elseif nameH == "Uniform"
-        la = Hparams[1];
-        ub = Hparams[2];
-        distrH = Uniform(la,ub+1e-10);
-    elseif nameH == "Normal"
-        μ = Hparams[1];
-        σ = Hparams[2];
-        distrH = Normal(μ,σ);
-    end
+    Ω = 1:Ωn;
+    distrH = buildDistrn(nameH,Hparams);
 
     distrD = Dict();
     for i in keys(dparams)
-        if nameD == "Exponential"
-            μ = dparams[i][1];
-            distrD[i] = Exponential(μ);
-        elseif nameD == "LogNormal"
-            μ = dparams[i][1];
-            σ = dparams[i][2];
-            distrD[i] = LogNormal(μ,σ);
-        elseif nameD == "Gamma"
-            α = dparams[i][1];
-            θ = dparams[i][2];
-            distrD[i] = Gamma(α,θ);
-        elseif nameD == "Uniform"
-            la = dparams[i][1];
-            ub = dparams[i][2];
-            distrD[i] = Uniform(la,ub+1e-10);
-        elseif nameD == "Normal"
-            μ = dparams[i][1];
-            σ = dparams[i][2];
-            distrD[i] = Normal(μ,σ);
-        end
+        distrD[i] = buildDistrn(nameD,dparams[i]);
     end
 
     ω = 0;
@@ -238,49 +189,11 @@ end
 function autoUGenStrata2(nameH, Hparams, nameD, dparams, Ωt, Ωd, totalProb)
     disData = Dict();
 
-    if nameH == "Exponential"
-        μ = Hparams[1];
-        distrH = Exponential(μ);
-    elseif nameH == "LogNormal"
-        μ = Hparams[1];
-        σ = Hparams[2];
-        distrH = LogNormal(μ,σ);
-    elseif nameH == "Gamma"
-        α = Hparams[1];
-        θ = Hparams[2];
-        distrH = Gamma(α,θ);
-    elseif nameH == "Uniform"
-        la = Hparams[1];
-        ub = Hparams[2];
-        distrH = Uniform(la,ub+1e-10);
-    elseif nameH == "Normal"
-        μ = Hparams[1];
-        σ = Hparams[2];
-        distrH = Normal(μ,σ);
-    end
+    distrH = buildDistrn(nameH,Hparams);
 
     distrD = Dict();
     for i in keys(dparams)
-        if nameD == "Exponential"
-            μ = dparams[i][1];
-            distrD[i] = Exponential(μ);
-        elseif nameD == "LogNormal"
-            μ = dparams[i][1];
-            σ = dparams[i][2];
-            distrD[i] = LogNormal(μ,σ);
-        elseif nameD == "Gamma"
-            α = dparams[i][1];
-            θ = dparams[i][2];
-            distrD[i] = Gamma(α,θ);
-        elseif nameD == "Uniform"
-            la = dparams[i][1];
-            ub = dparams[i][2];
-            distrD[i] = Uniform(la,ub+1e-10);
-        elseif nameD == "Normal"
-            μ = dparams[i][1];
-            σ = dparams[i][2];
-            distrD[i] = Normal(μ,σ);
-        end
+        distrD[i] = buildDistrn(nameD,dparams[i]);
     end
 
     ω = 0;
@@ -304,6 +217,17 @@ function autoUGenStrata2(nameH, Hparams, nameD, dparams, Ωt, Ωd, totalProb)
     return disData,Ω;
 end
 
+function readH(hInputAdd)
+    hRaw = readdlm(hInputAdd,',',header = false);
+    nameH = hRaw[1,1];
+    nh,mh = size(hRaw);
+    Hparams = [];
+    for i in 1:mh
+        push!(Hparams,hRaw[2,i]);
+    end
+    return nameH,Hparams;
+end
+
 function orderdisData(disData,Ω)
     dHList = [disData[ω].H for ω in Ω];
     ωOrdered = sortperm(dHList);
@@ -312,4 +236,50 @@ function orderdisData(disData,Ω)
         disDataNew[ω] = disData[ωOrdered[ω]];
     end
     return disDataNew;
+end
+
+function genData(filePath,Ωsize,dataSize = 1,pName = "test_P.csv",kName = "test_K.csv",ϕName = "test_Phi.csv",hName = "test_H.csv", dOnly = 0, hOnly = 0, saveOpt = 0)
+    # under the file path, look for test_P, test_K and test_Phi
+    pInputAdd = joinpath(filePath,pName);
+    kInputAdd = joinpath(filePath,kName);
+    ϕInputAdd = joinpath(filePath,ϕName);
+    hInputAdd = joinpath(filePath,hName);
+
+    pData = readInP(pInputAdd,kInputAdd);
+    nameD,dparams = readInUnc(ϕInputAdd);
+    nameH,Hparams = readH(hInputAdd);
+
+    disDataSet = [];
+
+    for ds in 1:dataSize
+        if (dOnly == 0)&(hOnly == 0)
+            disData,Ω = autoUGen(nameH,Hparams,nameD,dparams,Ωsize,1 - pData.p0);
+            disData = orderdisData(disData,Ω);
+        elseif (dOnly != 0)&(hOnly == 0)
+            distrD = Dict();
+            for i in pData.II
+                distrD[i] = mean(buildDistrn(nameD,dparams[i]));
+            end
+            disData,Ω = autoUGen(nameH,Hparams,"Singleton",distrD,Ωsize,1 - pData.p0);
+            disData = orderdisData(disData,Ω);
+        elseif (dOnly == 0)&(hOnly != 0)
+            distrH = mean(buildDistrn(nameH,Hparams));
+            disData,Ω = autoUGen("Singleton",distrH,nameD,dparams,Ωsize,1 - pData.p0);
+            disData = orderdisData(disData,Ω);
+        end
+        push!(disDataSet,disData);
+    end
+    if saveOpt == 0
+        return pData,disDataSet;
+    else
+        save("test.jld","pData",pData,"disDataSet",disDataSet);
+    end
+end
+
+function loadData(filePath,fName = "test.jld")
+    # under the file path, look for test.jld (or stated specifically otherwise)
+    fileAdd = joinpath(filePath,fName);
+    disDataSetR = load(fileAdd);
+    disDataSet = disDataSetR["disDataSet"];
+    return disDataSet;
 end
