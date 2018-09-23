@@ -397,7 +397,7 @@ function convexify(pData,disData,Ω,Tmax,Tmax1,nTree,ϵ = 1e-2,cutLim = 100)
     end
 
     LBList = [];
-    while !(stopBool)
+    while (!(stopBool))&(length(LBList) <= 20)
         # solve the master problem and obtain the master solution
         solve(mp);
         tm = Dict();

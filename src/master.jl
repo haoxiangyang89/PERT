@@ -256,5 +256,17 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax)
         end
     end
 
+    # add the constraints between y
+    for k in pData.K
+        # for each precedence relationship
+        for par1 in 1:length(divSet[k[1]])
+            for par2 in 1:length(divSet[k[2]])
+                if H[divSet[k[2]][par2].endH] < H[divSet[k[1]][par1].startH] + pData.D[k[1]]*(1 - maximum(values(pData.eff[k[1]])))
+                    @constraint(mp, y[k[1],par1] + y[k[2],par2] <= 1);
+                end
+            end
+        end
+    end
+
     return mp;
 end

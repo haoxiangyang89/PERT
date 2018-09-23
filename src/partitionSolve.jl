@@ -80,6 +80,10 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
             mp = updateMaster(mp,ubInfo,lbInfo);
             divSet,divDet = revisePar(pData,disData,divSet,divDet,ubInfo,lbInfo);
             mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
+        elseif tightenBool == 2
+            mpTemp = copy(mp);
+            divDet = obtainDet(pData,disData,Ω,mpTemp,ub,divSet,divDet);
+            mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
         end
         while keepIter
             solve(mp);

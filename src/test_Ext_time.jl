@@ -1,9 +1,14 @@
 addprocs(20);
+@everywhere using JuMP,Gurobi,CPLEX,Ipopt;
+@everywhere using Distributions,HDF5,JLD;
 # test sbb
 @everywhere include("header.jl");
 
-filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_ExponentialD_LogNormalH/"
-pData,disDataSet = genData(filePath,5);
+#filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_ExponentialD_LogNormalH/"
+filePath = "/home/haoxiang/PERT_tests/14";
+Ωsize = 5;
+Ω = 1:Ωsize;
+pData,disDataSet = genData(filePath,Ωsize);
 disData = disDataSet[1];
 
 # deterministic solution

@@ -1,7 +1,4 @@
 # test sbb
-@everywhere using JuMP,Gurobi,CPLEX,Ipopt;
-@everywhere using Distributions,HDF5,JLD;
-
 @everywhere include("piecewiseU.jl");
 @everywhere include("def.jl");
 @everywhere include("readIn.jl");
