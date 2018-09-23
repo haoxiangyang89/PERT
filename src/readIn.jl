@@ -270,7 +270,7 @@ function genData(filePath,Ωsize,dataSize = 1,pName = "test_P.csv",kName = "test
         push!(disDataSet,disData);
     end
     if saveOpt == 0
-        return pData,disDataSet;
+        return pData,disDataSet,dparams,Hparams;
     else
         save("test.jld","pData",pData,"disDataSet",disDataSet);
     end

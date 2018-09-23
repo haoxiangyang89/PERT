@@ -6,9 +6,9 @@ addprocs(20);
 
 #filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_ExponentialD_LogNormalH/"
 filePath = "/home/haoxiang/PERT_tests/14";
-Ωsize = 5;
+Ωsize = 500;
 Ω = 1:Ωsize;
-pData,disDataSet = genData(filePath,Ωsize);
+pData,disDataSet,dparams,Hparams = genData(filePath,Ωsize);
 disData = disDataSet[1];
 
 # deterministic solution
