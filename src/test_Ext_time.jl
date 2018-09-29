@@ -8,7 +8,7 @@ addprocs(20);
 filePath = "/home/haoxiang/PERT_tests/14";
 Ωsize = 500;
 Ω = 1:Ωsize;
-pData,disDataSet,dparams,Hparams = genData(filePath,Ωsize);
+pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
 disData = disDataSet[1];
 
 # deterministic solution
@@ -30,13 +30,13 @@ ubexp = ubCalP(pData,disData,Ω,xexp,texp,999999);
 
 # our decomposition method
 tic();
-tbest,xbest,lbCost,ubCost = partitionSolve(pData,disData,0.001);
+tbest,xbest,lbCost,ubCost = partitionSolve(pData,disData,0.01);
 timedecomp = toc();
 gapdecomp = (ubCost - lbCost)/ubCost;
 
 # extensive formulation
 tic();
-text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-2,999999);
+text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-4,999999);
 timeext = toc();
 θext = Dict();
 for ω in Ω
@@ -54,10 +54,10 @@ save("test_Ext_time.jld","dDict",dDict);
 ############################################
 ubList = [];
 for n in 1:30
-    disData,Ω = autoUGen("LogNormal",[log(35),0.5],nameD,dparams,500,1 - pData.p0);
-    disData = orderdisData(disData,Ω);
-    ubdet = ubCal(pData,disData,Ω,xdet,tdet,999999);
-    ubexp = ubCal(pData,disData,Ω,xexp,texp,999999);
-    ubext = ubCal(pData,disData,Ω,xext,text,999999);
-    push!(ubList,[ubdet,ubexp,ubext]);
+    disData1,Ω = autoUGen("LogNormal",Hparams,"Exponential",dparams,500,1 - pData.p0);
+    disData1 = orderdisData(disData1,Ω);
+    ubdet1 = ubCalP(pData,disData1,Ω,xdet,tdet,999999);
+    ubexp1 = ubCalP(pData,disData1,Ω,xexp,texp,999999);
+    ubext1 = ubCalP(pData,disData1,Ω,xext,text,999999);
+    push!(ubList,[ubdet1,ubexp1,ubext1]);
 end
