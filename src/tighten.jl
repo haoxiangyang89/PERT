@@ -331,7 +331,7 @@ function obtainDet(pData,disData,Ω,mpTemp,ub,divSet,divDet)
             @constraint(mpTTemp,mpTTemp[:y][i,par] == 1);
             mpStatus = solve(mpTTemp);
             if mpStatus == :Infeasible
-                divDet[i,par] = -1;
+                divDet[i][par] = -1;
             end
         end
     end
