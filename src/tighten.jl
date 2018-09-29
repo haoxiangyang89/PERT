@@ -328,7 +328,7 @@ function obtainDet(pData,disData,Ω,mpTemp,ub,divSet,divDet)
         # fix the y[i,par] to be 1 and solve the problem, if infeasible, then y[i,par] has to be 0
         for par in 1:length(divSet[i])
             mpTTemp = copy(mpTemp);
-            @constraint(mpTTemp,y[i,par] == 1);
+            @constraint(mpTTemp,mpTTemp[:y][i,par] == 1);
             mpStatus = solve(mpTTemp);
             if mpStatus == :Infeasible
                 divDet[i,par] = -1;
