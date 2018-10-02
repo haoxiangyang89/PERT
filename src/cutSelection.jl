@@ -28,6 +28,10 @@ function examineCuts_count(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThre
             if (cutSel[nc,ω] > cutThreshold)&(!((nc,ω) in cutyn))
                 push!(cutyn,(nc,ω));
             end
+            # remove the cuts from the exempt list because it is tight again
+            if (cutSel[nc,ω] > cutThreshold)&(!((nc,ω) in cutyn))
+                deleteat!(cutyn, findin(cutyn, (nc,ω)));
+            end
         end
     end
     return cutSel,cutyn;
