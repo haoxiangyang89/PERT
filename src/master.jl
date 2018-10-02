@@ -215,7 +215,7 @@ function updateMaster(mp,ubInfo,lbInfo)
     return mp;
 end
 
-function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yCuts = 0)
+function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yCuts = 1,cutyn = [])
     H = Dict();
     H[0] = 0;
     H[length(Ω)+1] = Tmax;
@@ -244,8 +244,8 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yCuts = 0)
     # second dimension record the dual solution for every scenario
     for nc in 1:length(cutSet)
         for ω in Ω
-            if cutSet[nc][2][ω] != []
-                # if there is a cut for scenario ω in iteration nc
+            if (cutSet[nc][2][ω] != [])&(!((nc,ω) in cutyn))
+                # if there is a cut for scenario ω in iteration nc and it is tight
                 # @constraint(mp, θ[ω] >= cutSet[nc][2][ω][1] + sum(cutSet[nc][2][ω][2][i]*(mp[:t][i] - cutSet[nc][1][1][i]) for i in pData.II) +
                 #     sum(sum(cutSet[nc][2][ω][3][i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) for i in pData.II) +
                 #     sum(sum(cutSet[nc][2][ω][4][i,revPar(cutSet[nc][1][4][i],divSet[i][par])]*(mp[:y][i,par] - cutSet[nc][1][3][i,revPar(cutSet[nc][1][4][i],divSet[i][par])]) for par in 1:length(divSet[i])) for i in pData.II));

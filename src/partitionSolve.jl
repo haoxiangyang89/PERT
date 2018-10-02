@@ -1,4 +1,4 @@
-function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
+function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0, cutThreshold = 5)
     # process to solve the PERT problem
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
@@ -17,7 +17,7 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
 
     # start with an upper bound based on the deterministic solution
     tdet,xdet,fdet = detBuild(pData);
-    ubdet = ubCal(pData,disData,Ω,xdet,tdet,Tmax1);
+    ubdet = ubCalP(pData,disData,Ω,xdet,tdet,Tmax1);
     brInfo = precludeRel(pData,disData,Ω,ubdet);
 
     H = Dict();
@@ -64,6 +64,10 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
     tbest = Dict();
     ubCost = ubdet;
     lbCost = -Inf;
+    lbCostList = [];
+    ubCostList = [];
+    # set up the counter for being tight
+    cutSel = Dict();
 
     while (ubCost - lbCost)/ubCost > ϵ
         keepIter = true;
@@ -72,7 +76,7 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
         θlb = Dict();
         ylb = Dict();
         dataList = [];
-        mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
+        mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,1,cutyn);
         # if perform the bound tightening process
         if tightenBool == 1
             mpTemp = copy(mp);
@@ -82,7 +86,7 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
             mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
         elseif tightenBool == 2
             mpTemp = copy(mp);
-            divDet = obtainDet(pData,disData,Ω,mpTemp,ub,divSet,divDet);
+            divDet = obtainDet(pData,disData,Ω,mpTemp,ubCost,divSet,divDet);
             mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax);
         end
         while keepIter
@@ -105,6 +109,10 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
                 θhat[ω] = getvalue(mp[:θ][ω]);
             end
             lbCost = getobjectivevalue(mp);
+            push!(lbCostList,lbCost);
+            # examine how many cuts are tight at this solution, update the cutSel
+            cutSel,cutyn = examineCuts(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThreshold);
+
             # generate cuts
             lbPrev = lbCost;
             πdict = Dict();
@@ -118,6 +126,7 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
                 tbest = copy(that);
                 xbest = copy(xhat);
             end
+            push!(ubCostList,ubCost);
             dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
             for ω in Ω
                 πdict[ω] = dataList[ω][1];
@@ -128,7 +137,7 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
             ωTightCounter = 0;
             cutDual = Dict();
             for ω in Ω
-                if vk[ω] - θhat[ω] > 1e-5
+                if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
                     cutDual[ω] = [vk[ω],πdict[ω],λdict[ω],γdict[ω]];
                     mp = addtxyCut(pData,ω,mp,πdict[ω],λdict[ω],γdict[ω],vk[ω],that,xhat,yhat,divSet);
                 else
@@ -152,6 +161,9 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0)
                 end
             else
                 push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
+                for ω in Ω
+                    cutSel[length(cutSet),ω] = 0;
+                end
             end
         end
 
