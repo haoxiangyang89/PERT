@@ -25,7 +25,7 @@ function examineCuts_count(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThre
                     cutSel[nc,ω] = 0;
                 end
             end
-            if cutSel[nc,ω] > cutThreshold
+            if (cutSel[nc,ω] > cutThreshold)&(!((nc,ω) in cutyn))
                 push!(cutyn,(nc,ω));
             end
         end
