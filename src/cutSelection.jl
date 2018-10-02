@@ -8,9 +8,16 @@ function examineCuts_count(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThre
             # for each scenario
             if cutSet[nc][2][ω] != []
                 # there is a cut
-                cutV = cutSet[nc][2][ω][1] + sum(cutSet[nc][2][ω][2][i]*(that[i] - cutSet[nc][1][1][i]) for i in pData.II) +
-                    sum(sum(cutSet[nc][2][ω][3][i,j]*(xhat[i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                    sum(sum(cutSet[nc][2][ω][4][i,par]*(sum(yhat[i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par]) for par in 1:length(cutSet[nc][1][4][i])) for i in pData.II);
+                cutV = cutSet[nc][2][ω][1];
+                for i in pData.II
+                    cutV +=  cutSet[nc][2][ω][2][i]*(that[i] - cutSet[nc][1][1][i]);
+                    for j in pData.Ji[i]
+                        cutV += cutSet[nc][2][ω][3][i,j]*(xhat[i,j] - cutSet[nc][1][2][i,j]);
+                    end
+                    for par in 1:length(cutSet[nc][1][4][i]))
+                        cutV += cutSet[nc][2][ω][4][i,par]*(sum(yhat[i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par]);
+                    end
+                end
                 if θhat[ω] > cutV + 1e-4
                     # not tight
                     cutSel[nc,ω] += 1;

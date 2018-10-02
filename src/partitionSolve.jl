@@ -68,6 +68,7 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0, cutThreshold = 
     ubCostList = [];
     # set up the counter for being tight
     cutSel = Dict();
+    cutyn = [];
 
     while (ubCost - lbCost)/ubCost > ϵ
         keepIter = true;
@@ -111,7 +112,7 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0, cutThreshold = 
             lbCost = getobjectivevalue(mp);
             push!(lbCostList,lbCost);
             # examine how many cuts are tight at this solution, update the cutSel
-            cutSel,cutyn = examineCuts(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThreshold);
+            cutSel,cutyn = examineCuts_count(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThreshold);
 
             # generate cuts
             lbPrev = lbCost;
