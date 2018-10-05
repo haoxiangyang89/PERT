@@ -215,7 +215,7 @@ function updateMaster(mp,ubInfo,lbInfo)
     return mp;
 end
 
-function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yLim,yCuts = 1,cutyn = [])
+function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yOption,yLim,yCuts = 1,cutyn = [])
     H = Dict();
     H[0] = 0;
     H[length(Ω)+1] = Tmax;
@@ -271,10 +271,12 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yLim,yCuts 
     end
 
     # add yLim constraints
-    for i in pData.II
-        for par in 1:length(divSet[i])
-            if !(par in yLim[i])
-                @constraint(mp, y[i,par] == 0);
+    if yOption != 0
+        for i in pData.II
+            for par in 1:length(divSet[i])
+                if !(par in yLim[i])
+                    @constraint(mp, y[i,par] == 0);
+                end
             end
         end
     end
