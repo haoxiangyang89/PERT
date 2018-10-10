@@ -106,3 +106,51 @@ function revisePar(pData,disData,PartSet,PartDet,ubInfo,lbInfo)
     end
     return newPartSet,newPartDet;
 end
+
+function splitPar_CI(PartSet,PartDet,splitInfo)
+    # i generic
+    newPartSet = copy(PartSet);
+    newPartDet = copy(PartDet);
+    for (i,splitStart,splitEnd) in splitInfo
+        partSetiTemp = [];
+        partDetiTemp = [];
+        for par in 1:length(PartSet[i])
+            # split the current partition, essentially split twice using the start and the end
+            if (splitStart < PartSet[i][par].endH)&(splitStart > PartSet[i][par].startH)&(PartDet[i][par] == 0)
+                if (splitEnd < PartSet[i][par].endH)&(splitEnd > PartSet[i][par].startH)
+                    part1 = partType(PartSet[i][par].startH,splitStart);
+                    part2 = partType(splitStart,splitEnd);
+                    part3 = partType(splitEnd,PartSet[i][par].endH);
+                    push!(partSetiTemp,part1);
+                    push!(partSetiTemp,part2);
+                    push!(partSetiTemp,part3);
+                    push!(partDetiTemp,0);
+                    push!(partDetiTemp,0);
+                    push!(partDetiTemp,0);
+                else
+                    part1 = partType(PartSet[i][par].startH,splitStart);
+                    part2 = partType(splitStart,PartSet[i][par].endH);
+                    push!(partSetiTemp,part1);
+                    push!(partSetiTemp,part2);
+                    push!(partDetiTemp,0);
+                    push!(partDetiTemp,0);
+                end
+            else
+                if (splitEnd < PartSet[i][par].endH)&(splitEnd > PartSet[i][par].startH)
+                    part1 = partType(PartSet[i][par].startH,splitEnd);
+                    part2 = partType(splitEnd,PartSet[i][par].endH);
+                    push!(partSetiTemp,part1);
+                    push!(partSetiTemp,part2);
+                    push!(partDetiTemp,0);
+                    push!(partDetiTemp,0);
+                else
+                    push!(partSetiTemp,PartSet[i][par]);
+                    push!(partDetiTemp,PartDet[i][par]);
+                end
+            end
+        end
+        newPartSet[i] = partSetiTemp;
+        newPartDet[i] = partDetiTemp;
+    end
+    return newPartSet,newPartDet;
+end
