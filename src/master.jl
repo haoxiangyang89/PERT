@@ -252,10 +252,10 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDic
             γk = cutSet[nc][2][l][5];
             rhsExpr = vk;
             if !((nc,l) in cutyn)
-                @constraint(mp, θ[ω] >= sum(πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]) +
+                @constraint(mp, θ[ω] >= vk + sum(πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]) +
                     sum(λk[i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) +
                     sum(sum(γk[i,par]*(mp[:y][i,parNew] - cutSet[nc][1][3][i,par]) for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par)
-                    for par in 1:length(cutSet[nc][1][4][i]))for i in pData.II));
+                    for par in 1:length(cutSet[nc][1][4][i])) for i in pData.II));
             end
         end
     end
@@ -327,7 +327,7 @@ function createMaster_DivRel(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distance
             γk = cutSet[nc][2][l][5];
             rhsExpr = vk;
             if !((nc,l) in cutyn)
-                @constraint(mp, θ[ω] >= sum(πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]) +
+                @constraint(mp, θ[ω] >= vk + sum(πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]) +
                     sum(λk[i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) +
                     sum(sum(γk[i,par]*(mp[:y][i,parNew] - cutSet[nc][1][3][i,par]) for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par)
                     for par in 1:length(cutSet[nc][1][4][i]))for i in pData.II));
