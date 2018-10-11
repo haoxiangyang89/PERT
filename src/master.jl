@@ -227,14 +227,8 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yOption,yLi
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
-      x1[i in pData.II,j in pData.Ji[i]]
-      x2[i in pData.II,j in pData.Ji[i]]
       t[i in pData.II] >= 0
-      t1[i in pData.II] >= 0
-      t2[i in pData.II] >= 0
       y[i in pData.II, par in 1:length(divSet[i])], Bin
-      y1[i in pData.II, par in 1:length(divSet[i])] >= 0
-      y2[i in pData.II, par in 1:length(divSet[i])] >= 0
     end);
     @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
@@ -244,13 +238,6 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yOption,yLi
     @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
     @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
 
-    # scaling constraints
-    @constraint(mp, x1Constr[i in pData.II,j in pData.Ji[i]], x1[i,j] == x[i,j]*1000);
-    @constraint(mp, x2Constr[i in pData.II,j in pData.Ji[i]], x2[i,j] == x[i,j]/1000);
-    @constraint(mp, t1Constr[i in pData.II], t1[i] == t[i]*1000);
-    @constraint(mp, t2Constr[i in pData.II], t2[i] == t[i]/1000);
-    @constraint(mp, y1Constr[i in pData.II, par in 1:length(divSet[i])], y1[i,par] == y[i,par]*1000);
-    @constraint(mp, y2Constr[i in pData.II, par in 1:length(divSet[i])], y2[i,par] == y[i,par]/1000);
     @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
 
     # add the cut
@@ -265,37 +252,10 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yOption,yLi
             γk = cutSet[nc][2][l][5];
             rhsExpr = vk;
             if !((nc,l) in cutyn)
-                for i in pData.II
-                    if πk[i] <= 1e-6
-                        rhsExpr += (πk[i]*1000)*mp[:t2][i] - πk[i]*cutSet[nc][1][1][i];
-                    elseif πk[i] >= 1e6
-                        rhsExpr += (πk[i]/1000)*mp[:t1][i] - πk[i]*cutSet[nc][1][1][i];
-                    else
-                        rhsExpr += πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]);
-                    end
-                    for j in pData.Ji[i]
-                        if λk[i,j] <= 1e-6
-                            rhsExpr += (λk[i,j]*1000)*mp[:x2][i] - λk[i,j]*cutSet[nc][1][2][i,j];
-                        elseif λk[i,j] >= 1e6
-                            rhsExpr += (λk[i,j]/1000)*mp[:x1][i] - λk[i,j]*cutSet[nc][1][2][i,j];
-                        else
-                            rhsExpr += λk[i,j]*(mp[:x][i] - cutSet[nc][1][2][i,j]);
-                        end
-                    end
-                    for par in 1:length(cutSet[nc][1][4][i])
-                        for parNew in 1:length(divSet[i])
-                            if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par
-                                if γk[i,par] <= 1e-6
-                                    rhsExpr += (γk[i,par]*1000)*mp[:y2][i] - γk[i,par]*cutSet[nc][1][3][i,par];
-                                elseif γk[i,par] >= 1e6
-                                    rhsExpr += (γk[i,par]/1000)*mp[:y1][i] - γk[i,par]*cutSet[nc][1][3][i,par];
-                                else
-                                    rhsExpr += γk[i,par]*(mp[:y][i,parNew] - cutSet[nc][1][3][i,par]);
-                                end
-                            end
-                        end
-                    end
-                end
+                @constraint(mp, θ[ω] >= sum(πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]) +
+                    sum(λk[i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) +
+                    sum(sum(γk[i,par]*(mp[:y][i,parNew] - cutSet[nc][1][3][i,par]) for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par)
+                    for par in 1:length(cutSet[nc][1][4][i]))for i in pData.II));
             end
         end
     end
@@ -340,14 +300,8 @@ function createMaster_DivRel(pData,disData,Ω,divSet,divDet,cutSet,Tmax,y1Loc)
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
-      x1[i in pData.II,j in pData.Ji[i]]
-      x2[i in pData.II,j in pData.Ji[i]]
       t[i in pData.II] >= 0
-      t1[i in pData.II] >= 0
-      t2[i in pData.II] >= 0
       0 <= y[i in pData.II, par in 1:length(divSet[i])] <= 1
-      y1[i in pData.II, par in 1:length(divSet[i])] >= 0
-      y2[i in pData.II, par in 1:length(divSet[i])] >= 0
     end);
     @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
@@ -370,37 +324,10 @@ function createMaster_DivRel(pData,disData,Ω,divSet,divDet,cutSet,Tmax,y1Loc)
             γk = cutSet[nc][2][l][5];
             rhsExpr = vk;
             if !((nc,l) in cutyn)
-                for i in pData.II
-                    if πk[i] <= 1e-6
-                        rhsExpr += (πk[i]*1000)*mp[:t2][i] - πk[i]*cutSet[nc][1][1][i];
-                    elseif πk[i] >= 1e6
-                        rhsExpr += (πk[i]/1000)*mp[:t1][i] - πk[i]*cutSet[nc][1][1][i];
-                    else
-                        rhsExpr += πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]);
-                    end
-                    for j in pData.Ji[i]
-                        if λk[i,j] <= 1e-6
-                            rhsExpr += (λk[i,j]*1000)*mp[:x2][i] - λk[i,j]*cutSet[nc][1][2][i,j];
-                        elseif λk[i,j] >= 1e6
-                            rhsExpr += (λk[i,j]/1000)*mp[:x1][i] - λk[i,j]*cutSet[nc][1][2][i,j];
-                        else
-                            rhsExpr += λk[i,j]*(mp[:x][i] - cutSet[nc][1][2][i,j]);
-                        end
-                    end
-                    for par in 1:length(cutSet[nc][1][4][i])
-                        for parNew in 1:length(divSet[i])
-                            if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par
-                                if γk[i,par] <= 1e-6
-                                    rhsExpr += (γk[i,par]*1000)*mp[:y2][i] - γk[i,par]*cutSet[nc][1][3][i,par];
-                                elseif γk[i,par] >= 1e6
-                                    rhsExpr += (γk[i,par]/1000)*mp[:y1][i] - γk[i,par]*cutSet[nc][1][3][i,par];
-                                else
-                                    rhsExpr += γk[i,par]*(mp[:y][i,parNew] - cutSet[nc][1][3][i,par]);
-                                end
-                            end
-                        end
-                    end
-                end
+                @constraint(mp, θ[ω] >= sum(πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]) +
+                    sum(λk[i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) +
+                    sum(sum(γk[i,par]*(mp[:y][i,parNew] - cutSet[nc][1][3][i,par]) for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par)
+                    for par in 1:length(cutSet[nc][1][4][i]))for i in pData.II));
             end
         end
     end

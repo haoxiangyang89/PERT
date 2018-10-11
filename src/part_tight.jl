@@ -176,3 +176,31 @@ function prunePart(pData,disData,Ω,divSet,divDet,cutSet,Tmax,currentUB)
     end
     return divDet;
 end
+
+function findSuccAll(pData)
+    allSucc = Dict();
+    pathSucc = Dict();
+    for i in pData
+        rootSucc = Dict();
+        succList = copy(pData.Succ);
+        for j in pData.Succ
+            rootSucc[j] = [];
+        end
+        succAll = [];
+        while succList != []
+            currentSucc = succList[1];
+            push!(succAll,currentSucc);
+            shift!(succList);
+            for j in pData.Succ[currentSucc]
+                if !((j in succAll) & (j in succList))
+                    push!(succList,j);
+                    rootSucc[j] = rootSucc[currentSucc];
+                    push!(rootSucc[j],currentSucc);
+                end
+            end
+        end
+        allSucc[i] = succAll;
+        pathSucc[i] = rootSucc;
+    end
+    return allSucc;
+end
