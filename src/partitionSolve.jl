@@ -146,7 +146,7 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0, cutThreshold = 
                 vk[ω] = dataList[ω][4];
             end
             ωTightCounter = 0;
-            cutDual = Dict();
+            cutDual = [];
             for ω in Ω
                 if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
                     push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
@@ -231,7 +231,7 @@ function limYselection(pData,H,tcurr,divSet,radius)
     return yLim;
 end
 
-function partitionSolve_yLim(pData,disData,ϵ = 0.01,tightenBool = 0, cutThreshold = 10,radius = 1,partOption = 2)
+function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tightenBool = 0, cutThreshold = 10,radius = 1,partOption = 2)
     # process to solve the PERT problem
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
@@ -313,18 +313,18 @@ function partitionSolve_yLim(pData,disData,ϵ = 0.01,tightenBool = 0, cutThresho
         ylb = Dict();
         dataList = [];
         divDet = prunePart(pData,disData,Ω,divSet,divDet,cutSet,Tmax,ubCost);
-        mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,1,yLim,0,cutyn);
+        mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,1,yLim,0,cutyn);
         # if perform the bound tightening process
         if tightenBool == 1
             mpTemp = copy(mp);
             ubInfo,lbInfo = obtainBds(pData,disData,Ω,mpTemp,ubCost);
             mp = updateMaster(mp,ubInfo,lbInfo);
             divSet,divDet = revisePar(pData,disData,divSet,divDet,ubInfo,lbInfo);
-            mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,1,yLim);
+            mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,1,yLim);
         elseif tightenBool == 2
             mpTemp = copy(mp);
             divDet = obtainDet(pData,disData,Ω,mpTemp,ubCost,divSet,divDet);
-            mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,1,yLim);
+            mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,1,yLim);
         end
         that = Dict();
         xhat = Dict();
@@ -382,7 +382,7 @@ function partitionSolve_yLim(pData,disData,ϵ = 0.01,tightenBool = 0, cutThresho
                 vk[ω] = dataList[ω][4];
             end
             ωTightCounter = 0;
-            cutDual = Dict();
+            cutDual = [];
             for ω in Ω
                 if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
                     push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
@@ -434,7 +434,7 @@ function partitionSolve_yLim(pData,disData,ϵ = 0.01,tightenBool = 0, cutThresho
                     vk[ω] = dataList[ω][4];
                 end
                 ωTightCounter = 0;
-                cutDual = Dict();
+                cutDual = [];
                 for ω in Ω
                     if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
                         push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
@@ -469,10 +469,10 @@ function partitionSolve_yLim(pData,disData,ϵ = 0.01,tightenBool = 0, cutThresho
                 xhatt = copy(xhat);
                 yhatt = copy(yhat);
                 push!(cutSet,[[thatt,xhatt,yhatt,divSet],cutDual]);
-                for ω in Ω
-                    cutSel[length(cutSet),ω] = 0;
+                for l in 1:length(cutDual)
+                    cutSel[length(cutSet),l] = 0;
                 end
-                mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,1,yLim,0,cutyn);
+                mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,1,yLim,0,cutyn);
             end
         end
         tIter = toc();
