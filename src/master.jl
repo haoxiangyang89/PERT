@@ -215,7 +215,7 @@ function updateMaster(mp,ubInfo,lbInfo)
     return mp;
 end
 
-function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yOption,yLim,yCuts = 1,cutyn = [])
+function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,yOption,yLim,yCuts = 1,cutyn = [])
     H = Dict();
     H[0] = 0;
     H[length(Ω)+1] = Tmax;
@@ -262,12 +262,15 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yOption,yLi
 
     # add the constraints between y
     if yCuts != 0
-        for k in pData.K
+        for i in pData.II
             # for each precedence relationship
-            for par1 in 1:length(divSet[k[1]])
-                for par2 in 1:length(divSet[k[2]])
-                    if H[divSet[k[2]][par2].endH] < H[divSet[k[1]][par1].startH] + pData.D[k[1]]*(1 - maximum(values(pData.eff[k[1]])))
-                        @constraint(mp, y[k[1],par1] + y[k[2],par2] <= 1);
+            for j in allSucc[i]
+                k = (i,j);
+                for par1 in 1:length(divSet[k[1]])
+                    for par2 in 1:length(divSet[k[2]])
+                        if H[divSet[k[2]][par2].endH] < H[divSet[k[1]][par1].startH] + distanceDict[i,j]
+                            @constraint(mp, y[k[1],par1] + y[k[2],par2] <= 1);
+                        end
                     end
                 end
             end
@@ -288,7 +291,7 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yOption,yLi
     return mp;
 end
 
-function createMaster_DivRel(pData,disData,Ω,divSet,divDet,cutSet,Tmax,y1Loc)
+function createMaster_DivRel(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,y1Loc)
     H = Dict();
     H[0] = 0;
     H[length(Ω)+1] = Tmax;
@@ -334,12 +337,15 @@ function createMaster_DivRel(pData,disData,Ω,divSet,divDet,cutSet,Tmax,y1Loc)
 
     # add the constraints between y
     # obtain the set of y's all predecessors
-    for k in pData.K
+    for i in pData.II
         # for each precedence relationship
-        for par1 in 1:length(divSet[k[1]])
-            for par2 in 1:length(divSet[k[2]])
-                if H[divSet[k[2]][par2].endH] < H[divSet[k[1]][par1].startH] + pData.D[k[1]]*(1 - maximum(values(pData.eff[k[1]])))
-                    @constraint(mp, y[k[1],par1] + y[k[2],par2] <= 1);
+        for j in allSucc[i]
+            k = (i,j);
+            for par1 in 1:length(divSet[k[1]])
+                for par2 in 1:length(divSet[k[2]])
+                    if H[divSet[k[2]][par2].endH] < H[divSet[k[1]][par1].startH] + distanceDict[i,j]
+                        @constraint(mp, y[k[1],par1] + y[k[2],par2] <= 1);
+                    end
                 end
             end
         end
