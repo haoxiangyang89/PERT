@@ -339,3 +339,19 @@ function obtainDet(pData,disData,Ω,mpTemp,ub,divSet,divDet)
     end
     return divDet;
 end
+
+function detCal(pData,i,j)
+    mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    @variables(mp, begin
+      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
+      t[i in pData.II] >= 0
+    end);
+    @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
+    @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+    @objective(mp, Min, t[j] - t[i]);
+    solve(mp);
+    disIJ = getobjectivevalue(mp);
+
+    return disIJ;
+end
