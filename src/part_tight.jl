@@ -154,3 +154,25 @@ function splitPar_CI(PartSet,PartDet,splitInfo)
     end
     return newPartSet,newPartDet;
 end
+
+function prunePart(pData,disData,Ω,divSet,divDet,cutSet,Tmax,currentUB)
+    # try to solve the linear relaxation of the master to prune some partition
+    for i in pData.II
+        for par in 1:length(divSet[i])
+            if divDet[i][par] == 0
+                mpTemp = createMaster_DivRel(pData,disData,Ω,divSet,divDet,cutSet,Tmax,[i,par]);
+                #mpTemp.solver = GurobiSolver();
+                mpStatus = solve(mpTemp);
+                println(i," ",par," ",getobjectivevalue(mpTemp));
+                if mpStatus == :Optimal
+                    if getobjectivevalue(mpTemp) > currentUB
+                        divDet[i][par] = -1;
+                    end
+                else
+                    divDet[i][par] = -1;
+                end
+            end
+        end
+    end
+    return divDet;
+end

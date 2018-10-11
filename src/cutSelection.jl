@@ -4,33 +4,32 @@ function examineCuts_count(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThre
     cutyn = [];
     for nc in 1:length(cutSet)
         # how many rounds have been through
-        for ω in Ω
-            # for each scenario
-            if cutSet[nc][2][ω] != []
-                # there is a cut
-                cutV = cutSet[nc][2][ω][1];
-                for i in pData.II
-                    cutV += cutSet[nc][2][ω][2][i]*(that[i] - cutSet[nc][1][1][i]);
-                    for j in pData.Ji[i]
-                        cutV += cutSet[nc][2][ω][3][i,j]*(xhat[i,j] - cutSet[nc][1][2][i,j]);
-                    end
-                    for par in 1:length(cutSet[nc][1][4][i])
-                        cutV += cutSet[nc][2][ω][4][i,par]*(sum(yhat[i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par]);
-                    end
+        for l in 1:length(cutSet[nc])
+            # for each cut
+            ω = cutSet[nc][2][l][1]
+            cutV = cutSet[nc][2][l][2];
+            for i in pData.II
+                cutV += cutSet[nc][2][l][3][i]*(that[i] - cutSet[nc][1][1][i]);
+                for j in pData.Ji[i]
+                    cutV += cutSet[nc][2][l][4][i,j]*(xhat[i,j] - cutSet[nc][1][2][i,j]);
                 end
-                if θhat[ω] > cutV + 1e-4
-                    # not tight
-                    cutSel[nc,ω] += 1;
-                else
-                    cutSel[nc,ω] = 0;
+                for par in 1:length(cutSet[nc][1][4][i])
+                    cutV += cutSet[nc][2][l][5][i,par]*(sum(yhat[i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par]);
                 end
             end
-            if (cutSel[nc,ω] > cutThreshold)&(!((nc,ω) in cutyn))
-                push!(cutyn,(nc,ω));
+            if θhat[ω] > cutV + 1e-4
+                # not tight
+                cutSel[nc,l] += 1;
+            else
+                cutSel[nc,l] = 0;
+            end
+        end
+            if (cutSel[nc,l] > cutThreshold)&(!((nc,l) in cutyn))
+                push!(cutyn,(nc,l));
             end
             # remove the cuts from the exempt list because it is tight again
-            if (cutSel[nc,ω] > cutThreshold)&(!((nc,ω) in cutyn))
-                deleteat!(cutyn, findin(cutyn, (nc,ω)));
+            if (cutSel[nc,l] > cutThreshold)&(!((nc,l) in cutyn))
+                deleteat!(cutyn, findin(cutyn, (nc,l)));
             end
         end
     end

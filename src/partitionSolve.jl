@@ -149,10 +149,9 @@ function partitionSolve(pData,disData,ϵ = 0.01,tightenBool = 0, cutThreshold = 
             cutDual = Dict();
             for ω in Ω
                 if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
-                    cutDual[ω] = [vk[ω],πdict[ω],λdict[ω],γdict[ω]];
+                    push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
                     mp = addtxyCut(pData,ω,mp,πdict[ω],λdict[ω],γdict[ω],vk[ω],that,xhat,yhat,divSet);
                 else
-                    cutDual[ω] = [];
                     ωTightCounter += 1;
                 end
             end
@@ -232,7 +231,7 @@ function limYselection(pData,H,tcurr,divSet,radius)
     return yLim;
 end
 
-function partitionSolve_yLim(pData,disData,ϵ = 0.01,tightenBool = 0, cutThreshold = 10,radius = 1)
+function partitionSolve_yLim(pData,disData,ϵ = 0.01,tightenBool = 0, cutThreshold = 10,radius = 1,partOption = 2)
     # process to solve the PERT problem
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
@@ -313,6 +312,7 @@ function partitionSolve_yLim(pData,disData,ϵ = 0.01,tightenBool = 0, cutThresho
         θlb = Dict();
         ylb = Dict();
         dataList = [];
+        divDet = prunePart(pData,disData,Ω,divSet,divDet,cutSet,Tmax,ubCost);
         mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,1,yLim,0,cutyn);
         # if perform the bound tightening process
         if tightenBool == 1
@@ -385,10 +385,9 @@ function partitionSolve_yLim(pData,disData,ϵ = 0.01,tightenBool = 0, cutThresho
             cutDual = Dict();
             for ω in Ω
                 if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
-                    cutDual[ω] = [vk[ω],πdict[ω],λdict[ω],γdict[ω]];
+                    push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
                     mp = addtxyCut(pData,ω,mp,πdict[ω],λdict[ω],γdict[ω],vk[ω],that,xhat,yhat,divSet);
                 else
-                    cutDual[ω] = [];
                     ωTightCounter += 1;
                 end
             end
@@ -438,10 +437,9 @@ function partitionSolve_yLim(pData,disData,ϵ = 0.01,tightenBool = 0, cutThresho
                 cutDual = Dict();
                 for ω in Ω
                     if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
-                        cutDual[ω] = [vk[ω],πdict[ω],λdict[ω],γdict[ω]];
+                        push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
                         mp = addtxyCut(pData,ω,mp,πdict[ω],λdict[ω],γdict[ω],vk[ω],that,xhat,yhat,divSet);
                     else
-                        cutDual[ω] = [];
                         ωTightCounter += 1;
                     end
                 end
@@ -508,9 +506,19 @@ function partitionSolve_yLim(pData,disData,ϵ = 0.01,tightenBool = 0, cutThresho
                 # obtain the CI by tRec
                 meanTrec = mean(tRec[i]);
                 CIu = meanTrec + 3*sqrt(sum((tRec[i][j] - meanTrec)^2 for j in 1:length(tRec[i]))/length(tRec[i]));
-                CIuH = minimum([H[ω] for ω in 1:length(H) if H[ω] > CIu]);
+                CIuSet = [ω for ω in keys(H) if H[ω] > CIu];
+                if CIuSet != []
+                    CIuH = minimum(CIuSet);
+                else
+                    CIuH = maximum(keys(H));
+                end
                 CIl = meanTrec - 3*sqrt(sum((tRec[i][j] - meanTrec)^2 for j in 1:length(tRec[i]))/length(tRec[i]));
-                CIlH = maximum([H[ω] for ω in 1:length(H) if H[ω] < CIl]);
+                CIlSet = [ω for ω in keys(H) if H[ω] < CIl];
+                if CIlSet != []
+                    CIlH = maximum(CIlSet);
+                else
+                    CIlH = 0;
+                end
                 newItem = (i,CIlH,CIuH);
                 push!(newPartition,newItem);
             end

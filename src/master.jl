@@ -227,8 +227,14 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yOption,yLi
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
+      x1[i in pData.II,j in pData.Ji[i]]
+      x2[i in pData.II,j in pData.Ji[i]]
       t[i in pData.II] >= 0
+      t1[i in pData.II] >= 0
+      t2[i in pData.II] >= 0
       y[i in pData.II, par in 1:length(divSet[i])], Bin
+      y1[i in pData.II, par in 1:length(divSet[i])] >= 0
+      y2[i in pData.II, par in 1:length(divSet[i])] >= 0
     end);
     @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
@@ -237,21 +243,59 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yOption,yLi
     @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSet[i])));
     @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
     @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
+
+    # scaling constraints
+    @constraint(mp, x1Constr[i in pData.II,j in pData.Ji[i]], x1[i,j] == x[i,j]*1000);
+    @constraint(mp, x2Constr[i in pData.II,j in pData.Ji[i]], x2[i,j] == x[i,j]/1000);
+    @constraint(mp, t1Constr[i in pData.II], t1[i] == t[i]*1000);
+    @constraint(mp, t2Constr[i in pData.II], t2[i] == t[i]/1000);
+    @constraint(mp, y1Constr[i in pData.II, par in 1:length(divSet[i])], y1[i,par] == y[i,par]*1000);
+    @constraint(mp, y2Constr[i in pData.II, par in 1:length(divSet[i])], y2[i,par] == y[i,par]/1000);
     @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
 
     # add the cut
     # cutInfo = 2 dimensional vector, first dimention record the primal solution,
     # second dimension record the dual solution for every scenario
     for nc in 1:length(cutSet)
-        for ω in Ω
-            if (cutSet[nc][2][ω] != [])&(!((nc,ω) in cutyn))
-                # if there is a cut for scenario ω in iteration nc and it is tight
-                # @constraint(mp, θ[ω] >= cutSet[nc][2][ω][1] + sum(cutSet[nc][2][ω][2][i]*(mp[:t][i] - cutSet[nc][1][1][i]) for i in pData.II) +
-                #     sum(sum(cutSet[nc][2][ω][3][i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                #     sum(sum(cutSet[nc][2][ω][4][i,revPar(cutSet[nc][1][4][i],divSet[i][par])]*(mp[:y][i,par] - cutSet[nc][1][3][i,revPar(cutSet[nc][1][4][i],divSet[i][par])]) for par in 1:length(divSet[i])) for i in pData.II));
-                @constraint(mp, θ[ω] >= cutSet[nc][2][ω][1] + sum(cutSet[nc][2][ω][2][i]*(mp[:t][i] - cutSet[nc][1][1][i]) for i in pData.II) +
-                    sum(sum(cutSet[nc][2][ω][3][i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                    sum(sum(cutSet[nc][2][ω][4][i,par]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par]) for par in 1:length(cutSet[nc][1][4][i])) for i in pData.II));
+        for l in 1:length(cutSet[nc][2])
+            ω = cutSet[nc][2][l][1];
+            vk = cutSet[nc][2][l][2];
+            πk = cutSet[nc][2][l][3];
+            λk = cutSet[nc][2][l][4];
+            γk = cutSet[nc][2][l][5];
+            rhsExpr = vk;
+            if !((nc,l) in cutyn)
+                for i in pData.II
+                    if πk[i] <= 1e-6
+                        rhsExpr += (πk[i]*1000)*mp[:t2][i] - πk[i]*cutSet[nc][1][1][i];
+                    elseif πk[i] >= 1e6
+                        rhsExpr += (πk[i]/1000)*mp[:t1][i] - πk[i]*cutSet[nc][1][1][i];
+                    else
+                        rhsExpr += πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]);
+                    end
+                    for j in pData.Ji[i]
+                        if λk[i,j] <= 1e-6
+                            rhsExpr += (λk[i,j]*1000)*mp[:x2][i] - λk[i,j]*cutSet[nc][1][2][i,j];
+                        elseif λk[i,j] >= 1e6
+                            rhsExpr += (λk[i,j]/1000)*mp[:x1][i] - λk[i,j]*cutSet[nc][1][2][i,j];
+                        else
+                            rhsExpr += λk[i,j]*(mp[:x][i] - cutSet[nc][1][2][i,j]);
+                        end
+                    end
+                    for par in 1:length(cutSet[nc][1][4][i])
+                        for parNew in 1:length(divSet[i])
+                            if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par
+                                if γk[i,par] <= 1e-6
+                                    rhsExpr += (γk[i,par]*1000)*mp[:y2][i] - γk[i,par]*cutSet[nc][1][3][i,par];
+                                elseif γk[i,par] >= 1e6
+                                    rhsExpr += (γk[i,par]/1000)*mp[:y1][i] - γk[i,par]*cutSet[nc][1][3][i,par];
+                                else
+                                    rhsExpr += γk[i,par]*(mp[:y][i,parNew] - cutSet[nc][1][3][i,par]);
+                                end
+                            end
+                        end
+                    end
+                end
             end
         end
     end
@@ -280,6 +324,100 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,yOption,yLi
             end
         end
     end
+
+    return mp;
+end
+
+function createMaster_DivRel(pData,disData,Ω,divSet,divDet,cutSet,Tmax,y1Loc)
+    H = Dict();
+    H[0] = 0;
+    H[length(Ω)+1] = Tmax;
+    for ω in Ω
+        H[ω] = disData[ω].H;
+    end
+
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9,OutputFlag = 0));
+    @variables(mp, begin
+      θ[Ω] >= 0
+      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
+      x1[i in pData.II,j in pData.Ji[i]]
+      x2[i in pData.II,j in pData.Ji[i]]
+      t[i in pData.II] >= 0
+      t1[i in pData.II] >= 0
+      t2[i in pData.II] >= 0
+      0 <= y[i in pData.II, par in 1:length(divSet[i])] <= 1
+      y1[i in pData.II, par in 1:length(divSet[i])] >= 0
+      y2[i in pData.II, par in 1:length(divSet[i])] >= 0
+    end);
+    @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
+    @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+    @constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSet[i][par].endH]*y[i,par] for par in 1:length(divSet[i])));
+    @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSet[i])));
+    @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
+    @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
+    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
+
+    # add the cut
+    # cutInfo = 2 dimensional vector, first dimention record the primal solution,
+    # second dimension record the dual solution for every scenario
+    for nc in 1:length(cutSet)
+        for l in 1:length(cutSet[nc][2])
+            ω = cutSet[nc][2][l][1];
+            vk = cutSet[nc][2][l][2];
+            πk = cutSet[nc][2][l][3];
+            λk = cutSet[nc][2][l][4];
+            γk = cutSet[nc][2][l][5];
+            rhsExpr = vk;
+            if !((nc,l) in cutyn)
+                for i in pData.II
+                    if πk[i] <= 1e-6
+                        rhsExpr += (πk[i]*1000)*mp[:t2][i] - πk[i]*cutSet[nc][1][1][i];
+                    elseif πk[i] >= 1e6
+                        rhsExpr += (πk[i]/1000)*mp[:t1][i] - πk[i]*cutSet[nc][1][1][i];
+                    else
+                        rhsExpr += πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]);
+                    end
+                    for j in pData.Ji[i]
+                        if λk[i,j] <= 1e-6
+                            rhsExpr += (λk[i,j]*1000)*mp[:x2][i] - λk[i,j]*cutSet[nc][1][2][i,j];
+                        elseif λk[i,j] >= 1e6
+                            rhsExpr += (λk[i,j]/1000)*mp[:x1][i] - λk[i,j]*cutSet[nc][1][2][i,j];
+                        else
+                            rhsExpr += λk[i,j]*(mp[:x][i] - cutSet[nc][1][2][i,j]);
+                        end
+                    end
+                    for par in 1:length(cutSet[nc][1][4][i])
+                        for parNew in 1:length(divSet[i])
+                            if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par
+                                if γk[i,par] <= 1e-6
+                                    rhsExpr += (γk[i,par]*1000)*mp[:y2][i] - γk[i,par]*cutSet[nc][1][3][i,par];
+                                elseif γk[i,par] >= 1e6
+                                    rhsExpr += (γk[i,par]/1000)*mp[:y1][i] - γk[i,par]*cutSet[nc][1][3][i,par];
+                                else
+                                    rhsExpr += γk[i,par]*(mp[:y][i,parNew] - cutSet[nc][1][3][i,par]);
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    # add the constraints between y
+    # obtain the set of y's all predecessors
+    for k in pData.K
+        # for each precedence relationship
+        for par1 in 1:length(divSet[k[1]])
+            for par2 in 1:length(divSet[k[2]])
+                if H[divSet[k[2]][par2].endH] < H[divSet[k[1]][par1].startH] + pData.D[k[1]]*(1 - maximum(values(pData.eff[k[1]])))
+                    @constraint(mp, y[k[1],par1] + y[k[2],par2] <= 1);
+                end
+            end
+        end
+    end
+    @constraint(mp, y1LocConstr, y[y1Loc[1],y1Loc[2]] == 1);
 
     return mp;
 end
