@@ -312,7 +312,7 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
         θlb = Dict();
         ylb = Dict();
         dataList = [];
-        divDet = prunePart(pData,disData,Ω,divSet,divDet,cutSet,Tmax,ubCost);
+        divDet = prunePart(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,ubCost);
         mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,1,yLim,0,cutyn);
         # if perform the bound tightening process
         if tightenBool == 1
@@ -392,7 +392,7 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
                 end
             end
             if ωTightCounter == length(Ω)
-                mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,0,yLim,0,cutyn);
+                mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,0,yLim,0,cutyn);
                 mp.solver = GurobiSolver();
                 solve(mp);
                 that = Dict();
@@ -462,7 +462,7 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
                     push!(cutynRec,length(cutyn));
                     # update the master with new cutyn
                     yLim = limYselection(pData,H,that,divSet,radius);
-                    mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,1,yLim,0,cutyn);
+                    mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,1,yLim,0,cutyn);
                 end
             else
                 thatt = copy(that);

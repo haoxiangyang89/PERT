@@ -4,7 +4,7 @@ function examineCuts_count(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThre
     cutyn = [];
     for nc in 1:length(cutSet)
         # how many rounds have been through
-        for l in 1:length(cutSet[nc])
+        for l in 1:length(cutSet[nc][2])
             # for each cut
             ω = cutSet[nc][2][l][1]
             cutV = cutSet[nc][2][l][2];
