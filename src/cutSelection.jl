@@ -28,8 +28,14 @@ function examineCuts_count(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThre
     return cutSel;
 end
 
-function examineCuts_slack(disData,Ω,cutSlack,cutSet,that,xhat,θhat,yhat)
-    # check for each cut whether it is tight, if not update the counts
-
-    return cutSlack;
+function selectCuts(cutSel,cutSet,cutThreshold)
+    cutSelNew = Dict();
+    for nc in 1:length(cutSet)
+        leftSet = [l for l in 1:length(cutSet[nc][2]) if cutSel[nc,l] <= cutThreshold];
+        cutSet[nc][2] = cutSet[nc][2][leftSet];
+        for l1 in 1:length(leftSet)
+            cutSelNew[nc,l1] = cutSel[nc,leftSet[l1]];
+        end
+    end
+    return cutSelNew,cutSet;
 end

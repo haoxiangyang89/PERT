@@ -64,8 +64,8 @@ lbCost = -Inf;
 lbCostList = [];
 ubCostList = [ubdet];
 GList = [];
-cutynSel = Dict();
-cutThreshold = [10];
+cutSel = Dict();
+cutThreshold = 10;
 
 function partBenders(cb)
     # the callback function
@@ -87,7 +87,29 @@ function partBenders(cb)
         θhat[ω] = getvalue(θ[ω]);
     end
     # examine whether the previously generated cuts are tight
-    cutSel = examineCuts_count(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThreshold[length(cutThreshold)]);
+    for nc in 1:length(cutSet)
+        # how many rounds have been through
+        for l in 1:length(cutSet[nc][2])
+            # for each cut
+            ω = cutSet[nc][2][l][1]
+            cutV = cutSet[nc][2][l][2];
+            for i in pData.II
+                cutV += cutSet[nc][2][l][3][i]*(that[i] - cutSet[nc][1][1][i]);
+                for j in pData.Ji[i]
+                    cutV += cutSet[nc][2][l][4][i,j]*(xhat[i,j] - cutSet[nc][1][2][i,j]);
+                end
+                for par in 1:length(cutSet[nc][1][4][i])
+                    cutV += cutSet[nc][2][l][5][i,par]*(sum(yhat[i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par]);
+                end
+            end
+            if abs(θhat[ω] - cutV)/θhat[ω] > 1e-4
+                # not tight
+                cutSel[nc,l] += 1;
+            else
+                cutSel[nc,l] = 0;
+            end
+        end
+    end
 
     # generate cuts
     πdict = Dict();
@@ -120,7 +142,7 @@ function partBenders(cb)
         end
     end
     push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
-    for l in length(cutSet[length(cutSet)])
+    for l in 1:length(cutSet[length(cutSet)][2])
         cutSel[length(cutSet),l] = 0;
     end
     GCurrent = [dataList[ω][5] for ω in Ω];
@@ -135,7 +157,7 @@ while keepIter
     yCurrent = Dict();
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9,OutputFlag = 0));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -157,18 +179,16 @@ while keepIter
     # second dimension record the dual solution for every scenario
     for nc in 1:length(cutSet)
         for l in 1:length(cutSet[nc][2])
-            if cutSel[nc,l] <= cutThreshold[length(cutThreshold)]
-                ω = cutSet[nc][2][l][1];
-                vk = cutSet[nc][2][l][2];
-                πk = cutSet[nc][2][l][3];
-                λk = cutSet[nc][2][l][4];
-                γk = cutSet[nc][2][l][5];
-                rhsExpr = vk;
-                @constraint(mp, θ[ω] >= vk + sum(πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]) +
-                    sum(λk[i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) +
-                    sum(γk[i,par]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par])
-                    for par in 1:length(cutSet[nc][1][4][i])) for i in pData.II));
-            end
+            ω = cutSet[nc][2][l][1];
+            vk = cutSet[nc][2][l][2];
+            πk = cutSet[nc][2][l][3];
+            λk = cutSet[nc][2][l][4];
+            γk = cutSet[nc][2][l][5];
+            rhsExpr = vk;
+            @constraint(mp, θ[ω] >= vk + sum(πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]) +
+                sum(λk[i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) +
+                sum(γk[i,par]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par])
+                for par in 1:length(cutSet[nc][1][4][i])) for i in pData.II));
         end
     end
 
@@ -221,7 +241,9 @@ while keepIter
         end
         divSet,divDet = splitPar(divSet,divDet,newPartition);
     end
-    push!(cutThreshold,cutThreshold[length(cutThreshold)] + 5);
+    # remove all cuts that are not tight for a while
+    cutSel,cutSet = selectCuts(cutSel,cutSet,cutThreshold);
+    cutThreshold += 5;
 end
 
 # need a cut selection process within the callback
