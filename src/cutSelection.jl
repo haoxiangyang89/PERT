@@ -17,22 +17,15 @@ function examineCuts_count(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThre
                     cutV += cutSet[nc][2][l][5][i,par]*(sum(yhat[i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par]);
                 end
             end
-            if θhat[ω] > cutV + 1e-4
+            if abs(θhat[ω] - cutV)/θhat[ω] > 1e-4
                 # not tight
                 cutSel[nc,l] += 1;
             else
                 cutSel[nc,l] = 0;
             end
-            if (cutSel[nc,l] > cutThreshold)&(!((nc,l) in cutyn))
-                push!(cutyn,(nc,l));
-            end
-            # remove the cuts from the exempt list because it is tight again
-            if (cutSel[nc,l] > cutThreshold)&(!((nc,l) in cutyn))
-                deleteat!(cutyn, findin(cutyn, (nc,l)));
-            end
         end
     end
-    return cutSel,cutyn;
+    return cutSel;
 end
 
 function examineCuts_slack(disData,Ω,cutSlack,cutSet,that,xhat,θhat,yhat)

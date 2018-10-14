@@ -312,7 +312,6 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
         θlb = Dict();
         ylb = Dict();
         dataList = [];
-        divDet = prunePart(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,ubCost);
         mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,1,yLim,0,cutyn);
         # if perform the bound tightening process
         if tightenBool == 1
