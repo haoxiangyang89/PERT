@@ -86,6 +86,61 @@ function partBenders(cb)
     for ω in Ω
         θhat[ω] = getvalue(θ[ω]);
     end
+
+    # generate cuts
+    πdict = Dict();
+    λdict = Dict();
+    γdict = Dict();
+    vk = Dict();
+    θInt = Dict();
+    ubCost = minimum(ubCostList);
+    ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1);
+    if ubCost > ubTemp
+        tbest = copy(that);
+        xbest = copy(xhat);
+    end
+    push!(ubCostList,ubTemp);
+    dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
+    for ω in Ω
+        πdict[ω] = dataList[ω][1];
+        λdict[ω] = dataList[ω][2];
+        γdict[ω] = dataList[ω][3];
+        vk[ω] = dataList[ω][4];
+    end
+    cutDual = [];
+    for ω in Ω
+        if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
+            push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
+            @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*(t[i] - that[i]) for i in pData.II) +
+                sum(sum(λdict[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
+                sum(sum(γdict[ω][i,par]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
+            #mp = addtxyCut(pData,ω,mp,πdict[ω],λdict[ω],γdict[ω],vk[ω],that,xhat,yhat,divSet);
+        end
+    end
+    push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
+    GCurrent = [dataList[ω][5] for ω in Ω];
+    push!(GList,GCurrent);
+end
+
+function partBenders_CutSel(cb)
+    # the callback function
+    that = Dict();
+    xhat = Dict();
+    θhat = Dict();
+    yhat = Dict();
+    # obtain the solution at the current node
+    for i in pData.II
+        that[i] = getvalue(t[i]);
+        for j in pData.Ji[i]
+            xhat[i,j] = getvalue(x[i,j]);
+        end
+        for par in 1:length(divSet[i])
+            yhat[i,par] = getvalue(y[i,par]);
+        end
+    end
+    for ω in Ω
+        θhat[ω] = getvalue(θ[ω]);
+    end
     # examine whether the previously generated cuts are tight
     for nc in 1:length(cutSet)
         # how many rounds have been through
@@ -157,7 +212,7 @@ while keepIter
     yCurrent = Dict();
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9,OutputFlag = 0));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -235,11 +290,12 @@ while keepIter
         newPartition = [];
         for i in pData.II
             if GFrac[i] != []
-                newItem = (i,Int(floor((GFrac[i][1] + GFrac[i][2])/2)));
+                newItem = (i,GFrac[i][1],GFrac[i][2]);
                 push!(newPartition,newItem);
             end
         end
-        divSet,divDet = splitPar(divSet,divDet,newPartition);
+        #divSet,divDet = splitPar(divSet,divDet,newPartition);
+        divSet,divDet = splitPar3(divSet,divDet,newPartition);
     end
     # remove all cuts that are not tight for a while
     cutSel,cutSet = selectCuts(cutSel,cutSet,cutThreshold);
