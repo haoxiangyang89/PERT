@@ -67,6 +67,39 @@ GList = [];
 cutSel = Dict();
 cutThreshold = 10;
 
+bbdata = [];
+function paraInfo(cb)
+    obj       = MathProgBase.cbgetobj(cb);
+    bestbound = MathProgBase.cbgetbestbound(cb);
+    push!(bbdata,(obj,bestbound));
+    println(obj," ",bestbound);
+end
+
+function paraInfo1(cb)
+    # the callback function
+    that = Dict();
+    xhat = Dict();
+    θhat = Dict();
+    yhat = Dict();
+    # obtain the solution at the current node
+    for i in pData.II
+        that[i] = getvalue(t[i]);
+        for j in pData.Ji[i]
+            xhat[i,j] = getvalue(x[i,j]);
+        end
+        for par in 1:length(divSet[i])
+            yhat[i,par] = getvalue(y[i,par]);
+        end
+    end
+    for ω in Ω
+        θhat[ω] = getvalue(θ[ω]);
+    end
+    obj = that[0]*pData.p0 + sum(disData[ω].prDis*θhat[ω] for ω in Ω);
+    bestbound = MathProgBase.cbgetbestbound(cb);
+    push!(bbdata,(obj,bestbound));
+    println(obj," ",bestbound);
+end
+
 function partBenders(cb)
     # the callback function
     that = Dict();
@@ -121,8 +154,91 @@ function partBenders(cb)
     GCurrent = [dataList[ω][5] for ω in Ω];
     push!(GList,GCurrent);
 end
+#
+# function partBenders_CutSel(cb)
+#     # the callback function
+#     that = Dict();
+#     xhat = Dict();
+#     θhat = Dict();
+#     yhat = Dict();
+#     # obtain the solution at the current node
+#     for i in pData.II
+#         that[i] = getvalue(t[i]);
+#         for j in pData.Ji[i]
+#             xhat[i,j] = getvalue(x[i,j]);
+#         end
+#         for par in 1:length(divSet[i])
+#             yhat[i,par] = getvalue(y[i,par]);
+#         end
+#     end
+#     for ω in Ω
+#         θhat[ω] = getvalue(θ[ω]);
+#     end
+#     # examine whether the previously generated cuts are tight
+#     for nc in 1:length(cutSet)
+#         # how many rounds have been through
+#         for l in 1:length(cutSet[nc][2])
+#             # for each cut
+#             ω = cutSet[nc][2][l][1]
+#             cutV = cutSet[nc][2][l][2];
+#             for i in pData.II
+#                 cutV += cutSet[nc][2][l][3][i]*(that[i] - cutSet[nc][1][1][i]);
+#                 for j in pData.Ji[i]
+#                     cutV += cutSet[nc][2][l][4][i,j]*(xhat[i,j] - cutSet[nc][1][2][i,j]);
+#                 end
+#                 for par in 1:length(cutSet[nc][1][4][i])
+#                     cutV += cutSet[nc][2][l][5][i,par]*(sum(yhat[i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par]);
+#                 end
+#             end
+#             if abs(θhat[ω] - cutV)/θhat[ω] > 1e-4
+#                 # not tight
+#                 cutSel[nc,l] += 1;
+#             else
+#                 cutSel[nc,l] = 0;
+#             end
+#         end
+#     end
+#
+#     # generate cuts
+#     πdict = Dict();
+#     λdict = Dict();
+#     γdict = Dict();
+#     vk = Dict();
+#     θInt = Dict();
+#     ubCost = minimum(ubCostList);
+#     ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1);
+#     if ubCost > ubTemp
+#         tbest = copy(that);
+#         xbest = copy(xhat);
+#     end
+#     push!(ubCostList,ubTemp);
+#     dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
+#     for ω in Ω
+#         πdict[ω] = dataList[ω][1];
+#         λdict[ω] = dataList[ω][2];
+#         γdict[ω] = dataList[ω][3];
+#         vk[ω] = dataList[ω][4];
+#     end
+#     cutDual = [];
+#     for ω in Ω
+#         if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
+#             push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
+#             @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*(t[i] - that[i]) for i in pData.II) +
+#                 sum(sum(λdict[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
+#                 sum(sum(γdict[ω][i,par]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
+#             #mp = addtxyCut(pData,ω,mp,πdict[ω],λdict[ω],γdict[ω],vk[ω],that,xhat,yhat,divSet);
+#         end
+#     end
+#     push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
+#     for l in 1:length(cutSet[length(cutSet)][2])
+#         cutSel[length(cutSet),l] = 0;
+#     end
+#     GCurrent = [dataList[ω][5] for ω in Ω];
+#     push!(GList,GCurrent);
+# end
 
-function partBenders_CutSel(cb)
+wrongList = [];
+function partBenders_diag(cb)
     # the callback function
     that = Dict();
     xhat = Dict();
@@ -141,30 +257,6 @@ function partBenders_CutSel(cb)
     for ω in Ω
         θhat[ω] = getvalue(θ[ω]);
     end
-    # examine whether the previously generated cuts are tight
-    for nc in 1:length(cutSet)
-        # how many rounds have been through
-        for l in 1:length(cutSet[nc][2])
-            # for each cut
-            ω = cutSet[nc][2][l][1]
-            cutV = cutSet[nc][2][l][2];
-            for i in pData.II
-                cutV += cutSet[nc][2][l][3][i]*(that[i] - cutSet[nc][1][1][i]);
-                for j in pData.Ji[i]
-                    cutV += cutSet[nc][2][l][4][i,j]*(xhat[i,j] - cutSet[nc][1][2][i,j]);
-                end
-                for par in 1:length(cutSet[nc][1][4][i])
-                    cutV += cutSet[nc][2][l][5][i,par]*(sum(yhat[i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par]);
-                end
-            end
-            if abs(θhat[ω] - cutV)/θhat[ω] > 1e-4
-                # not tight
-                cutSel[nc,l] += 1;
-            else
-                cutSel[nc,l] = 0;
-            end
-        end
-    end
 
     # generate cuts
     πdict = Dict();
@@ -180,11 +272,17 @@ function partBenders_CutSel(cb)
     end
     push!(ubCostList,ubTemp);
     dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
+    stopIter = false;
     for ω in Ω
         πdict[ω] = dataList[ω][1];
         λdict[ω] = dataList[ω][2];
         γdict[ω] = dataList[ω][3];
         vk[ω] = dataList[ω][4];
+        if isnan(dataList[ω][5][0])
+            stopIter = true;
+            push!(wrongList,[that,xhat,yhat,θhat,ω]);
+            return JuMP.StopTheSolver
+        end
     end
     cutDual = [];
     for ω in Ω
@@ -197,9 +295,6 @@ function partBenders_CutSel(cb)
         end
     end
     push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
-    for l in 1:length(cutSet[length(cutSet)][2])
-        cutSel[length(cutSet),l] = 0;
-    end
     GCurrent = [dataList[ω][5] for ω in Ω];
     push!(GList,GCurrent);
 end
@@ -212,7 +307,7 @@ while keepIter
     yCurrent = Dict();
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9,OutputFlag = 0));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -264,10 +359,28 @@ while keepIter
     end
 
     addlazycallback(mp, partBenders);
+    # addlazycallback(mp, partBenders_diag);
+    #addinfocallback(mp, paraInfo, when = :MIPNode);
+    addinfocallback(mp, paraInfo1, when = :MIPSol);
     tic();
     solve(mp);
     tIter = toc();
     lbCost = getobjectivevalue(mp);
+    # only select currently tight cuts
+    for i in pData.II
+        tCurrent[i] = getvalue(mp[:t][i]);
+        for j in pData.Ji[i]
+            xCurrent[i,j] = getvalue(mp[:x][i,j]);
+        end
+        for par in 1:length(divSet[i])
+            yCurrent[i,par] = getvalue(mp[:y][i,par]);
+        end
+    end
+    for ω in Ω
+        θCurrent[ω] = getvalue(mp[:θ][ω]);
+    end
+    cutSel = examineCuts_count_2(disData,Ω,cutSet,tCurrent,xCurrent,θCurrent,yCurrent);
+    cutSetNew = selectCuts2(cutSet,cutSel);
 
     # need to come up with a rule to partition: gradient descent like binary search
     # check θInt vs. θhat: why the lower bound and the upper bound do not converge quickly --->
@@ -298,8 +411,9 @@ while keepIter
         divSet,divDet = splitPar3(divSet,divDet,newPartition);
     end
     # remove all cuts that are not tight for a while
-    cutSel,cutSet = selectCuts(cutSel,cutSet,cutThreshold);
-    cutThreshold += 5;
+    # cutSel,cutSet = selectCuts(cutSel,cutSet,cutThreshold);
+    # cutThreshold += 5;
+    cutSet = deepcopy(cutSetNew);
 end
 
 # need a cut selection process within the callback

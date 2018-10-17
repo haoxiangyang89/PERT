@@ -50,25 +50,35 @@ function splitPar3(PartSet,PartDet,splitInfo)
             if (splitEnd <= PartSet[i][par].endH)&(splitStart >= PartSet[i][par].startH)
                 mod3 = mod(PartSet[i][par].endH - PartSet[i][par].startH + 1,3);
                 len3 = div(PartSet[i][par].endH - PartSet[i][par].startH + 1,3);
-                if mod3 == 0
-                    part1 = partType(PartSet[i][par].startH,PartSet[i][par].startH + len3 - 1);
-                    part2 = partType(PartSet[i][par].startH + len3,PartSet[i][par].startH + len3*2 - 1);
-                    part3 = partType(PartSet[i][par].startH + len3*2,PartSet[i][par].endH);
-                elseif mod3 == 1
-                    part1 = partType(PartSet[i][par].startH,PartSet[i][par].startH + len3 - 1);
-                    part2 = partType(PartSet[i][par].startH + len3,PartSet[i][par].startH + len3*2 - 1);
-                    part3 = partType(PartSet[i][par].startH + len3*2,PartSet[i][par].endH);
+                if len3 >= 1
+                    # if the partition is larger than 3 items in between
+                    if mod3 == 0
+                        part1 = partType(PartSet[i][par].startH,PartSet[i][par].startH + len3);
+                        part2 = partType(PartSet[i][par].startH + len3,PartSet[i][par].startH + len3*2);
+                        part3 = partType(PartSet[i][par].startH + len3*2,PartSet[i][par].endH);
+                    elseif mod3 == 1
+                        part1 = partType(PartSet[i][par].startH,PartSet[i][par].startH + len3);
+                        part2 = partType(PartSet[i][par].startH + len3,PartSet[i][par].startH + len3*2);
+                        part3 = partType(PartSet[i][par].startH + len3*2,PartSet[i][par].endH);
+                    else
+                        part1 = partType(PartSet[i][par].startH,PartSet[i][par].startH + len3);
+                        part2 = partType(PartSet[i][par].startH + len3,PartSet[i][par].startH + len3*2 + 1);
+                        part3 = partType(PartSet[i][par].startH + len3*2,PartSet[i][par].endH);
+                    end
+                    push!(partSetiTemp,part1);
+                    push!(partSetiTemp,part2);
+                    push!(partSetiTemp,part3);
+                    push!(partDetiTemp,0);
+                    push!(partDetiTemp,0);
+                    push!(partDetiTemp,0);
                 else
-                    part1 = partType(PartSet[i][par].startH,PartSet[i][par].startH + len3 - 1);
-                    part2 = partType(PartSet[i][par].startH + len3,PartSet[i][par].startH + len3*2);
-                    part3 = partType(PartSet[i][par].startH + len3*2 + 1,PartSet[i][par].endH);
+                    part1 = partType(PartSet[i][par].startH,splitPos);
+                    part2 = partType(splitPos,PartSet[i][par].endH);
+                    push!(partSetiTemp,part1);
+                    push!(partSetiTemp,part2);
+                    push!(partDetiTemp,0);
+                    push!(partDetiTemp,0);
                 end
-                push!(partSetiTemp,part1);
-                push!(partSetiTemp,part2);
-                push!(partSetiTemp,part3);
-                push!(partDetiTemp,0);
-                push!(partDetiTemp,0);
-                push!(partDetiTemp,0);
             else
                 push!(partSetiTemp,PartSet[i][par]);
                 push!(partDetiTemp,PartDet[i][par]);
