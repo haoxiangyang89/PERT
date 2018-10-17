@@ -72,6 +72,7 @@ function splitPar3(PartSet,PartDet,splitInfo)
                     push!(partDetiTemp,0);
                     push!(partDetiTemp,0);
                 else
+                    splitPos = Int(floor((splitStart + splitEnd)/2));
                     part1 = partType(PartSet[i][par].startH,splitPos);
                     part2 = partType(splitPos,PartSet[i][par].endH);
                     push!(partSetiTemp,part1);
