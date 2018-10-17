@@ -63,7 +63,7 @@ function splitPar3(PartSet,PartDet,splitInfo)
                     else
                         part1 = partType(PartSet[i][par].startH,PartSet[i][par].startH + len3);
                         part2 = partType(PartSet[i][par].startH + len3,PartSet[i][par].startH + len3*2 + 1);
-                        part3 = partType(PartSet[i][par].startH + len3*2,PartSet[i][par].endH);
+                        part3 = partType(PartSet[i][par].startH + len3*2 + 1,PartSet[i][par].endH);
                     end
                     push!(partSetiTemp,part1);
                     push!(partSetiTemp,part2);
