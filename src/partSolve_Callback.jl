@@ -63,11 +63,11 @@ tbest = Dict();
 lbCost = -Inf;
 lbCostList = [];
 ubCostList = [ubdet];
+ubCost = ubdet;
 GList = [];
 cutSel = Dict();
 cutThreshold = 10;
 
-bbdata = [];
 function paraInfo(cb)
     obj       = MathProgBase.cbgetobj(cb);
     bestbound = MathProgBase.cbgetbestbound(cb);
@@ -96,7 +96,10 @@ function paraInfo1(cb)
     end
     obj = that[0]*pData.p0 + sum(disData[ω].prDis*θhat[ω] for ω in Ω);
     bestbound = MathProgBase.cbgetbestbound(cb);
-    push!(bbdata,(obj,bestbound));
+    if obj < minimum(ubCurrentList)
+        push!(ubCurrentList,obj);
+        @lazyconstraint(cb, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) <= obj);
+    end
     println(obj," ",bestbound);
 end
 
@@ -300,29 +303,40 @@ function partBenders_diag(cb)
 end
 
 keepIter = true;
+lbHist = [];
+ubHist = [];
+timeHist = [];
+cutHist = [];
+intSolHist = [];
+
+# move the createMaster_Callback here
+mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+@variables(mp, begin
+  θ[Ω] >= 0
+  0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
+  t[i in pData.II] >= 0
+  y[i in pData.II, par in 1:length(divSet[i])], Bin
+end);
+@constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+@constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
+@constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+@constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSet[i][par].endH]*y[i,par] for par in 1:length(divSet[i])));
+@constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSet[i])));
+@constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
+@constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
+
+@objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
+# if ubCost != Inf
+#     @constraint(mp, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) <= ubCost);
+# end
+# if lbCost != -Inf
+#     @constraint(mp, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) >= lbCost);
+# end
 while keepIter
     tCurrent = Dict();
     xCurrent = Dict();
     θCurrent = Dict();
     yCurrent = Dict();
-
-    # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
-    @variables(mp, begin
-      θ[Ω] >= 0
-      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
-      t[i in pData.II] >= 0
-      y[i in pData.II, par in 1:length(divSet[i])], Bin
-    end);
-    @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
-    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
-    @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
-    @constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSet[i][par].endH]*y[i,par] for par in 1:length(divSet[i])));
-    @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSet[i])));
-    @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
-    @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
-
-    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
 
     # add the cut
     # cutInfo = 2 dimensional vector, first dimention record the primal solution,
@@ -361,11 +375,13 @@ while keepIter
     addlazycallback(mp, partBenders);
     # addlazycallback(mp, partBenders_diag);
     #addinfocallback(mp, paraInfo, when = :MIPNode);
-    addinfocallback(mp, paraInfo1, when = :MIPSol);
+    #addinfocallback(mp, paraInfo1, when = :MIPSol);
     tic();
     solve(mp);
     tIter = toc();
+    push!(timeHist,tIter);
     lbCost = getobjectivevalue(mp);
+    push!(lbHist,lbCost);
     # only select currently tight cuts
     for i in pData.II
         tCurrent[i] = getvalue(mp[:t][i]);
@@ -379,7 +395,7 @@ while keepIter
     for ω in Ω
         θCurrent[ω] = getvalue(mp[:θ][ω]);
     end
-    cutSel = examineCuts_count_2(disData,Ω,cutSet,tCurrent,xCurrent,θCurrent,yCurrent);
+    cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
     cutSetNew = selectCuts2(cutSet,cutSel);
 
     # need to come up with a rule to partition: gradient descent like binary search
@@ -387,6 +403,8 @@ while keepIter
     # use the sub problem solution G to learn the b&b
     # also need to think up a way to tightening the cuts for each partition
     ubCost = minimum(ubCostList);
+    push!(ubHist,ubCost);
+    push!(intSolHist,length(ubCostList));
     if (ubCost - lbCost)/ubCost < ϵ
         keepIter = false;
     else
@@ -410,10 +428,36 @@ while keepIter
         #divSet,divDet = splitPar(divSet,divDet,newPartition);
         divSet,divDet = splitPar3(divSet,divDet,newPartition);
     end
+    push!(cutHist,sum(length(cutSet[l][2]) for l in 1:length(cutSet)));
+    cutSet = deepcopy(cutSetNew);
+
+    # move the createMaster_Callback here
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+    @variables(mp, begin
+      θ[Ω] >= 0
+      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
+      t[i in pData.II] >= 0
+      y[i in pData.II, par in 1:length(divSet[i])], Bin
+    end);
+    @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
+    @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+    @constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSet[i][par].endH]*y[i,par] for par in 1:length(divSet[i])));
+    @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSet[i])));
+    @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
+    @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
+
+    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
+    # if ubCost != Inf
+    #     @constraint(mp, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) <= ubCost);
+    # end
+    # if lbCost != -Inf
+    #     @constraint(mp, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) >= lbCost);
+    # end
+
     # remove all cuts that are not tight for a while
     # cutSel,cutSet = selectCuts(cutSel,cutSet,cutThreshold);
     # cutThreshold += 5;
-    cutSet = deepcopy(cutSetNew);
 end
 
 # need a cut selection process within the callback
