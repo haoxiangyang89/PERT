@@ -48,8 +48,8 @@ function splitPar3(PartSet,PartDet,splitInfo)
         for par in 1:length(PartSet[i])
             # split the current partition
             if (splitEnd <= PartSet[i][par].endH)&(splitStart >= PartSet[i][par].startH)
-                mod3 = mod(PartSet[i][par].endH - PartSet[i][par].startH + 1,3);
-                len3 = div(PartSet[i][par].endH - PartSet[i][par].startH + 1,3);
+                mod3 = mod(PartSet[i][par].endH - PartSet[i][par].startH,3);
+                len3 = div(PartSet[i][par].endH - PartSet[i][par].startH,3);
                 if len3 >= 1
                     # if the partition is larger than 3 items in between
                     if mod3 == 0
