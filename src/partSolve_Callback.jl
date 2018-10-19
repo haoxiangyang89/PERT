@@ -132,8 +132,12 @@ function partBenders(cb)
     ubCost = minimum(ubCostList);
     ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1);
     if ubCost > ubTemp
-        tbest = copy(that);
-        xbest = copy(xhat);
+        for i in pData.II
+            tbest[i] = that[i];
+            for j in pData.Ji[i]
+                xbest[i,j] = xhat[i,j];
+            end
+        end
     end
     push!(ubCostList,ubTemp);
     dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
@@ -310,7 +314,8 @@ cutHist = [];
 intSolHist = [];
 
 # move the createMaster_Callback here
-mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+#mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+mp = Model(solver = CplexSolver());
 @variables(mp, begin
   θ[Ω] >= 0
   0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -432,7 +437,8 @@ while keepIter
     cutSet = deepcopy(cutSetNew);
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+    #mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+    mp = Model(solver = CplexSolver());
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
