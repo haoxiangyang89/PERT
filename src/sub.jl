@@ -713,21 +713,21 @@ function sub_divTDual(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
     solve(sp);
     vk = getobjectivevalue(sp);
 
-    λdict1 = Dict();             # dual for x
-    πdict1 = Dict();             # dual for t
-    γdict1 = Dict();             # dual for y
+    λdict = Dict();             # dual for x
+    πdict = Dict();             # dual for t
+    γdict = Dict();             # dual for y
     for i in pData.II
-        πdict1[i] = -getvalue(sp[:λHG1][i]) - getvalue(sp[:λHG2][i]) + getvalue(sp[:λtG2][i]) + getvalue(sp[:λtG3][i]);
+        πdict[i] = -getvalue(sp[:λHG1][i]) - getvalue(sp[:λHG2][i]) + getvalue(sp[:λtG2][i]) + getvalue(sp[:λtG3][i]);
         for j in pData.Ji[i]
-            λdict1[i,j] = getvalue(sp[:λxG1][i,j]) + getvalue(sp[:λxG2][i,j]);
+            λdict[i,j] = getvalue(sp[:λxG1][i,j]) + getvalue(sp[:λxG2][i,j]);
         end
         for par in 1:length(divSet[i])
-            γdict1[i,par] = H[divSet[i][par].startH]*getvalue(sp[:λHG2][i]) +
+            γdict[i,par] = H[divSet[i][par].startH]*getvalue(sp[:λHG2][i]) +
                 getvalue(sp[:λFG2][i,par]) + getvalue(sp[:λFG3][i,par]);
             if ωCurr <= divSet[i][par].startH
-                γdict1[i,par] += getvalue(sp[:λGy1][i]);
+                γdict[i,par] += getvalue(sp[:λGy1][i]);
             elseif ωCurr >= divSet[i][par].endH
-                γdict1[i,par] -= getvalue(sp[:λGy2][i]);
+                γdict[i,par] -= getvalue(sp[:λGy2][i]);
             end
         end
     end
