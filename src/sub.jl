@@ -642,7 +642,7 @@ function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
     end
     Ghat = Dict();
     for i in pData.II
-        Ghat[i] = getvalue(sp[:G][i]);
+        Ghat[i] = -getvalue(sp[:G][i]);
     end
     if returnOpt == 0
         return πdict,λdict,γdict,vk,Ghat;
