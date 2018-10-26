@@ -790,7 +790,7 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,vhat,divSet,H,M,tcore,xc
     @constraint(sp, FConstr[i in pData.II, par in 1:length(divSet[i])], -λFG1[i,par] - λFG2[i,par] - λFG3[i,par] +
         H[divSet[i][par].endH]*λHG1[i] - H[divSet[i][par].startH]*λHG2[i] >= 0);
     # s constraint
-    @constraint(sp, sConstr[i in pData.II, j in pData.Ji[i]], -λsG1[i,j] - λsG2[i,j] - ⁠λsG3[i,j] -
+    @constraint(sp, sConstr[i in pData.II, j in pData.Ji[i]], -λsG1[i,j] - λsG2[i,j] - λsG3[i,j] -
         sum(dDω.d[i]*pData.eff[i][j]*λdur[k] for k in pData.K if k[1] == i) >= 0);
 
     # objective function of the binary feasible solution should be the same
