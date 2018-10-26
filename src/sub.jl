@@ -650,3 +650,164 @@ function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
         return πdict,λdict,γdict,vk,sp;
     end
 end
+
+function sub_divTDual(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
+    # solve the subproblem by dual formulation
+    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    @variable(sp, λFG1[i in pData.II, par in 1:length(divSet[i])] <= 0);
+    @variable(sp, λFG2[i in pData.II, par in 1:length(divSet[i])] <= 0);
+    @variable(sp, λFG3[i in pData.II, par in 1:length(divSet[i])] >= 0);
+    @variable(sp, λHG1[i in pData.II] <= 0);
+    @variable(sp, λHG2[i in pData.II] >= 0);
+    @variable(sp, λGy1[i in pData.II] >= 0);
+    @variable(sp, λGy2[i in pData.II] <= 0);
+    @variable(sp, λGG[k in pData.K] <= 0);
+    @variable(sp, λtG1[i in pData.II] >= 0);
+    @variable(sp, λtG2[i in pData.II] >= 0);
+    @variable(sp, λtG3[i in pData.II] <= 0);
+    @variable(sp, λxG1[i in pData.II, j in pData.Ji[i]] >= 0);
+    @variable(sp, λxG2[i in pData.II, j in pData.Ji[i]] <= 0);
+    @variable(sp, λsG1[i in pData.II, j in pData.Ji[i]] <= 0);
+    @variable(sp, λsG2[i in pData.II, j in pData.Ji[i]] <= 0);
+    @variable(sp, λsG3[i in pData.II, j in pData.Ji[i]] >= 0);
+    @variable(sp, λbudget <= 0);
+    @variable(sp, λxub[i in pData.II] <= 0);
+    @variable(sp, λdur[k in pData.K] >= 0);
+
+    tBool = Dict();
+    for i in pData.II
+        if i != 0
+            tBool[i] = 0;
+        else
+            tBool[i] = 1;
+        end
+    end
+
+    # t constraint
+    @constraint(sp, tConstr[i in pData.II], tBool[i] - λtG1[i] - λtG2[i] - λtG3[i] +
+        sum(λdur[k] for k in pData.K if k[1] == i) - sum(λdur[k] for k in pData.K if k[2] == i) >= 0);
+    # x constraint
+    @constraint(sp, xConstr[i in pData.II, j in pData.Ji[i]], -λxG1[i,j] - λxG2[i,j] +
+        λsG2[i,j] + λsG3[i,j] - pData.b[i][j]*λbudget - λxub[i] - sum(pData.D[i]*pData.eff[i][j]*λdur[k] for k in pData.K if k[1] == i) >= 0);
+    # G constraint
+    @constraint(sp, gConstr[i in pData.II], sum(λFG1[i,par] + λFG3[i,par] for par in 1:length(divSet[i])) - dDω.H*(λHG1[i] - λHG2[i]) -
+        λGy1[i] - λGy2[i] + sum(λGG[k] for k in pData.K if k[2] == i) - sum(λGG[k] for k in pData.K if k[1] == i) + λtG1[i]*dDω.H -
+        λtG2[i]*M[i] + λtG3[i]*M[i] + sum(-λxG1[i,j] + λxG2[i,j] + λsG1[i,j] + λsG3[i,j] for j in pData.Ji[i]) +
+        sum(dDω.d[i]*λdur[k] for k in pData.K if k[1] == i) >= 0);
+    # Gy constraint
+    @constraint(sp, FConstr[i in pData.II, par in 1:length(divSet[i])], -λFG1[i,par] - λFG2[i,par] - λFG3[i,par] +
+        H[divSet[i][par].endH]*λHG1[i] - H[divSet[i][par].startH]*λHG2[i] >= 0);
+    # s constraint
+    @constraint(sp, sConstr[i in pData.II, j in pData.Ji[i]], -λsG1[i,j] - λsG2[i,j] - λsG3[i,j] -
+        sum(dDω.d[i]*pData.eff[i][j]*λdur[k] for k in pData.K if k[1] == i) >= 0);
+
+    # objective function
+    @objective(sp, Max, sum(sum(yhat[i,par]*λFG2[i,par] + (yhat[i,par] - 1)*λFG3[i,par] for par in 1:length(divSet[i])) for i in pData.II) +
+        sum(λHG1[i]*(dDω.H - that[i]) + λHG2[i]*(-that[i] + sum(yhat[i,par]*H[divSet[i][par].startH] for par in 1:length(divSet[i]))) for i in pData.II) +
+        sum(λGy1[i]*(sum(yhat[i,par] for par in 1:length(divSet[i]) if ωCurr <= divSet[i][par].startH)) +
+            λGy2[i]*(1 - sum(yhat[i,par] for par in 1:length(divSet[i]) if ωCurr >= divSet[i][par].endH)) for i in pData.II) +
+        sum(that[i]*(λtG2[i] + λtG3[i]) + sum(xhat[i,j]*(λxG1[i,j] + λxG2[i,j]) for j in pData.Ji[i]) for i in pData.II) -
+        sum(sum(λsG3[i,j] for j in pData.Ji[i]) for i in pData.II) + pData.B*λbudget + sum(λxub[i] for i in pData.II) +
+        sum(pData.D[k[1]]*λdur[k] for k in pData.K));
+
+    solve(sp);
+    vk = getobjectivevalue(sp);
+
+    λdict1 = Dict();             # dual for x
+    πdict1 = Dict();             # dual for t
+    γdict1 = Dict();             # dual for y
+    for i in pData.II
+        πdict1[i] = -getvalue(sp[:λHG1][i]) - getvalue(sp[:λHG2][i]) + getvalue(sp[:λtG2][i]) + getvalue(sp[:λtG3][i]);
+        for j in pData.Ji[i]
+            λdict1[i,j] = getvalue(sp[:λxG1][i,j]) + getvalue(sp[:λxG2][i,j]);
+        end
+        for par in 1:length(divSet[i])
+            γdict1[i,par] = H[divSet[i][par].startH]*getvalue(sp[:λHG2][i]) +
+                getvalue(sp[:λFG2][i,par]) + getvalue(sp[:λFG3][i,par]);
+            if ωCurr <= divSet[i][par].startH
+                γdict1[i,par] += getvalue(sp[:λGy1][i]);
+            elseif ωCurr >= divSet[i][par].endH
+                γdict1[i,par] -= getvalue(sp[:λGy2][i]);
+            end
+        end
+    end
+    Ghat = Dict();
+    for i in pData.II
+        Ghat[i] = getdual(sp[:gConstr][i]);
+    end
+
+    if returnOpt == 0
+        return πdict,λdict,γdict,vk,Ghat;
+    else
+        return πdict,λdict,γdict,vk,sp;
+    end
+end
+
+function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,vhat,divSet,H,M,tcore,xcore,ycore,returnOpt = 0)
+    # solve the subproblem by dual formulation
+    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    @variable(sp, λFG1[i in pData.II, par in 1:length(divSet[i])] <= 0);
+    @variable(sp, λFG2[i in pData.II, par in 1:length(divSet[i])] <= 0);
+    @variable(sp, λFG3[i in pData.II, par in 1:length(divSet[i])] >= 0);
+    @variable(sp, λHG1[i in pData.II] <= 0);
+    @variable(sp, λHG2[i in pData.II] >= 0);
+    @variable(sp, λGy1[i in pData.II] >= 0);
+    @variable(sp, λGy2[i in pData.II] <= 0);
+    @variable(sp, λGG[k in pData.K] <= 0);
+    @variable(sp, λtG1[i in pData.II] >= 0);
+    @variable(sp, λtG2[i in pData.II] >= 0);
+    @variable(sp, λtG3[i in pData.II] <= 0);
+    @variable(sp, λxG1[i in pData.II, j in pData.Ji[i]] >= 0);
+    @variable(sp, λxG2[i in pData.II, j in pData.Ji[i]] <= 0);
+    @variable(sp, λsG1[i in pData.II, j in pData.Ji[i]] <= 0);
+    @variable(sp, λsG2[i in pData.II, j in pData.Ji[i]] <= 0);
+    @variable(sp, λsG3[i in pData.II, j in pData.Ji[i]] >= 0);
+    @variable(sp, λbudget <= 0);
+    @variable(sp, λxub[i in pData.II] <= 0);
+    @variable(sp, λdur[k in pData.K] >= 0);
+
+    tBool = Dict();
+    for i in pData.II
+        if i != 0
+            tBool[i] = 0;
+        else
+            tBool[i] = 1;
+        end
+    end
+
+    # t constraint
+    @constraint(sp, tConstr[i in pData.II], tBool[i] - λtG1[i] - λtG2[i] - λtG3[i] +
+        sum(λdur[k] for k in pData.K if k[1] == i) - sum(λdur[k] for k in pData.K if k[2] == i) >= 0);
+    # x constraint
+    @constraint(sp, xConstr[i in pData.II, j in pData.Ji[i]], -λxG1[i,j] - λxG2[i,j] +
+        λsG2[i,j] + λsG3[i,j] - pData.b[i][j]*λbudget - λxub[i] - sum(pData.D[i]*pData.eff[i][j]*λdur[k] for k in pData.K if k[1] == i) >= 0);
+    # G constraint
+    @constraint(sp, gConstr[i in pData.II], sum(λFG1[i,par] + λFG3[i,par] for par in 1:length(divSet[i])) - dDω.H*(λHG1[i] - λHG2[i]) -
+        λGy1[i] - λGy2[i] + sum(λGG[k] for k in pData.K if k[2] == i) - sum(λGG[k] for k in pData.K if k[1] == i) + λtG1[i]*dDω.H -
+        λtG2[i]*M[i] + λtG3[i]*M[i] + sum(-λxG1[i,j] + λxG2[i,j] + λsG1[i,j] + λsG3[i,j] for j in pData.Ji[i]) +
+        sum(dDω.d[i]*λdur[k] for k in pData.K if k[1] == i) >= 0);
+    # Gy constraint
+    @constraint(sp, FConstr[i in pData.II, par in 1:length(divSet[i])], -λFG1[i,par] - λFG2[i,par] - λFG3[i,par] +
+        H[divSet[i][par].endH]*λHG1[i] - H[divSet[i][par].startH]*λHG2[i] >= 0);
+    # s constraint
+    @constraint(sp, sConstr[i in pData.II, j in pData.Ji[i]], -λsG1[i,j] - λsG2[i,j] - ⁠λsG3[i,j] -
+        sum(dDω.d[i]*pData.eff[i][j]*λdur[k] for k in pData.K if k[1] == i) >= 0);
+
+    # objective function of the binary feasible solution should be the same
+    @constraint(sp, binaryTight, sum(sum(yhat[i,par]*λFG2[i,par] + (yhat[i,par] - 1)*λFG3[i,par] for par in 1:length(divSet[i])) for i in pData.II) +
+        sum(λHG1[i]*(dDω.H - that[i]) + λHG2[i]*(-that[i] + sum(yhat[i,par]*H[divSet[i][par].startH] for par in 1:length(divSet[i]))) for i in pData.II) +
+        sum(λGy1[i]*(sum(yhat[i,par] for par in 1:length(divSet[i]) if ωCurr <= divSet[i][par].startH)) +
+            λGy2[i]*(1 - sum(yhat[i,par] for par in 1:length(divSet[i]) if ωCurr >= divSet[i][par].endH)) for i in pData.II) +
+        sum(that[i]*(λtG2[i] + λtG3[i]) + sum(xhat[i,j]*(λxG1[i,j] + λxG2[i,j]) for j in pData.Ji[i]) for i in pData.II) -
+        sum(sum(λsG3[i,j] for j in pData.Ji[i]) for i in pData.II) + pData.B*λbudget + sum(λxub[i] for i in pData.II) +
+        sum(D[k[1]]*λdur[k] for k in pData.K) == vhat);
+
+    # optimize the fractional solution's objective
+    @objective(sp, Max, sum(sum(ycore[i,par]*λFG2[i,par] + (ycore[i,par] - 1)*λFG3[i,par] for par in 1:length(divSet[i])) for i in pData.II) +
+        sum(λHG1[i]*(dDω.H - tcore[i]) + λHG2[i]*(-tcore[i] + sum(ycore[i,par]*H[divSet[i][par].startH] for par in 1:length(divSet[i]))) for i in pData.II) +
+        sum(λGy1[i]*(sum(ycore[i,par] for par in 1:length(divSet[i]) if ωCurr <= divSet[i][par].startH)) +
+            λGy2[i]*(1 - sum(ycore[i,par] for par in 1:length(divSet[i]) if ωCurr >= divSet[i][par].endH)) for i in pData.II) +
+        sum(tcore[i]*(λtG2[i] + λtG3[i]) + sum(xcore[i,j]*(λxG1[i,j] + λxG2[i,j]) for j in pData.Ji[i]) for i in pData.II) -
+        sum(sum(λsG3[i,j] for j in pData.Ji[i]) for i in pData.II) + pData.B*λbudget + sum(λxub[i] for i in pData.II) +
+        sum(D[k[1]]*λdur[k] for k in pData.K));
+end

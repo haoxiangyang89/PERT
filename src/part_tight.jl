@@ -250,3 +250,111 @@ function findSuccAll(pData)
     end
     return allSucc;
 end
+
+function iniPart(pData,disData,Ω,sN,MM)
+    Tmax = disData[length(Ω)].H + longestPath(pData)[0];
+    H = Dict();
+    H[0] = 0;
+    H[length(Ω)+1] = Tmax;
+    for ω in Ω
+        H[ω] = disData[ω].H;
+    end
+
+    # sample sN scenarios and solve the small extensive formulation
+    tList = Dict();
+    for i in pData.II
+        tList[i] = [];
+    end
+    ubList = [];
+    for m in 1:MM
+        #randList = rand(Ω,sN);
+        disData1 = Dict();
+        Ω1 = 1:sN;
+        randList = [(ω - 1)*MM + m for ω in Ω1];
+        for i in Ω1
+            disData1[i] = deepcopy(disData[randList[i]]);
+            disData1[i].prDis = (1 - pData.p0)/length(Ω1);
+        end
+        text,xext,fext,gext,mext = extForm_cheat(pData,disData1,Ω1,1e-4,999999);
+        ubext = ubCalP(pData,disData,Ω,xext,text,999999);
+        push!(ubList,ubext);
+        for i in pData.II
+            push!(tList[i],text[i]);
+        end
+    end
+
+    # ubList = [];
+    # tList = Dict();
+    # for i in pData.II
+    #     tList[i] = [];
+    # end
+    # for m in 1:MM
+    #     disData1 = Dict();
+    #     Ω1 = (sN*(m - 1)+1):sN*m;
+    #     for i in 1:length(Ω1)
+    #         disData1[i] = disData[Ω1[i]];
+    #     end
+    #     text,xext,fext,gext,mext = extForm_cheat(pData,disData1,1:length(Ω1),1e-4,999999);
+    #     ubext = ubCalP(pData,disData,Ω,xext,text,999999);
+    #     push!(ubList,ubext);
+    #     for i in pData.II
+    #         push!(tList[i],text[i]);
+    #     end
+    # end
+
+    # return the min-max decomposition
+    tHList = [];
+    for i in pData.II
+        tHstart = maximum([ω for ω in keys(H) if H[ω] <= minimum(tList[i])]);
+        tHend = minimum([ω for ω in keys(H) if H[ω] >= maximum(tList[i])]);
+        push!(tHList,[i,tHstart,tHend]);
+    end
+    return ubList,HList;
+end
+
+function splitAny(PartSet,PartDet,splitInfo)
+    newPartSet = copy(PartSet);
+    newPartDet = copy(PartDet);
+    for (i,splitStart,splitEnd) in splitInfo
+        partSetiTemp = [];
+        partDetiTemp = [];
+        for par in 1:length(PartSet[i])
+            # split the current partition, essentially split twice using the start and the end
+            if (splitStart < PartSet[i][par].endH)&(splitStart > PartSet[i][par].startH)&(PartDet[i][par] == 0)
+                if (splitEnd < PartSet[i][par].endH)&(splitEnd > PartSet[i][par].startH)
+                    part1 = partType(PartSet[i][par].startH,splitStart);
+                    part2 = partType(splitStart,splitEnd);
+                    part3 = partType(splitEnd,PartSet[i][par].endH);
+                    push!(partSetiTemp,part1);
+                    push!(partSetiTemp,part2);
+                    push!(partSetiTemp,part3);
+                    push!(partDetiTemp,0);
+                    push!(partDetiTemp,0);
+                    push!(partDetiTemp,0);
+                else
+                    part1 = partType(PartSet[i][par].startH,splitStart);
+                    part2 = partType(splitStart,PartSet[i][par].endH);
+                    push!(partSetiTemp,part1);
+                    push!(partSetiTemp,part2);
+                    push!(partDetiTemp,0);
+                    push!(partDetiTemp,0);
+                end
+            else
+                if (splitEnd < PartSet[i][par].endH)&(splitEnd > PartSet[i][par].startH)
+                    part1 = partType(PartSet[i][par].startH,splitEnd);
+                    part2 = partType(splitEnd,PartSet[i][par].endH);
+                    push!(partSetiTemp,part1);
+                    push!(partSetiTemp,part2);
+                    push!(partDetiTemp,0);
+                    push!(partDetiTemp,0);
+                else
+                    push!(partSetiTemp,PartSet[i][par]);
+                    push!(partDetiTemp,PartDet[i][par]);
+                end
+            end
+        end
+        newPartSet[i] = partSetiTemp;
+        newPartDet[i] = partDetiTemp;
+    end
+    return newPartSet,newPartDet;
+end

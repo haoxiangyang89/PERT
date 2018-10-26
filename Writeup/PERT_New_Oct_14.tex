@@ -218,11 +218,10 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 	\noi In this example, the optimal solution is to crash activity 1 with one unit of resource, i.e.\,\(x_1 = 1, x_2 = 0\). Activity 1 starts at time \(t_1 = 0\) and activity 2 starts at time \(t_2 = 1.5\). The optimal expected project span is \(\mathbb{E}[t_T] = 6.5\). We can compare an alternative solution which crash activity 2 with one unit of resource, which has a longer expected duration. Crashing activity 2 matches the intuition from the deterministic case where on the critical path the activities with longer expected duration are prioritized. However, in this case with a stochastic disruption, the latter solution (\(t_1 = 0, t_2 = 3, x_1 = 0, x_2 = 1\)) yields a longer expected project span as \(\mathbb{E}[t_T] = 7.5\). The reason behind this gap is that by crashing activity 1 with one unit amount of resource, the probability of activity 2 starting before the disruption increases to \(0.8\), which prevents activity 2 from seeing the increased duration. \\
 	\newline
 	These examples above indicate that the crashing optimization problem with stochastic disruption has complicated nature. The intuition of deterministic crashing optimization problem does not apply here, and we need a math program model as~\eqref{prob:extensive} to solve for the best crashing plan.
-	\textcolor{blue}{NP-hardness proof.}
 	%Add the conclusion of consistency. Add the proof of consistency. Prove the inconsistency of the stratified sampling method. 
 	
 	\section{Decomposition Method} \label{sec:decomposition}
-	Model~\eqref{prob:extensive} is a two-stage stochastic mixed integer program (2SMIP). If we attempt to decompose it into a master problem~\eqref{prob:masterOri} and scenario-specific subproblems~\eqref{prob:subOri}, the state variables \(t\) and \(x\) are all continuous and binary variables exist in the recourse problems. The recourse problems become nonconvex. Most of previous literature of stochastic mixed integer programming assumes a special structure or property which cannot be applied to our problem setting. For example, Gade et al. \cite{gade2014decomposition} solve 2SMIPs with pure binary first stage variables using sequential convex approximation of recourse by a branch-and-cut process framework where Gomory cuts are added. Ahmed et al. \cite{zou2016nested} assumes state variables to be binary so that the Lagrangian cuts are a tight approximation of the recourse function. Car{\o}e and Tind \cite{caroe1998shaped} solves a more general case of 2SMIP by using the MIP duality theory but the practical tractability is not verified. Qi and Sen \cite{qi2017ancestral} have mixed integer variables in both the master and the recourse problems. Parametric disjunctive cuts, derived in Chen et al. \cite{chen2012computational}, are generated to convexify recourse problems while Benders' cuts approximate recourse value functions. \textcolor{blue}{Although this method suits our problem settings, we implement it only to find that it does not converge in a reasonable time frame.} Therefore, we propose a new decomposition method that utilizes the special structure of our problem. \\
+	Model~\eqref{prob:extensive} is a two-stage stochastic mixed integer program (2SMIP). If we attempt to decompose it into a master problem~\eqref{prob:masterOri} and scenario-specific subproblems~\eqref{prob:subOri}, the state variables \(t\) and \(x\) are all continuous and binary variables exist in the recourse problems. The recourse problems become nonconvex. Most of previous literature of stochastic mixed integer programming assumes a special structure or property which cannot be applied to our problem setting. For example, Gade et al. \cite{gade2014decomposition} solve 2SMIPs with pure binary first stage variables using sequential convex approximation of recourse by a branch-and-cut process framework where Gomory cuts are added. Ahmed et al. \cite{zou2016nested} assumes state variables to be binary so that the Lagrangian cuts are a tight approximation of the recourse function. Car{\o}e and Tind \cite{caroe1998shaped} solves a more general case of 2SMIP by using the MIP duality theory but the practical tractability is not verified. Qi and Sen \cite{qi2017ancestral} have mixed integer variables in both the master and the recourse problems. Parametric disjunctive cuts, derived in Chen et al. \cite{chen2012computational}, are generated to convexify recourse problems while Benders' cuts approximate recourse value functions. Although this method suits our problem settings, we implement it only to find that it does not converge in a reasonable time frame. Therefore, we propose a new decomposition method that utilizes the special structure of our problem. \\
 	\newline
 	We first rewrite the extensive formulation into a master problem \((M)\) and a set of recourse problems \((S^\omega)\), \(\omega \in \Omega\):
 	%The recourse problem becomes a linear program as long as we can determine the temporal relationship between each activity and the disruption, and an early determination of the value of \(G\) help accelerate the decomposition process.
@@ -558,25 +557,27 @@ Optimal Crashing of a PERT Network with Disruptions \ms
 		\item How does the solution quality improve as the number of samples used in sample average approximation increases? 
 		\item What is the time improvement of Algorithm~\ref{alg:Cut} compared to solving extensive formulation~\eqref{prob:extensive} using state-of-the-art MIP solvers? Other algorithms solving 2SMIP with mixed binary recourse?
 	\end{enumerate}
-	We first introduce the PERT network used for test and distribution information used to characterize uncertainty in Section~\ref{subsec:example}. In Section~\ref{subsec:value} we construct a series of deterministic and semi-deterministic alternatives to model~\eqref{prob:extensive}, perform out-of-sample tests, and present the better quality result of solution to model~\eqref{prob:extensive} compared to the alternative ones. We test the effect of different simulation budgets on solution quality and computational performance in Section~\ref{subsec:budget}. Finally in Section~\ref{subsec:time} we present the computational advantage of Algorithm~\ref{alg:Cut} compared to solving extensive formulation and the ancestral Benders decomposition method (\textcolor{blue}{Cite Sen's two papers}.)\\
+	We first introduce the PERT network used for test and distribution information used to characterize uncertainty in Section~\ref{subsec:example}. In Section~\ref{subsec:value} we construct a series of deterministic and semi-deterministic alternatives to model~\eqref{prob:extensive}, perform out-of-sample tests, and present the better quality result of solution to model~\eqref{prob:extensive} compared to the alternative ones. We test the effect of different simulation budgets on solution quality and computational performance in Section~\ref{subsec:budget}. Finally in Section~\ref{subsec:time} we present the computational advantage of Algorithm~\ref{alg:Cut} compared to solving extensive formulation.\\
 	\newline
 	All tests are run on a server with 20 Intel Xeon cores at 3.1 GHz and 256 GB of RAM. All models are constructed using version 0.18.0 of the JuMP package \cite{DunningHuchetteLubin2017} on the Julia platform. All linear programs and mixed integer programs are solved by Gurobi 8.01 \cite{gurobi2016} with default parameters.
 	
 	\subsection{Test Cases Construction} \label{subsec:example}
 	\textcolor{blue}{Where we find our tests:
-		\begin{itemize}
-			\item Plambeck paper: Case 11
-			\item V42: Case 14
-			\item Case 19 from Elmgrabhy
-			\item Case 55 from Elmgrabhy
-			\item Randomized network 75, 100 nodes
-			\item Plambeck paper: Case 110
+	\begin{itemize}
+		\item Plambeck paper: Case 11
+		\item V42: Case 14
+		\item Case 19 from Elmgrabhy
+		\item Case 55 from Elmgrabhy
+		\item Randomized network 100 nodes
+		\item Plambeck paper: Case 110
 	\end{itemize}}
-	\noi Although it is easy to construct an activity network with randomly distributed disruption time and magnitude, not all instances constructed can well illustrate properties of our problem. Therefore, we construct our test cases based on the activity networks used in the previous literature, which have been shown of research value. We create one activity network with 14 activities and 
+	\noi We construct our test cases based on the activity networks used in the previous literature.
 	\subsection{Value of a Fully Stochastic Model} \label{subsec:value}
 	In this section, we first construct a deterministic problem assuming no disruption occurs and three semi-deterministic alternatives assuming: both timing and magnitude of the disruption are random, only the timing is random, and only the magnitude is random.
 	\subsection{Simulation Budget} \label{subsec:budget}
+	In this section, we show that a large sample size can lead to a significantly better solution compared to the one yielded by a small sample size. We also compare, with a finite budget on the number of samples, what budget allocation plan works the best in terms of the computational time and solution bias.
 	\subsection{Computational Performance} \label{subsec:time}
+	In this section, we show the computational advantage our method has compared to directly solving the extensive formulation.
 \bibliographystyle{plain}
 \bibliography{PERT_Bib}
 

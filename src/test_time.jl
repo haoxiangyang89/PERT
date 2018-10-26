@@ -5,14 +5,13 @@ addprocs(20);
 @everywhere include("header.jl");
 
 #filePath = "/Users/haoxiangyang/Desktop/PERT_tests/75_Lognormal_Exponential/"
-filePath = "/home/haoxiang/PERT_tests/14_Lognormal_Exponential";
+filePath = "/home/haoxiang/PERT_tests/55_Lognormal_Exponential/";
 Ωsize = 500;
 Ω = 1:Ωsize;
 ϵ = 1e-2;
 pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
-data = load("test_cuts.jld");
-disData = data["disData"];
-dataDet = load("test_Ext_time_exponential.jld");
+disData = disDataSet[1];
+
 allSucc = findSuccAll(pData);
 distanceDict = Dict();
 for i in pData.II

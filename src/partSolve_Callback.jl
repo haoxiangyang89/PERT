@@ -140,7 +140,8 @@ function partBenders(cb)
         end
     end
     push!(ubCostList,ubTemp);
-    dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
+    #dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
+    dataList = pmap(ω -> sub_divTDual(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
     for ω in Ω
         πdict[ω] = dataList[ω][1];
         λdict[ω] = dataList[ω][2];
