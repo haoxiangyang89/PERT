@@ -799,7 +799,7 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
             λGy2[i]*(1 - sum(yhat[i,par] for par in 1:length(divSet[i]) if ωCurr >= divSet[i][par].endH)) for i in pData.II) +
         sum(that[i]*(λtG2[i] + λtG3[i]) + sum(xhat[i,j]*(λxG1[i,j] + λxG2[i,j]) for j in pData.Ji[i]) for i in pData.II) -
         sum(sum(λsG3[i,j] for j in pData.Ji[i]) for i in pData.II) + pData.B*λbudget + sum(λxub[i] for i in pData.II) +
-        sum(D[k[1]]*λdur[k] for k in pData.K));
+        sum(pData.D[k[1]]*λdur[k] for k in pData.K));
 
     solve(sp);
     vhat = getobjectivevalue(sp);
@@ -811,7 +811,7 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
             λGy2[i]*(1 - sum(yhat[i,par] for par in 1:length(divSet[i]) if ωCurr >= divSet[i][par].endH)) for i in pData.II) +
         sum(that[i]*(λtG2[i] + λtG3[i]) + sum(xhat[i,j]*(λxG1[i,j] + λxG2[i,j]) for j in pData.Ji[i]) for i in pData.II) -
         sum(sum(λsG3[i,j] for j in pData.Ji[i]) for i in pData.II) + pData.B*λbudget + sum(λxub[i] for i in pData.II) +
-        sum(D[k[1]]*λdur[k] for k in pData.K) == vhat);
+        sum(pData.D[k[1]]*λdur[k] for k in pData.K) == vhat);
 
     # optimize the fractional solution's objective
     @objective(sp, Max, sum(sum(ycore[i,par]*λFG2[i,par] + (ycore[i,par] - 1)*λFG3[i,par] for par in 1:length(divSet[i])) for i in pData.II) +
@@ -820,7 +820,7 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
             λGy2[i]*(1 - sum(ycore[i,par] for par in 1:length(divSet[i]) if ωCurr >= divSet[i][par].endH)) for i in pData.II) +
         sum(tcore[i]*(λtG2[i] + λtG3[i]) + sum(xcore[i,j]*(λxG1[i,j] + λxG2[i,j]) for j in pData.Ji[i]) for i in pData.II) -
         sum(sum(λsG3[i,j] for j in pData.Ji[i]) for i in pData.II) + pData.B*λbudget + sum(λxub[i] for i in pData.II) +
-        sum(D[k[1]]*λdur[k] for k in pData.K));
+        sum(pData.D[k[1]]*λdur[k] for k in pData.K));
 
     solve(sp);
 
