@@ -304,6 +304,9 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
     cutyn = [];
     cutynRec = [];
     yLim = limYselection(pData,H,tdet,divSet,radius);
+    tcoreList = [];
+    xcoreList = [];
+    ycoreList = [];
 
     while (ubCost - lbCost)/ubCost > ϵ
         keepIter = true;
@@ -336,7 +339,7 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
         end
         tic();
         while keepIter
-            mp.solver = GurobiSolver();
+            mp.solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9);
             solve(mp);
             # obtain the solution
             for i in pData.II
@@ -354,13 +357,16 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
             end
             lbCost = getobjectivevalue(mp);
             push!(lbCostList,lbCost);
+            push!(tcoreList,that);
+            push!(xcoreList,xhat);
+            push!(ycoreList,yhat);
 
             # examine how many cuts are tight at this solution, update the cutSel
             # cutSel,cutyn = examineCuts_count(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThreshold);
             # push!(cutynRec,length(cutyn));
 
             # update the master with new cutyn
-            yLim = limYselection(pData,H,that,divSet,radius);
+            #yLim = limYselection(pData,H,that,divSet,radius);
 
             # generate cuts
             πdict = Dict();
@@ -383,21 +389,24 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
             tcore = Dict();
             xcore = Dict();
             ycore = Dict();
+            ycore1 = Dict();
             for i in pData.II
                 tcore[i] = getvalue(mp1[:t][i]);
                 for j in pData.Ji[i]
                     xcore[i,j] = getvalue(mp1[:x][i,j]);
                 end
                 for par in 1:length(divSet[i])
-                    # if (tcore[i] >= H[divSet[i][par].startH])&(tcore[i] < H[divSet[i][par].endH])
-                    #     ycore[i,par] = 1;
-                    # else
-                    #     ycore[i,par] = 0;
-                    # end
+                    if (tcore[i] >= H[divSet[i][par].startH])&(tcore[i] < H[divSet[i][par].endH])
+                        ycore1[i,par] = 1;
+                    else
+                        ycore1[i,par] = 0;
+                    end
                     ycore[i,par] = getvalue(mp1[:y][i,par]);
                 end
             end
-            dataList1 = pmap(ω -> sub_divTDualT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
+            dataList1 = pmap(ω -> sub_divTDualT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore1), Ω);
+            dataList2 = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,0.00001), Ω);
+            dataList3 = pmap(ω -> sub_divTDualT3(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcoreList,xcoreList,ycoreList), Ω);
             for ω in Ω
                 πdict[ω] = dataList1[ω][1];
                 λdict[ω] = dataList1[ω][2];
