@@ -355,8 +355,9 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
             lbCost = getobjectivevalue(mp);
 
             # examine how many cuts are tight at this solution, update the cutSel
-            cutSel,cutyn = examineCuts_count(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThreshold);
-            push!(cutynRec,length(cutyn));
+            # cutSel,cutyn = examineCuts_count(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThreshold);
+            # push!(cutynRec,length(cutyn));
+
             # update the master with new cutyn
             yLim = limYselection(pData,H,that,divSet,radius);
 
@@ -373,12 +374,34 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
                 xbest = copy(xhat);
             end
             push!(ubCostList,ubCost);
-            dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
+            dataList = pmap(ω -> sub_divTDual(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
+
+            # added the current relaxation
+            mp1 = copy(mp);
+            solve(mp1,relaxation = true);
+            tcore = Dict();
+            xcore = Dict();
+            ycore = Dict();
+            for i in pData.II
+                tcore[i] = getvalue(mp1[:t][i]);
+                for j in pData.Ji[i]
+                    xcore[i,j] = getvalue(mp1[:x][i,j]);
+                end
+                for par in 1:length(divSet[i])
+                    # if (tcore[i] >= H[divSet[i][par].startH])&(tcore[i] < H[divSet[i][par].endH])
+                    #     ycore[i,par] = 1;
+                    # else
+                    #     ycore[i,par] = 0;
+                    # end
+                    ycore[i,par] = getvalue(mp1[:y][i,par]);
+                end
+            end
+            dataList1 = pmap(ω -> sub_divTDualT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
             for ω in Ω
-                πdict[ω] = dataList[ω][1];
-                λdict[ω] = dataList[ω][2];
-                γdict[ω] = dataList[ω][3];
-                vk[ω] = dataList[ω][4];
+                πdict[ω] = dataList1[ω][1];
+                λdict[ω] = dataList1[ω][2];
+                γdict[ω] = dataList1[ω][3];
+                vk[ω] = dataList1[ω][4];
             end
             ωTightCounter = 0;
             cutDual = [];
@@ -468,9 +491,9 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
                 xhatt = copy(xhat);
                 yhatt = copy(yhat);
                 push!(cutSet,[[thatt,xhatt,yhatt,divSet],cutDual]);
-                for l in 1:length(cutDual)
-                    cutSel[length(cutSet),l] = 0;
-                end
+                # for l in 1:length(cutDual)
+                #     cutSel[length(cutSet),l] = 0;
+                # end
                 mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,1,yLim,0,cutyn);
             end
         end
@@ -489,40 +512,50 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
                 GFrac[i] = [];
             end
         end
-        # create new partition
-        if partOption == 1
-            newPartition = [];
-            for i in pData.II
-                if GFrac[i] != []
-                    newItem = (i,Int(floor((GFrac[i][1] + GFrac[i][2])/2)));
-                    push!(newPartition,newItem);
-                end
-            end
-            divSet,divDet = splitPar(divSet,divDet,newPartition);
-        elseif partOption == 2
-            newPartition = [];
-            for i in pData.II
-                # obtain the CI by tRec
-                meanTrec = mean(tRec[i]);
-                CIu = meanTrec + 3*sqrt(sum((tRec[i][j] - meanTrec)^2 for j in 1:length(tRec[i]))/length(tRec[i]));
-                CIuSet = [ω for ω in keys(H) if H[ω] > CIu];
-                if CIuSet != []
-                    CIuH = minimum(CIuSet);
-                else
-                    CIuH = maximum(keys(H));
-                end
-                CIl = meanTrec - 3*sqrt(sum((tRec[i][j] - meanTrec)^2 for j in 1:length(tRec[i]))/length(tRec[i]));
-                CIlSet = [ω for ω in keys(H) if H[ω] < CIl];
-                if CIlSet != []
-                    CIlH = maximum(CIlSet);
-                else
-                    CIlH = 0;
-                end
-                newItem = (i,CIlH,CIuH);
+        newPartition = [];
+        for i in pData.II
+            if GFrac[i] != []
+                newItem = (i,GFrac[i][1],GFrac[i][2]);
                 push!(newPartition,newItem);
             end
-            divSet,divDet = splitPar_CI(divSet,divDet,newPartition);
         end
+        #divSet,divDet = splitPar(divSet,divDet,newPartition);
+        divSet,divDet = splitPar3(divSet,divDet,newPartition);
+
+        # create new partition
+        # if partOption == 1
+        #     newPartition = [];
+        #     for i in pData.II
+        #         if GFrac[i] != []
+        #             newItem = (i,Int(floor((GFrac[i][1] + GFrac[i][2])/2)));
+        #             push!(newPartition,newItem);
+        #         end
+        #     end
+        #     divSet,divDet = splitPar(divSet,divDet,newPartition);
+        # elseif partOption == 2
+        #     newPartition = [];
+        #     for i in pData.II
+        #         # obtain the CI by tRec
+        #         meanTrec = mean(tRec[i]);
+        #         CIu = meanTrec + 3*sqrt(sum((tRec[i][j] - meanTrec)^2 for j in 1:length(tRec[i]))/length(tRec[i]));
+        #         CIuSet = [ω for ω in keys(H) if H[ω] > CIu];
+        #         if CIuSet != []
+        #             CIuH = minimum(CIuSet);
+        #         else
+        #             CIuH = maximum(keys(H));
+        #         end
+        #         CIl = meanTrec - 3*sqrt(sum((tRec[i][j] - meanTrec)^2 for j in 1:length(tRec[i]))/length(tRec[i]));
+        #         CIlSet = [ω for ω in keys(H) if H[ω] < CIl];
+        #         if CIlSet != []
+        #             CIlH = maximum(CIlSet);
+        #         else
+        #             CIlH = 0;
+        #         end
+        #         newItem = (i,CIlH,CIuH);
+        #         push!(newPartition,newItem);
+        #     end
+        #     divSet,divDet = splitPar_CI(divSet,divDet,newPartition);
+        # end
         yLim = limYselection(pData,H,that,divSet,radius);
         cutThreshold += 5;
     end
