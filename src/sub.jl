@@ -998,7 +998,7 @@ function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,
             xNew[i,j] = xcore[i,j]*ρ + (1-ρ)*xhat[i,j];
         end
         for par in 1:length(divSet[i])
-            yNew[i,par] = ycore[i,par]*ρ + (1-ρ)*yhat[i,j];
+            yNew[i,par] = ycore[i,par]*ρ + (1-ρ)*yhat[i,par];
         end
     end
 
