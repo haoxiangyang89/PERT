@@ -803,6 +803,10 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
 
     solve(sp);
     vhat = getobjectivevalue(sp);
+    Ghat = Dict();
+    for i in pData.II
+        Ghat[i] = -getdual(sp[:gConstr][i]);
+    end
 
     # objective function of the binary feasible solution should be the same
     @constraint(sp, binaryTight, sum(sum(yhat[i,par]*λFG2[i,par] + (yhat[i,par] - 1)*λFG3[i,par] for par in 1:length(divSet[i])) for i in pData.II) +
@@ -843,10 +847,6 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
                 γdict[i,par] -= getvalue(sp[:λGy2][i]);
             end
         end
-    end
-    Ghat = Dict();
-    for i in pData.II
-        Ghat[i] = -getdual(sp[:gConstr][i]);
     end
 
     if returnOpt == 0

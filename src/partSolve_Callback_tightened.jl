@@ -109,24 +109,28 @@ function partBenders(cb)
     push!(ubCostList,ubTemp);
 
     # solve the LP relaxation
-    solve(mp1,relaxation = true);
+    println("test point 1");
+    solve(mp1);
+    println("test point 2");
     tcore = Dict();
     xcore = Dict();
     ycore = Dict();
     for i in pData.II
-        tcore[i] = getvalue(mp1[:t][i]);
+        tcore[i] = getvalue(mp1[:t1][i]);
         for j in pData.Ji[i]
-            xcore[i,j] = getvalue(mp1[:x][i,j]);
+            xcore[i,j] = getvalue(mp1[:x1][i,j]);
         end
         for par in 1:length(divSet[i])
-            if (tcore[i] >= H[divSet[i][par].startH])&(tcore[i] < H[divSet[i][par].endH])
-                ycore[i,par] = 1;
-            else
-                ycore[i,par] = 0;
-            end
-            println(i," ",par," ",ycore[i,par]);
+            # if (tcore[i] >= H[divSet[i][par].startH])&(tcore[i] < H[divSet[i][par].endH])
+            #     ycore[i,par] = 1;
+            # else
+            #     ycore[i,par] = 0;
+            # end
+            # println(i," ",par," ",ycore[i,par]);
+            ycore[i,par] = getvalue(mp1[:y1][i,par]);
         end
     end
+    push!(yhistList,ycore);
 
     #dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
     dataList = pmap(ω -> sub_divTDualT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
@@ -143,7 +147,9 @@ function partBenders(cb)
             @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*(t[i] - that[i]) for i in pData.II) +
                 sum(sum(λdict[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
                 sum(sum(γdict[ω][i,par]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
-            mp1 = addtxyCut(pData,ω,mp1,πdict[ω],λdict[ω],γdict[ω],vk[ω],that,xhat,yhat,divSet);
+            @constraint(mp1,mp1[:θ1][ω] >= vk[ω] + sum(πdict[ω][i]*(mp1[:t1][i] - that[i]) for i in pData.II) +
+                sum(sum(λdict[ω][i,j]*(mp1[:x1][i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
+                sum(sum(γdict[ω][i,par]*(mp1[:y1][i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
         end
     end
     push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
@@ -157,6 +163,7 @@ ubHist = [];
 timeHist = [];
 cutHist = [];
 intSolHist = [];
+yhistList = [];
 
 # move the createMaster_Callback here
 #mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
@@ -183,6 +190,23 @@ end);
 #     @constraint(mp, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) >= lbCost);
 # end
 while keepIter
+    mp1 = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+    @variables(mp1, begin
+      θ1[Ω] >= 0
+      0 <= x1[i in pData.II,j in pData.Ji[i]] <= 1
+      t1[i in pData.II] >= 0
+      0 <= y1[i in pData.II, par in 1:length(divSet[i])] <= 1
+    end);
+    @constraint(mp1, budgetConstr1, sum(sum(pData.b[i][j]*x1[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(mp1, durationConstr1[k in pData.K], t1[k[2]] - t1[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x1[k[1],j] for j in pData.Ji[k[1]])));
+    @constraint(mp1, xConstr1[i in pData.II], sum(x1[i,j] for j in pData.Ji[i]) <= 1);
+    @constraint(mp1, tub1[i in pData.II], t1[i] <= sum(H[divSet[i][par].endH]*y1[i,par] for par in 1:length(divSet[i])));
+    @constraint(mp1, tlb1[i in pData.II], t1[i] >= sum(H[divSet[i][par].startH]*y1[i,par] for par in 1:length(divSet[i])));
+    @constraint(mp1, yConstr1[i in pData.II], sum(y1[i,par] for par in 1:length(divSet[i])) == 1);
+    @constraint(mp1, yLimit1[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y1[i,par] == 0);
+
+    @objective(mp1, Min, pData.p0*t1[0] + sum(disData[ω].prDis*θ1[ω] for ω in Ω));
+    
     tCurrent = Dict();
     xCurrent = Dict();
     θCurrent = Dict();
@@ -221,8 +245,6 @@ while keepIter
             end
         end
     end
-
-    mp1 = deepcopy(mp);
 
     addlazycallback(mp, partBenders);
     # addlazycallback(mp, partBenders_diag);
