@@ -119,7 +119,12 @@ function partBenders(cb)
             xcore[i,j] = getvalue(mp1[:x][i,j]);
         end
         for par in 1:length(divSet[i])
-            ycore[i,par] = getvalue(mp1[:y][i,par]);
+            if (tcore[i] >= H[divSet[i][par].startH])&(tcore[i] < H[divSet[i][par].endH])
+                ycore[i,par] = 1;
+            else
+                ycore[i,par] = 0;
+            end
+            println(i," ",par," ",ycore[i,par]);
         end
     end
 
@@ -139,68 +144,6 @@ function partBenders(cb)
                 sum(sum(λdict[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
                 sum(sum(γdict[ω][i,par]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
             mp1 = addtxyCut(pData,ω,mp1,πdict[ω],λdict[ω],γdict[ω],vk[ω],that,xhat,yhat,divSet);
-        end
-    end
-    push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
-    GCurrent = [dataList[ω][5] for ω in Ω];
-    push!(GList,GCurrent);
-end
-
-wrongList = [];
-function partBenders_diag(cb)
-    # the callback function
-    that = Dict();
-    xhat = Dict();
-    θhat = Dict();
-    yhat = Dict();
-    # obtain the solution at the current node
-    for i in pData.II
-        that[i] = getvalue(t[i]);
-        for j in pData.Ji[i]
-            xhat[i,j] = getvalue(x[i,j]);
-        end
-        for par in 1:length(divSet[i])
-            yhat[i,par] = getvalue(y[i,par]);
-        end
-    end
-    for ω in Ω
-        θhat[ω] = getvalue(θ[ω]);
-    end
-
-    # generate cuts
-    πdict = Dict();
-    λdict = Dict();
-    γdict = Dict();
-    vk = Dict();
-    θInt = Dict();
-    ubCost = minimum(ubCostList);
-    ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1);
-    if ubCost > ubTemp
-        tbest = copy(that);
-        xbest = copy(xhat);
-    end
-    push!(ubCostList,ubTemp);
-    dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
-    stopIter = false;
-    for ω in Ω
-        πdict[ω] = dataList[ω][1];
-        λdict[ω] = dataList[ω][2];
-        γdict[ω] = dataList[ω][3];
-        vk[ω] = dataList[ω][4];
-        if isnan(dataList[ω][5][0])
-            stopIter = true;
-            push!(wrongList,[that,xhat,yhat,θhat,ω]);
-            return JuMP.StopTheSolver
-        end
-    end
-    cutDual = [];
-    for ω in Ω
-        if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
-            push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
-            @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*(t[i] - that[i]) for i in pData.II) +
-                sum(sum(λdict[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                sum(sum(γdict[ω][i,par]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
-            #mp = addtxyCut(pData,ω,mp,πdict[ω],λdict[ω],γdict[ω],vk[ω],that,xhat,yhat,divSet);
         end
     end
     push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
