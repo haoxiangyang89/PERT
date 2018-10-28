@@ -353,6 +353,7 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
                 θhat[ω] = getvalue(mp[:θ][ω]);
             end
             lbCost = getobjectivevalue(mp);
+            push!(lbCostList,lbCost);
 
             # examine how many cuts are tight at this solution, update the cutSel
             # cutSel,cutyn = examineCuts_count(disData,Ω,cutSel,cutSet,that,xhat,θhat,yhat,cutThreshold);

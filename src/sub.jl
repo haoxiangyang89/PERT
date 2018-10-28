@@ -2,8 +2,8 @@
 function subRelax(pData,dDω,xhat,that,brInfo)
     M = sum(max(pData.D[i],pData.D[i]+dDω.d[i]) for i in pData.II if i != 0);
 
-    # sp = Model(solver = GurobiSolver(OutputFlag = 0));
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    # sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
+    sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     # relax the logic binary variables
@@ -68,8 +68,8 @@ function subRelax_New(pData,dDω,xhat,that,brInfoω,M = Dict())
         end
     end
 
-    # sp = Model(solver = GurobiSolver(OutputFlag = 0));
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    # sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
+    sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     # relax the logic binary variables
@@ -146,7 +146,7 @@ function sub_Dual(pData,dDω,xhat,that,brInfoω,M = Dict())
         end
     end
 
-    dp = Model(solver = GurobiSolver(OutputFlag = 0));
+    dp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
 
     @variable(dp,λt0[k in pData.K; brInfoω[findin(pData.II,k[1])[1]] == 0] >= 0);
     @variable(dp,λth0[i in pData.II; brInfoω[findin(pData.II,i)[1]] == 0] >= 0);
@@ -236,8 +236,8 @@ end
 # generate the
 function subPull(pData,dDω,xhat,that,Ghatω,M = 9999999)
 
-    # sp = Model(solver = GurobiSolver(OutputFlag = 0));
-    sp = Model(solver = GurobiSolver(OutputFlag = 0,Method = 1));
+    # sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
+    sp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     @variable(sp, s[i in pData.II, j in pData.Ji[i]] >= 0);
@@ -281,7 +281,7 @@ function subPull(pData,dDω,xhat,that,Ghatω,M = 9999999)
 end
 
 function subMixed(pData,dDω,xhat,that,Ghatω,ωCurr,Ω,M = 9999999,returnOpt = 0)
-    sp = Model(solver = GurobiSolver(OutputFlag = 0,Method = 1));
+    sp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     @variable(sp, s[i in pData.II, j in pData.Ji[i]] >= 0);
@@ -344,7 +344,7 @@ function subMixed(pData,dDω,xhat,that,Ghatω,ωCurr,Ω,M = 9999999,returnOpt = 
 end
 
 function subF(pData,dDω,that,xhat,Fhat,M = 999999)
-    sp = Model(solver = GurobiSolver(OutputFlag = 0,Method = 1));
+    sp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     @variable(sp, s[i in pData.II, j in pData.Ji[i]] >= 0);
@@ -391,8 +391,8 @@ end
 
 function subLag(pData,dDω,xhat,that,Ghatω,γhat,M = 9999999)
 
-    # sp = Model(solver = GurobiSolver(OutputFlag = 0));
-    sp = Model(solver = GurobiSolver(OutputFlag = 0,IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+    # sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
+    sp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     @variable(sp, s[i in pData.II, j in pData.Ji[i]] >= 0);
@@ -435,8 +435,8 @@ end
 function subTight(pData,dDω,xhat,that,ubInfo,lbInfo,returnOpt = 0)
     M = sum(max(pData.D[i],pData.D[i]+dDω.d[i]) for i in pData.II if i != 0);
 
-    # sp = Model(solver = GurobiSolver(OutputFlag = 0));
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    # sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
+    sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     # relax the logic binary variables
@@ -504,7 +504,7 @@ end
 function sub_div(pData,dDω,ωCurr,that,xhat,yhat,divSet,ubInfo,lbInfo,M1 = 999999,returnOpt = 0)
     M = sum(max(pData.D[i],pData.D[i]+dDω.d[i]) for i in pData.II if i != 0);
 
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     # relax the logic binary variables
@@ -577,7 +577,7 @@ function sub_div(pData,dDω,ωCurr,that,xhat,yhat,divSet,ubInfo,lbInfo,M1 = 9999
 end
 
 function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     # relax the logic binary variables
@@ -653,7 +653,7 @@ end
 
 function sub_divTDual(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
     # solve the subproblem by dual formulation
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
     @variable(sp, λFG1[i in pData.II, par in 1:length(divSet[i])] <= 0);
     @variable(sp, λFG2[i in pData.II, par in 1:length(divSet[i])] <= 0);
     @variable(sp, λFG3[i in pData.II, par in 1:length(divSet[i])] >= 0);
@@ -744,7 +744,7 @@ function sub_divTDual(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
 end
 
 function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,ycore,returnOpt = 0)
-    smp = Model(solver = GurobiSolver(OutputFlag = 0));
+    smp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
     @variable(smp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(smp, t[i in pData.II] >= 0);
     # relax the logic binary variables
@@ -790,7 +790,7 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
         Ghat[i] = -getvalue(smp[:G][i]);
     end
     # solve the subproblem by dual formulation
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
     @variable(sp, λFG1[i in pData.II, par in 1:length(divSet[i])] <= 0);
     @variable(sp, λFG2[i in pData.II, par in 1:length(divSet[i])] <= 0);
     @variable(sp, λFG3[i in pData.II, par in 1:length(divSet[i])] >= 0);
@@ -845,7 +845,7 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
             λGy2[i]*(1 - sum(yhat[i,par] for par in 1:length(divSet[i]) if ωCurr >= divSet[i][par].endH)) for i in pData.II) +
         sum(that[i]*(λtG2[i] + λtG3[i]) + sum(xhat[i,j]*(λxG1[i,j] + λxG2[i,j]) for j in pData.Ji[i]) for i in pData.II) -
         sum(sum(λsG3[i,j] for j in pData.Ji[i]) for i in pData.II) + pData.B*λbudget + sum(λxub[i] for i in pData.II) +
-        sum(pData.D[k[1]]*λdur[k] for k in pData.K) == vhat);
+        sum(pData.D[k[1]]*λdur[k] for k in pData.K) >= vhat - 1e-6);
 
     # optimize the fractional solution's objective
     @objective(sp, Max, sum(sum(ycore[i,par]*λFG2[i,par] + (ycore[i,par] - 1)*λFG3[i,par] for par in 1:length(divSet[i])) for i in pData.II) +
@@ -857,8 +857,6 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
         sum(pData.D[k[1]]*λdur[k] for k in pData.K));
 
     solve(sp);
-
-    vk = getobjectivevalue(sp);
 
     λdict = Dict();             # dual for x
     πdict = Dict();             # dual for t
@@ -880,8 +878,8 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
     end
 
     if returnOpt == 0
-        return πdict,λdict,γdict,vk,Ghat;
+        return πdict,λdict,γdict,vhat,Ghat;
     else
-        return πdict,λdict,γdict,vk,sp;
+        return πdict,λdict,γdict,vhat,sp;
     end
 end
