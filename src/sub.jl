@@ -1164,32 +1164,38 @@ function sub_divTDualT3(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcoreList,xc
         sum(pData.D[k[1]]*λdur[k] for k in pData.K) for ll in 1:LL));
 
     spStatus = solve(sp);
-    if spStatus != :Optimal
-        println(ωCurr);
-    end
-    hPv = getvalue(hatPoint);
-
     λdict = Dict();             # dual for x
     πdict = Dict();             # dual for t
     γdict = Dict();             # dual for y
-    for i in pData.II
-        πdict[i] = -getvalue(sp[:λHG1][i]) - getvalue(sp[:λHG2][i]) + getvalue(sp[:λtG2][i]) + getvalue(sp[:λtG3][i]);
-        for j in pData.Ji[i]
-            λdict[i,j] = getvalue(sp[:λxG1][i,j]) + getvalue(sp[:λxG2][i,j]);
-        end
-        for par in 1:length(divSet[i])
-            γdict[i,par] = H[divSet[i][par].startH]*getvalue(sp[:λHG2][i]) +
-                getvalue(sp[:λFG2][i,par]) + getvalue(sp[:λFG3][i,par]);
-            if ωCurr <= divSet[i][par].startH
-                γdict[i,par] += getvalue(sp[:λGy1][i]);
-            elseif ωCurr >= divSet[i][par].endH
-                γdict[i,par] -= getvalue(sp[:λGy2][i]);
+    if spStatus != :Optimal
+        println(ωCurr);
+        hPv = NaN;
+    else
+        hPv = getvalue(hatPoint);
+
+        for i in pData.II
+            πdict[i] = -getvalue(sp[:λHG1][i]) - getvalue(sp[:λHG2][i]) + getvalue(sp[:λtG2][i]) + getvalue(sp[:λtG3][i]);
+            for j in pData.Ji[i]
+                λdict[i,j] = getvalue(sp[:λxG1][i,j]) + getvalue(sp[:λxG2][i,j]);
+            end
+            for par in 1:length(divSet[i])
+                γdict[i,par] = H[divSet[i][par].startH]*getvalue(sp[:λHG2][i]) +
+                    getvalue(sp[:λFG2][i,par]) + getvalue(sp[:λFG3][i,par]);
+                if ωCurr <= divSet[i][par].startH
+                    γdict[i,par] += getvalue(sp[:λGy1][i]);
+                elseif ωCurr >= divSet[i][par].endH
+                    γdict[i,par] -= getvalue(sp[:λGy2][i]);
+                end
             end
         end
     end
 
+
     if returnOpt == 0
-        return πdict,λdict,γdict,hPv,Ghat;
+        if spStatus == :Optimal
+            return πdict,λdict,γdict,hPv,Ghat;
+        else
+            return πdict,λdict,γdict,hPv,'Error';
     else
         return πdict,λdict,γdict,hPv,sp;
     end
