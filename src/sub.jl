@@ -1167,6 +1167,7 @@ function sub_divTDualT3(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcoreList,xc
     if spStatus != :Optimal
         println(ωCurr);
     end
+    hPv = getvalue(hatPoint);
 
     λdict = Dict();             # dual for x
     πdict = Dict();             # dual for t
@@ -1188,8 +1189,8 @@ function sub_divTDualT3(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcoreList,xc
     end
 
     if returnOpt == 0
-        return πdict,λdict,γdict,hatPoint,Ghat;
+        return πdict,λdict,γdict,hPv,Ghat;
     else
-        return πdict,λdict,γdict,hatPoint,sp;
+        return πdict,λdict,γdict,hPv,sp;
     end
 end
