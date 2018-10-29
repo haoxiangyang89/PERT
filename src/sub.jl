@@ -1190,12 +1190,12 @@ function sub_divTDualT3(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcoreList,xc
         end
     end
 
-
     if returnOpt == 0
         if (spStatus == :Optimal)&(smpStatus == :Optimal)
             return πdict,λdict,γdict,hPv,Ghat;
         else
-            return πdict,λdict,γdict,hPv,'Error';
+            errorHat = "Error";
+            return πdict,λdict,γdict,hPv,errorhat;
         end
     else
         return πdict,λdict,γdict,hPv,sp;
