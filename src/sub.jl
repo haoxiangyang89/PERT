@@ -1195,7 +1195,7 @@ function sub_divTDualT3(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcoreList,xc
             return πdict,λdict,γdict,hPv,Ghat;
         else
             errorHat = "Error";
-            return πdict,λdict,γdict,hPv,errorhat;
+            return πdict,λdict,γdict,hPv,errorHat;
         end
     else
         return πdict,λdict,γdict,hPv,sp;
