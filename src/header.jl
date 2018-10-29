@@ -6,7 +6,6 @@ include("master.jl");
 include("sub.jl");
 include("cuts.jl");
 include("iSolve.jl");
-include("tighten.jl");
 include("branchFunc.jl");
 include("detForm.jl");
 include("extForm.jl");

@@ -99,7 +99,6 @@ function partBenders(cb)
     push!(tcoreList,that);
     push!(xcoreList,xhat);
     push!(ycoreList,yhat);
-    push!(θcoreList,θhat);
 
     # generate cuts
     πdict = Dict();
@@ -127,6 +126,7 @@ function partBenders(cb)
         γdict[ω] = dataList[ω][3];
         vk[ω] = dataList[ω][4];
     end
+    push!(θcoreList,vk);
     cutDual = [];
     for ω in Ω
         if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
@@ -139,6 +139,23 @@ function partBenders(cb)
     push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
     GCurrent = [dataList[ω][5] for ω in Ω];
     push!(GList,GCurrent);
+    #println(cb);
+
+    #@lazyconstraint(cb, pData.p0*t[0] + sum(θ[ω]*disData[ω].prDis for ω in Ω) <= pData.p0*that[0] + sum(vk[ω]*disData[ω].prDis for ω in Ω));
+
+    # for i in pData.II
+    #     setsolutionvalue(cb, t[i], that[i]);
+    #     for j in pData.Ji[i]
+    #         setsolutionvalue(cb, x[i,j], xhat[i,j]);
+    #     end
+    #     for par in 1:length(divSet[i])
+    #         setsolutionvalue(cb, y[i,par], yhat[i,par]);
+    #     end
+    # end
+    # for ω in Ω
+    #     setsolutionvalue(cb, θ[ω], θhat[ω]);
+    # end
+    # addsolution(cb);
 end
 
 function addSol(cb)
@@ -167,8 +184,8 @@ intSolHist = [];
 yhistList = [];
 
 # move the createMaster_Callback here
-#mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
-mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9));
+# mp = Model(solver = GurobiSolver());
+mp = Model(solver = CplexSolver());
 @variables(mp, begin
   θ[Ω] >= 0
   0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -231,6 +248,7 @@ while keepIter
     end
 
     addlazycallback(mp, partBenders);
+    addheuristiccallback(mp, addSol);
     # addlazycallback(mp, partBenders_diag);
     #addlazycallback(mp, paraInfo1, when = :Intermediate);
     #addinfocallback(mp, paraInfo1, when = :MIPSol);
@@ -303,7 +321,7 @@ while keepIter
     end
 
     # move the createMaster_Callback here
-    #mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+    # mp = Model(solver = GurobiSolver());
     mp = Model(solver = CplexSolver());
     @variables(mp, begin
       θ[Ω] >= 0

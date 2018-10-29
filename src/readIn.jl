@@ -66,7 +66,6 @@ function readInP(pInputAdd,kInputAdd)
         b[lineID] = Dict();
         eff[lineID] = Dict();
         jCounter = 0;
-        jStart = 3;
         while jStart <= mp
             jCounter += 1;
             push!(Ji[lineID],jCounter);
@@ -282,4 +281,29 @@ function loadData(filePath,fName = "test.jld")
     disDataSetR = load(fileAdd);
     disDataSet = disDataSetR["disDataSet"];
     return disDataSet;
+end
+
+function gridNetGen(n,m,pAddress,kAddress)
+    # grid network generation
+    nodeSet = [];
+    arcSet = [];
+    counter = 0;
+    for i in 0:m
+        # row
+        for j in 0:n
+            # column
+            counter += 1;
+            push!(nodeSet, counter);
+            if i < m
+                push!(arcSet,(counter, counter + n + 1));
+            end
+            if j < n
+                push!(arcSet,(counter, counter + 1));
+            end
+        end
+    end
+
+    # output the p file and k file given the size of the grid
+    writedlm(pAddress,pData,",");
+    writedlm(kAddress,kData,",");
 end
