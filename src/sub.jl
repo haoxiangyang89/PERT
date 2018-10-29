@@ -1081,7 +1081,7 @@ function sub_divTDualT3(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcoreList,xc
         - sum(pData.D[k[1]]*pData.eff[k[1]][j]*x[k[1],j] + dDω.d[k[1]]*pData.eff[k[1]][j]*s[k[1],j] for j in pData.Ji[k[1]]));
 
     @objective(smp, Min, t[0]);
-    solve(smp);
+    smpStatus = solve(smp);
     vhat = getobjectivevalue(smp);
     Ghat = Dict();
     for i in pData.II
@@ -1192,10 +1192,11 @@ function sub_divTDualT3(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcoreList,xc
 
 
     if returnOpt == 0
-        if spStatus == :Optimal
+        if (spStatus == :Optimal)&(smpStatus == :Optimal)
             return πdict,λdict,γdict,hPv,Ghat;
         else
             return πdict,λdict,γdict,hPv,'Error';
+        end
     else
         return πdict,λdict,γdict,hPv,sp;
     end
