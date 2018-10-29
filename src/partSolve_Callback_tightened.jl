@@ -67,28 +67,39 @@ ubCost = ubdet;
 GList = [];
 cutSel = Dict();
 cutThreshold = 10;
-aList = [];
-bbdata = [];
+tcoreList = [];
+xcoreList = [];
+ycoreList = [];
+θcoreList = [];
 
 function partBenders(cb)
+    println("lazy");
     # the callback function
     that = Dict();
     xhat = Dict();
     θhat = Dict();
     yhat = Dict();
+    t_val = getvalue(t);
+    x_val = getvalue(x);
+    y_val = getvalue(y);
+    θ_val = getvalue(θ);
     # obtain the solution at the current node
     for i in pData.II
-        that[i] = getvalue(t[i]);
+        that[i] = t_val[i];
         for j in pData.Ji[i]
-            xhat[i,j] = getvalue(x[i,j]);
+            xhat[i,j] = x_val[i,j];
         end
         for par in 1:length(divSet[i])
-            yhat[i,par] = getvalue(y[i,par]);
+            yhat[i,par] = y_val[i,par];
         end
     end
     for ω in Ω
-        θhat[ω] = getvalue(θ[ω]);
+        θhat[ω] = θ_val[ω];
     end
+    push!(tcoreList,that);
+    push!(xcoreList,xhat);
+    push!(ycoreList,yhat);
+    push!(θcoreList,θhat);
 
     # generate cuts
     πdict = Dict();
@@ -108,32 +119,8 @@ function partBenders(cb)
     end
     push!(ubCostList,ubTemp);
 
-    # solve the LP relaxation
-    println("test point 1");
-    solve(mp1);
-    println("test point 2");
-    tcore = Dict();
-    xcore = Dict();
-    ycore = Dict();
-    for i in pData.II
-        tcore[i] = getvalue(mp1[:t1][i]);
-        for j in pData.Ji[i]
-            xcore[i,j] = getvalue(mp1[:x1][i,j]);
-        end
-        for par in 1:length(divSet[i])
-            # if (tcore[i] >= H[divSet[i][par].startH])&(tcore[i] < H[divSet[i][par].endH])
-            #     ycore[i,par] = 1;
-            # else
-            #     ycore[i,par] = 0;
-            # end
-            # println(i," ",par," ",ycore[i,par]);
-            ycore[i,par] = getvalue(mp1[:y1][i,par]);
-        end
-    end
-    push!(yhistList,ycore);
-
     #dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
-    dataList = pmap(ω -> sub_divTDualT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
+    dataList = pmap(ω -> sub_divTDualT3(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcoreList,xcoreList,ycoreList), Ω);
     for ω in Ω
         πdict[ω] = dataList[ω][1];
         λdict[ω] = dataList[ω][2];
@@ -147,14 +134,28 @@ function partBenders(cb)
             @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*(t[i] - that[i]) for i in pData.II) +
                 sum(sum(λdict[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
                 sum(sum(γdict[ω][i,par]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
-            @constraint(mp1,mp1[:θ1][ω] >= vk[ω] + sum(πdict[ω][i]*(mp1[:t1][i] - that[i]) for i in pData.II) +
-                sum(sum(λdict[ω][i,j]*(mp1[:x1][i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                sum(sum(γdict[ω][i,par]*(mp1[:y1][i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
         end
     end
     push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
     GCurrent = [dataList[ω][5] for ω in Ω];
     push!(GList,GCurrent);
+end
+
+function addSol(cb)
+    println("heuristic");
+    for i in pData.II
+        setsolutionvalue(cb, t[i], tcoreList[length(tcoreList)][i]);
+        for j in pData.Ji[i]
+            setsolutionvalue(cb, x[i,j], xcoreList[length(xcoreList)][i,j]);
+        end
+        for par in 1:length(divSet[i])
+            setsolutionvalue(cb, y[i,par], ycoreList[length(ycoreList)][i,par]);
+        end
+    end
+    for ω in Ω
+        setsolutionvalue(cb, θ[ω], θcoreList[length(θcoreList)][ω]);
+    end
+    addsolution(cb);
 end
 
 keepIter = true;
@@ -167,7 +168,7 @@ yhistList = [];
 
 # move the createMaster_Callback here
 #mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
-mp = Model(solver = CplexSolver());
+mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9));
 @variables(mp, begin
   θ[Ω] >= 0
   0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -190,23 +191,6 @@ end);
 #     @constraint(mp, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) >= lbCost);
 # end
 while keepIter
-    mp1 = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
-    @variables(mp1, begin
-      θ1[Ω] >= 0
-      0 <= x1[i in pData.II,j in pData.Ji[i]] <= 1
-      t1[i in pData.II] >= 0
-      0 <= y1[i in pData.II, par in 1:length(divSet[i])] <= 1
-    end);
-    @constraint(mp1, budgetConstr1, sum(sum(pData.b[i][j]*x1[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
-    @constraint(mp1, durationConstr1[k in pData.K], t1[k[2]] - t1[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x1[k[1],j] for j in pData.Ji[k[1]])));
-    @constraint(mp1, xConstr1[i in pData.II], sum(x1[i,j] for j in pData.Ji[i]) <= 1);
-    @constraint(mp1, tub1[i in pData.II], t1[i] <= sum(H[divSet[i][par].endH]*y1[i,par] for par in 1:length(divSet[i])));
-    @constraint(mp1, tlb1[i in pData.II], t1[i] >= sum(H[divSet[i][par].startH]*y1[i,par] for par in 1:length(divSet[i])));
-    @constraint(mp1, yConstr1[i in pData.II], sum(y1[i,par] for par in 1:length(divSet[i])) == 1);
-    @constraint(mp1, yLimit1[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y1[i,par] == 0);
-
-    @objective(mp1, Min, pData.p0*t1[0] + sum(disData[ω].prDis*θ1[ω] for ω in Ω));
-    
     tCurrent = Dict();
     xCurrent = Dict();
     θCurrent = Dict();
@@ -304,6 +288,19 @@ while keepIter
     end
     push!(cutHist,sum(length(cutSet[l][2]) for l in 1:length(cutSet)));
     cutSet = deepcopy(cutSetNew);
+
+    # correct all ycoreList
+    for ll in 1:length(ycoreList)
+        for i in pData.II
+            for par in 1:length(divSet[i])
+                if (tcoreList[ll][i] >= H[divSet[i][par].startH])&(tcoreList[ll][i] < H[divSet[i][par].endH])
+                    ycoreList[ll][i,par] = 1;
+                else
+                    ycoreList[ll][i,par] = 0;
+                end
+            end
+        end
+    end
 
     # move the createMaster_Callback here
     #mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));

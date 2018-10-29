@@ -328,20 +328,32 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
             divDet = obtainDet(pData,disData,Ω,mpTemp,ubCost,divSet,divDet);
             mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,1,yLim);
         end
-        that = Dict();
-        xhat = Dict();
-        θhat = Dict();
-        yhat = Dict();
 
         tRec = Dict();
         for i in pData.II
             tRec[i] = [];
+        end
+        # correct all ycoreList
+        for ll in 1:length(ycoreList)
+            for i in pData.II
+                for par in 1:length(divSet[i])
+                    if (tcoreList[ll][i] >= H[divSet[i][par].startH])&(tcoreList[ll][i] < H[divSet[i][par].endH])
+                        ycoreList[ll][i,par] = 1;
+                    else
+                        ycoreList[ll][i,par] = 0;
+                    end
+                end
+            end
         end
         tic();
         while keepIter
             mp.solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9);
             solve(mp);
             # obtain the solution
+            that = Dict();
+            xhat = Dict();
+            θhat = Dict();
+            yhat = Dict();
             for i in pData.II
                 that[i] = getvalue(mp[:t][i]);
                 push!(tRec[i],that[i]);
@@ -404,9 +416,9 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
                     ycore[i,par] = getvalue(mp1[:y][i,par]);
                 end
             end
-            dataList1 = pmap(ω -> sub_divTDualT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore1), Ω);
-            dataList2 = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,0.00001), Ω);
-            dataList3 = pmap(ω -> sub_divTDualT3(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcoreList,xcoreList,ycoreList), Ω);
+            #dataList1 = pmap(ω -> sub_divTDualT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore1), Ω);
+            #dataList1 = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,0.00001), Ω);
+            dataList1 = pmap(ω -> sub_divTDualT3(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcoreList,xcoreList,ycoreList), Ω);
             for ω in Ω
                 πdict[ω] = dataList1[ω][1];
                 λdict[ω] = dataList1[ω][2];
