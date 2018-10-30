@@ -785,7 +785,7 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
 
     @objective(smp, Min, t[0]);
     smpStatus = solve(smp);
-    vhat = getobjectivevalue(smp);
+    vhat1 = getobjectivevalue(smp);
     Ghat = Dict();
     for i in pData.II
         Ghat[i] = getvalue(smp[:G][i]);
