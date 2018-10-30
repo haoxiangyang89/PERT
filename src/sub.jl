@@ -907,6 +907,8 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
                 end
             end
         end
+    else
+        print("Error on $(ωCurr)"," ",spStatus);
     end
 
     if returnOpt == 0
