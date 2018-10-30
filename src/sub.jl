@@ -847,6 +847,8 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
         sum(sum(λsG3[i,j] for j in pData.Ji[i]) for i in pData.II) + pData.B*λbudget + sum(λxub[i] for i in pData.II) +
         sum(pData.D[k[1]]*λdur[k] for k in pData.K));
 
+    spStatus = solve(sp);
+
     if spStatus == :Optimal
         λdict = Dict();             # dual for x
         πdict = Dict();             # dual for t
