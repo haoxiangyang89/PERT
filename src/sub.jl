@@ -744,8 +744,8 @@ function sub_divTDual(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
 end
 
 function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,ycore,returnOpt = 0)
-    #smp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
-    smp = Model(solver = GurobiSolver(OutputFlag = 0));
+    smp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
+    # smp = Model(solver = GurobiSolver(OutputFlag = 0));
     @variable(smp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(smp, t[i in pData.II] >= 0);
     # relax the logic binary variables
@@ -794,18 +794,18 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
     πdict1 = Dict();             # dual for t
     γdict1 = Dict();             # dual for y
     for i in pData.II
-        πdict1[i] = -getdual(sp[:GCons1][i]) - getdual(sp[:GCons2][i]) +
-            (getdual(sp[:tFnAnt1][i]) + getdual(sp[:tFnAnt2][i]));
+        πdict1[i] = -getdual(smp[:GCons1][i]) - getdual(smp[:GCons2][i]) +
+            (getdual(smp[:tFnAnt1][i]) + getdual(smp[:tFnAnt2][i]));
         for j in pData.Ji[i]
-            λdict1[i,j] = (getdual(sp[:xFnAnt1][i,j]) + getdual(sp[:xFnAnt2][i,j]));
+            λdict1[i,j] = (getdual(smp[:xFnAnt1][i,j]) + getdual(smp[:xFnAnt2][i,j]));
         end
         for par in 1:length(divSet[i])
-            γdict1[i,par] = H[divSet[i][par].startH]*getdual(sp[:GCons2][i]) +
-                getdual(sp[:GyRelax2][i,par]) + getdual(sp[:GyRelax3][i,par]);
+            γdict1[i,par] = H[divSet[i][par].startH]*getdual(smp[:GCons2][i]) +
+                getdual(smp[:GyRelax2][i,par]) + getdual(smp[:GyRelax3][i,par]);
             if ωCurr <= divSet[i][par].startH
-                γdict1[i,par] += getdual(sp[:GFixed0][i]);
+                γdict1[i,par] += getdual(smp[:GFixed0][i]);
             elseif ωCurr >= divSet[i][par].endH
-                γdict1[i,par] -= getdual(sp[:GFixed1][i]);
+                γdict1[i,par] -= getdual(smp[:GFixed1][i]);
             end
         end
     end
