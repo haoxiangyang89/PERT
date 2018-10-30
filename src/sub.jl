@@ -787,7 +787,7 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
     vhat = getobjectivevalue(smp);
     Ghat = Dict();
     for i in pData.II
-        Ghat[i] = -getvalue(smp[:G][i]);
+        Ghat[i] = getvalue(smp[:G][i]);
     end
     # solve the subproblem by dual formulation
     sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));

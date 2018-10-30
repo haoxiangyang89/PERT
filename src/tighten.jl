@@ -355,3 +355,16 @@ function detCal(pData,i,j)
 
     return disIJ;
 end
+
+function closestCore(pData,divSet,ycoreTemp,tcoreList,xcoreList,ycoreList)
+    smallestDist = Inf;
+    minInd = -1;
+    for ll in 1:length(ycoreList)
+        distanceCore = sum(sum(abs(ycoreList[ll][i,par] - ycoreTemp[i,par]) for par in 1:length(divSet[i])) for i in pData.II);
+        if distanceCore < smallestDist
+            minInd = ll;
+            smallestDist = distanceCore;
+        end
+    end
+    return tcoreList[minInd],xcoreList[minInd],ycoreList[minInd];
+end
