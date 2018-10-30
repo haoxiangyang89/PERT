@@ -1088,7 +1088,8 @@ function sub_divTDualT3(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcoreList,xc
         Ghat[i] = getvalue(smp[:G][i]);
     end
     # solve the subproblem by dual formulation
-    sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
+    #sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
+    sp = Model(solver = GurobiSolver(OutputFlag = 0));
     @variable(sp, λFG1[i in pData.II, par in 1:length(divSet[i])] <= 0);
     @variable(sp, λFG2[i in pData.II, par in 1:length(divSet[i])] <= 0);
     @variable(sp, λFG3[i in pData.II, par in 1:length(divSet[i])] >= 0);
