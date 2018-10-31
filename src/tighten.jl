@@ -382,4 +382,5 @@ function avgCore(pData,divSet,tcoreList,xcoreList,ycoreList)
             ycore[i,par] = mean([ycoreList[ll][i,par] for ll in 1:length(ycoreList)]);
         end
     end
+    return tcore,xcore,ycore;
 end
