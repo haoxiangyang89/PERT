@@ -1065,7 +1065,25 @@ function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,
             end
         end
     else
-        print("Error on $(ωCurr)"," ",spStatus);
+        λdict = Dict();             # dual for x
+        πdict = Dict();             # dual for t
+        γdict = Dict();             # dual for y
+        for i in pData.II
+            πdict[i] = -getdual(sp[:GCons1][i]) - getdual(sp[:GCons2][i]) +
+                (getdual(sp[:tFnAnt1][i]) + getdual(sp[:tFnAnt2][i]));
+            for j in pData.Ji[i]
+                λdict[i,j] = (getdual(sp[:xFnAnt1][i,j]) + getdual(sp[:xFnAnt2][i,j]));
+            end
+            for par in 1:length(divSet[i])
+                γdict[i,par] = H[divSet[i][par].startH]*getdual(sp[:GCons2][i]) +
+                    getdual(sp[:GyRelax2][i,par]) + getdual(sp[:GyRelax3][i,par]);
+                if ωCurr <= divSet[i][par].startH
+                    γdict[i,par] += getdual(sp[:GFixed0][i]);
+                elseif ωCurr >= divSet[i][par].endH
+                    γdict[i,par] -= getdual(sp[:GFixed1][i]);
+                end
+            end
+        end
     end
 
     if returnOpt == 0
