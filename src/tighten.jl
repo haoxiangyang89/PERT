@@ -368,3 +368,18 @@ function closestCore(pData,divSet,ycoreTemp,tcoreList,xcoreList,ycoreList)
     end
     return tcoreList[minInd],xcoreList[minInd],ycoreList[minInd];
 end
+
+function avgCore(pData,divSet,tcoreList,xcoreList,ycoreList)
+    tcore = Dict();
+    xcore = Dict();
+    ycore = Dict();
+    for i in pData.II
+        tcore[i] = mean([tcoreList[ll][i] for ll in 1:length(tcoreList)]);
+        for j in pData.Ji[i]
+            xcore[i,j] = mean([xcoreList[ll][i,j] for ll in 1:length(xcoreList)]);
+        end
+        for par in 1:length(divSet[i])
+            ycore[i,par] = mean([ycoreList[ll][i,par] for ll in 1:length(ycoreList)]);
+        end
+    end
+end
