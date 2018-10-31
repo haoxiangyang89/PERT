@@ -71,6 +71,7 @@ tcoreList = [];
 xcoreList = [];
 ycoreList = [];
 θcoreList = [];
+errorList = [];
 
 function partBenders(cb)
     println("lazy");
@@ -79,22 +80,18 @@ function partBenders(cb)
     xhat = Dict();
     θhat = Dict();
     yhat = Dict();
-    t_val = getvalue(t);
-    x_val = getvalue(x);
-    y_val = getvalue(y);
-    θ_val = getvalue(θ);
     # obtain the solution at the current node
     for i in pData.II
-        that[i] = t_val[i];
+        that[i] = getvalue(t[i]);
         for j in pData.Ji[i]
-            xhat[i,j] = x_val[i,j];
+            xhat[i,j] = getvalue(x[i,j]);
         end
         for par in 1:length(divSet[i])
-            yhat[i,par] = y_val[i,par];
+            yhat[i,par] = round(getvalue(y[i,par]));
         end
     end
     for ω in Ω
-        θhat[ω] = θ_val[ω];
+        θhat[ω] = getvalue(θ[ω]);
     end
     push!(tcoreList,that);
     push!(xcoreList,xhat);
@@ -119,12 +116,37 @@ function partBenders(cb)
     push!(ubCostList,ubTemp);
 
     #dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
-    dataList = pmap(ω -> sub_divTDualT3(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcoreList,xcoreList,ycoreList), Ω);
+    # obtain the cores
+    tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
+    dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
     for ω in Ω
         πdict[ω] = dataList[ω][1];
         λdict[ω] = dataList[ω][2];
         γdict[ω] = dataList[ω][3];
         vk[ω] = dataList[ω][4];
+    #     if dataList[ω][5] == "Error"
+    #         tError = Dict();
+    #         xError = Dict();
+    #         yError = Dict();
+    #         tcoreError = [];
+    #         xcoreError = [];
+    #         ycoreError = [];
+    #         for i in pData.II
+    #             tError[i] = that[i];
+    #             for j in pData.Ji[i]
+    #                 xError[i,j] = xhat[i,j];
+    #             end
+    #             for par in 1:length(divSet[i])
+    #                 yError[i,par] = yhat[i,par];
+    #             end
+    #         end
+    #         for i in 1:length(tcoreList)
+    #             push!(tcoreError,tcoreList[i]);
+    #             push!(xcoreError,xcoreList[i]);
+    #             push!(ycoreError,ycoreList[i])
+    #         end
+    #         push!(errorList,[ω,divSet,[tError,xError,yError],[tcoreError,xcoreError,ycoreError]]);
+    #     end
     end
     push!(θcoreList,vk);
     cutDual = [];
@@ -139,40 +161,6 @@ function partBenders(cb)
     push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
     GCurrent = [dataList[ω][5] for ω in Ω];
     push!(GList,GCurrent);
-    #println(cb);
-
-    #@lazyconstraint(cb, pData.p0*t[0] + sum(θ[ω]*disData[ω].prDis for ω in Ω) <= pData.p0*that[0] + sum(vk[ω]*disData[ω].prDis for ω in Ω));
-
-    # for i in pData.II
-    #     setsolutionvalue(cb, t[i], that[i]);
-    #     for j in pData.Ji[i]
-    #         setsolutionvalue(cb, x[i,j], xhat[i,j]);
-    #     end
-    #     for par in 1:length(divSet[i])
-    #         setsolutionvalue(cb, y[i,par], yhat[i,par]);
-    #     end
-    # end
-    # for ω in Ω
-    #     setsolutionvalue(cb, θ[ω], θhat[ω]);
-    # end
-    # addsolution(cb);
-end
-
-function addSol(cb)
-    println("heuristic");
-    for i in pData.II
-        setsolutionvalue(cb, t[i], tcoreList[length(tcoreList)][i]);
-        for j in pData.Ji[i]
-            setsolutionvalue(cb, x[i,j], xcoreList[length(xcoreList)][i,j]);
-        end
-        for par in 1:length(divSet[i])
-            setsolutionvalue(cb, y[i,par], ycoreList[length(ycoreList)][i,par]);
-        end
-    end
-    for ω in Ω
-        setsolutionvalue(cb, θ[ω], θcoreList[length(θcoreList)][ω]);
-    end
-    addsolution(cb);
 end
 
 keepIter = true;
@@ -185,7 +173,7 @@ yhistList = [];
 
 # move the createMaster_Callback here
 # mp = Model(solver = GurobiSolver());
-mp = Model(solver = CplexSolver());
+mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-8,CPX_PARAM_EPINT = 1e-8));
 @variables(mp, begin
   θ[Ω] >= 0
   0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -201,12 +189,6 @@ end);
 @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
 
 @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
-# if ubCost != Inf
-#     @constraint(mp, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) <= ubCost);
-# end
-# if lbCost != -Inf
-#     @constraint(mp, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) >= lbCost);
-# end
 while keepIter
     tCurrent = Dict();
     xCurrent = Dict();
@@ -248,10 +230,6 @@ while keepIter
     end
 
     addlazycallback(mp, partBenders);
-    addheuristiccallback(mp, addSol);
-    # addlazycallback(mp, partBenders_diag);
-    #addlazycallback(mp, paraInfo1, when = :Intermediate);
-    #addinfocallback(mp, paraInfo1, when = :MIPSol);
     tic();
     solve(mp);
     tIter = toc();
@@ -322,7 +300,7 @@ while keepIter
 
     # move the createMaster_Callback here
     # mp = Model(solver = GurobiSolver());
-    mp = Model(solver = CplexSolver());
+    mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-8,CPX_PARAM_EPINT = 1e-8));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -338,16 +316,6 @@ while keepIter
     @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
 
     @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
-    # if ubCost != Inf
-    #     @constraint(mp, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) <= ubCost);
-    # end
-    # if lbCost != -Inf
-    #     @constraint(mp, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) >= lbCost);
-    # end
-
-    # remove all cuts that are not tight for a while
-    # cutSel,cutSet = selectCuts(cutSel,cutSet,cutThreshold);
-    # cutThreshold += 5;
 end
 
 # need a cut selection process within the callback

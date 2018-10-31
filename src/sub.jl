@@ -1043,12 +1043,12 @@ function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,
         sum(pData.D[k[1]]*λdur[k] for k in pData.K));
 
     spStatus = solve(sp);
-    vhat = getvalue(corePoint);
 
     if spStatus == :Optimal
         λdict = Dict();             # dual for x
         πdict = Dict();             # dual for t
         γdict = Dict();             # dual for y
+        vhat = getvalue(corePoint);
         for i in pData.II
             πdict[i] = -getvalue(sp[:λHG1][i]) - getvalue(sp[:λHG2][i]) + getvalue(sp[:λtG2][i]) + getvalue(sp[:λtG3][i]);
             for j in pData.Ji[i]
@@ -1065,6 +1065,7 @@ function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,
             end
         end
     else
+        vhat = getobjectivevalue(smp);
         λdict = Dict();             # dual for x
         πdict = Dict();             # dual for t
         γdict = Dict();             # dual for y
