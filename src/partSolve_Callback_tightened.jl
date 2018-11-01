@@ -13,6 +13,14 @@ for i in pData.II
 end
 Tmax1 = lDict[0];
 
+allSucc = findSuccAll(pData);
+distanceDict = Dict();
+for i in pData.II
+    for j in allSucc[i]
+        distanceDict[i,j] = detCal(pData,i,j);
+    end
+end
+
 # start with an upper bound based on the deterministic solution
 tdet,xdet,fdet = detBuild(pData);
 ubdet = ubCalP(pData,disData,Ω,xdet,tdet,Tmax1);
@@ -173,7 +181,7 @@ yhistList = [];
 
 # move the createMaster_Callback here
 # mp = Model(solver = GurobiSolver());
-mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-8,CPX_PARAM_EPINT = 1e-8));
+mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7));
 @variables(mp, begin
   θ[Ω] >= 0
   0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -300,7 +308,7 @@ while keepIter
 
     # move the createMaster_Callback here
     # mp = Model(solver = GurobiSolver());
-    mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-8,CPX_PARAM_EPINT = 1e-8));
+    mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1

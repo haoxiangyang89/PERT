@@ -283,25 +283,6 @@ function iniPart(pData,disData,Ω,sN,MM)
         end
     end
 
-    # ubList = [];
-    # tList = Dict();
-    # for i in pData.II
-    #     tList[i] = [];
-    # end
-    # for m in 1:MM
-    #     disData1 = Dict();
-    #     Ω1 = (sN*(m - 1)+1):sN*m;
-    #     for i in 1:length(Ω1)
-    #         disData1[i] = disData[Ω1[i]];
-    #     end
-    #     text,xext,fext,gext,mext = extForm_cheat(pData,disData1,1:length(Ω1),1e-4,999999);
-    #     ubext = ubCalP(pData,disData,Ω,xext,text,999999);
-    #     push!(ubList,ubext);
-    #     for i in pData.II
-    #         push!(tList[i],text[i]);
-    #     end
-    # end
-
     # return the min-max decomposition
     tHList = [];
     for i in pData.II
@@ -309,7 +290,7 @@ function iniPart(pData,disData,Ω,sN,MM)
         tHend = minimum([ω for ω in keys(H) if H[ω] >= maximum(tList[i])]);
         push!(tHList,[i,tHstart,tHend]);
     end
-    return ubList,HList;
+    return ubList,tHList;
 end
 
 function splitAny(PartSet,PartDet,splitInfo)
