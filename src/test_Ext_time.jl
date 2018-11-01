@@ -42,7 +42,8 @@ ubexp = ubCalP(pData,disData,Ω,xexp,texp,999999);
 # our decomposition method
 tic();
 #tbest,xbest,lbCost,ubCost = partitionSolve(pData,disData,0.001);
-include("partSolve_Callback.jl");
+#include("partSolve_Callback.jl");
+include("partSolve_Callback_tightened.jl");
 timedecomp = toc();
 gapdecomp = (ubCost - lbCost)/ubCost;
 
@@ -61,7 +62,7 @@ ubext = ubCal(pData,disData,Ω,xext,text,999999);
 print(ubdet," ",ubexp," ",ubext);
 dDict = [tdet,xdet,fdet,ubdet,texp,xexp,fexp,Gexp,ubexp,
             tbest,xbest,lbCost,ubCost,gapdecomp,timedecomp];
-#            text,xext,fext,gext,ubmp,lbmp,gapext,timeext];
+            text,xext,fext,gext,ubmp,lbmp,gapext,timeext];
 save("test_Ext_time_d.jld","dDict",dDict);
 
 ############################################

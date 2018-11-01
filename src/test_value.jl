@@ -4,7 +4,6 @@ addprocs(20);
 # test sbb
 @everywhere include("header.jl");
 
-#filePath = "/Users/haoxiangyang/Desktop/PERT_tests/75_Lognormal_Exponential/"
 filePath = "/home/haoxiang/PERT_tests/14_Lognormal_Exponential/";
 Ωsize = 500;
 Ω = 1:Ωsize;
@@ -45,32 +44,3 @@ tic();
 include("partSolve_Callback_tightened.jl");
 timedecomp = toc();
 gapdecomp = (ubCost - lbCost)/ubCost;
-
-# extensive formulation
-tic();
-text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-4,999999);
-timeext = toc();
-θext = Dict();
-for ω in Ω
-    θext[ω] = getvalue(mext[:t][0,ω]);
-end
-ubmp = mext.objVal;
-lbmp = mext.objBound;
-gapext = (mext.objVal - mext.objBound)/mext.objVal;
-ubext = ubCal(pData,disData,Ω,xext,text,999999);
-print(ubdet," ",ubexp," ",ubext);
-dDict = [tdet,xdet,fdet,ubdet,texp,xexp,fexp,Gexp,ubexp,
-            tbest,xbest,lbCost,ubCost,gapdecomp,timedecomp];
-#            text,xext,fext,gext,ubmp,lbmp,gapext,timeext];
-save("test_Ext_time_d.jld","dDict",dDict);
-
-############################################
-ubList = [];
-for n in 1:30
-    disData1,Ω = autoUGen("LogNormal",Hparams,"Exponential",dparams,500,1 - pData.p0);
-    disData1 = orderdisData(disData1,Ω);
-    ubdet1 = ubCalP(pData,disData1,Ω,xdet,tdet,999999);
-    ubexp1 = ubCalP(pData,disData1,Ω,xexp,texp,999999);
-    ubbest1 = ubCalP(pData,disData1,Ω,xbest,tbest,999999);
-    push!(ubList,[ubdet1,ubexp1,ubbest1]);
-end
