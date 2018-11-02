@@ -38,27 +38,14 @@ end
 texp,xexp,fexp,Gexp,mexp = expModel(pData,eH,ed);
 ubexp = ubCalP(pData,disData,Ω,xexp,texp,999999);
 
-# full solution
-tic();
-include("partSolve_Callback_tightened.jl");
-timeFull = toc();
-gapFull = (ubCost - lbCost)/ubCost;
-ubFull = ubCost;
-lbFull = lbCost;
-xFull = deepcopy(xbest);
-tFull = deepcopy(tbest);
-
 # dOnly solution
 disData1 = deepcopy(disData);
 for ω in Ω
     disData[ω].H = mean(buildDistrn(nameH,Hparams));
 end
 tic();
-include("partSolve_Callback_tightened.jl");
+tdOnly,xdOnly,fdOnly,gdOnly,mdOnly = extForm_cheat(pData,disData,Ω,1e-4,999999);
 timedOnly = toc();
-gapdOnly = (ubCost - lbCost)/ubCost;
-xdOnly = deepcopy(xbest);
-tdOnly = deepcopy(tbest);
 disData = deepcopy(disData1);
 ubdOnly = ubCal(pData,disData,Ω,xdOnly,tdOnly,999999);
 
@@ -67,6 +54,9 @@ for ω in Ω
     for i in pData.II
         if i != 0
             disData[ω].d[i] = mean(buildDistrn(nameD,dparams[i]));
+            if disData[ω].d[i] < 1e-4
+                disData[ω].d[i] = 0;
+            end
         end
     end
 end
@@ -79,8 +69,18 @@ tHOnly = deepcopy(tbest);
 disData = deepcopy(disData1);
 ubHOnly = ubCal(pData,disData,Ω,xHOnly,tHOnly,999999);
 
+# full solution
+tic();
+include("partSolve_Callback_tightened.jl");
+timeFull = toc();
+gapFull = (ubCost - lbCost)/ubCost;
+ubFull = ubCost;
+lbFull = lbCost;
+xFull = deepcopy(xbest);
+tFull = deepcopy(tbest);
+
 dDict = [tdet,xdet,fdet,ubdet,texp,xexp,fexp,Gexp,ubexp,
             tFull,xFull,ubFull,lbFull,
-            tdOnly,xdOnly,ubdOnly,gapdOnly,
+            tdOnly,xdOnly,gdOnly,ubdOnly,
             tHOnly,xHOnly,ubHOnly,gapHOnly];
 save("test_Ext_value.jld","dDict",dDict);
