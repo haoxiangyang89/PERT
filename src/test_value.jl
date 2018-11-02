@@ -4,8 +4,8 @@ addprocs(20);
 # test sbb
 @everywhere include("header.jl");
 
-filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_Lognormal_Exponential/"
-#filePath = "/home/haoxiang/PERT_tests/14_Lognormal_Exponential";
+# filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_Lognormal_Exponential/"
+filePath = "/home/haoxiang/PERT_tests/14_Lognormal_Exponential";
 Ωsize = 500;
 Ω = 1:Ωsize;
 ϵ = 1e-2;
@@ -20,7 +20,6 @@ for i in pData.II
         distanceDict[i,j] = detCal(pData,i,j);
     end
 end
-#disData = disDataSet[1];
 
 # deterministic solution
 tdet,xdet,fdet = detBuild(pData);
