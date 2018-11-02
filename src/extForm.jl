@@ -99,6 +99,25 @@ function extForm_cheat(pData,disData,Ω,prec = 1e-4,TL = Inf)
     @constraint(mp, Slinear2[i in pData.II, j in pData.Ji[i], ω in Ω], s[i,j,ω] <= x[i,j,ω]);
     @constraint(mp, Slinear3[i in pData.II, j in pData.Ji[i], ω in Ω], s[i,j,ω] >= x[i,j,ω] - 1 + G[i,ω]);
 
+    # for the same H, bind the G variables
+    HDiff = Dict();
+    for ω in Ω
+        if disData[ω].H in keys(HDiff)
+            push!(HDiff[disData[ω].H], ω);
+        else
+            HDiff[disData[ω].H] = [ω];
+        end
+    end
+    for hIter in keys(HDiff)
+        if length(HDiff[hIter]) > 1
+            for item in 2:length(HDiff[hIter])
+                for i in pData.II
+                    @constraint(mp, G[i,HDiff[hIter][item]] == G[i,HDiff[hIter][1]]);
+                end
+            end
+        end
+    end
+
     @objective(mp,Min,pData.p0*t0[0] + sum(disData[ω].prDis*t[0,ω] for ω in Ω));
 
     solve(mp);

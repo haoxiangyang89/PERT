@@ -13,51 +13,62 @@ for i in pData.II
 end
 Tmax1 = lDict[0];
 
+H = Dict();
+H[0] = 0;
+# remove the duplicate ones
+counter = 1;
+for ω in Ω
+    if !(disData[ω].H in values(H))
+        H[counter] = disData[ω].H;
+        counter += 1;
+    end
+end
+H[counter] = Tmax;
+HΩ = 1:(counter - 1);
+HRev = Dict();
+for hIter in keys(H)
+    HRev[H[hIter]] = hIter;
+end
+
 # start with an upper bound based on the deterministic solution
 tdet,xdet,fdet = detBuild(pData);
 ubdet = ubCalP(pData,disData,Ω,xdet,tdet,Tmax1);
-brInfo = precludeRel(pData,disData,Ω,ubdet);
-
-H = Dict();
-H[0] = 0;
-H[length(Ω)+1] = Tmax;
-for ω in Ω
-    H[ω] = disData[ω].H;
-end
+brInfo = precludeRelNew(pData,H,ubdet);
 
 # initialize cutSet and divSet
 cutSet = [];
 divSet = Dict();
 divDet = Dict();
 for i in pData.II
-    set1 = [ω for ω in Ω if brInfo[findfirst(pData.II,i),ω] == 1];
-    setn1 = [ω for ω in Ω if brInfo[findfirst(pData.II,i),ω] == -1];
+    set1 = [h for h in HΩ if brInfo[findfirst(pData.II,i),h] == 1];
+    setn1 = [h for h in HΩ if brInfo[findfirst(pData.II,i),h] == -1];
 
     if set1 != []
         set1t = partType(0,maximum(set1));
         if setn1 != []
-            setn1t = partType(minimum(setn1),length(Ω) + 1);
+            setn1t = partType(minimum(setn1),length(HΩ) + 1);
             set0t = partType(maximum(set1),minimum(setn1));
             divSet[i] = [set1t,set0t,setn1t];
             divDet[i] = [1,0,-1];
         else
-            set0t = partType(maximum(set1),length(Ω) + 1);
+            set0t = partType(maximum(set1),length(HΩ) + 1);
             divSet[i] = [set1t,set0t];
             divDet[i] = [1,0];
         end
     else
         if setn1 != []
-            setn1t = partType(minimum(setn1),length(Ω) + 1);
+            setn1t = partType(minimum(setn1),length(HΩ) + 1);
             set0t = partType(0,minimum(setn1));
             divSet[i] = [set0t,setn1t];
             divDet[i] = [0,-1];
         else
-            set0t = partType(0,length(Ω) + 1);
+            set0t = partType(0,length(HΩ) + 1);
             divSet[i] = [set0t];
             divDet[i] = [0];
         end
     end
 end
+
 xbest = Dict();
 tbest = Dict();
 lbCost = -Inf;
@@ -303,9 +314,9 @@ while keepIter
         GCurrent = GList[length(GList)];
         GFrac = Dict();
         for i in pData.II
-            GFraciList = [ω for ω in Ω if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)];
+            GFraciList = [disData[ω].H for ω in Ω if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)];
             if GFraciList != []
-                GFrac[i] = [minimum(GFraciList),maximum(GFraciList)];
+                GFrac[i] = [HRev[minimum(GFraciList)],HRev[maximum(GFraciList)]];
             else
                 GFrac[i] = [];
             end

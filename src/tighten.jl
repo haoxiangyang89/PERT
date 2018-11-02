@@ -54,6 +54,36 @@ function precludeRel(pData,disData,Ω,ub = Inf)
     return brInfo;
 end
 
+function precludeRelNew(pData,H,ub = Inf)
+    # solve |II| number of LP to obtain each activity's earliest starting time
+    # initialize the brInfo
+    brInfo = zeros(length(pData.II),length(H) - 2);
+    for i in pData.II
+        tearly = iSolve(pData,i);
+        for hIter in keys(H)
+            if (hIter != 0)&(hIter != length(H) - 1)
+                if tearly >= H[hIter]
+                    brInfo[findin(pData.II,i)[1],hIter] = 1;
+                end
+            end
+        end
+    end
+    if ub != Inf
+        for i in pData.II
+            tlate = lSolve(pData,i,ub);
+            for hIter in keys(H)
+                if (hIter != 0)&(hIter != length(H) - 1)
+                    if tlate <= H[hIter]
+                        brInfo[findin(pData.II,i)[1],hIter] = -1;
+                    end
+                end
+            end
+        end
+    end
+
+    return brInfo;
+end
+
 function precludeRelStrata(pData,Hω,Ωt,ub = Inf)
     # solve |II| number of LP to obtain each activity's earliest starting time
     # initialize the brInfo
