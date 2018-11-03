@@ -10,25 +10,34 @@ dDict = Dict();
 for Ωl in 1:length(Ωsize)
     Ω = 1:Ωsize[Ωl];
     ϵ = 1e-2;
-    pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl]);
-    disData = disDataSet[1];
+    dDict[Ωsize[Ωl]] = [];
+    n = 1;
+    while n <= 20
+        try
+            pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl]);
+            disData = disDataSet[1];
 
-    allSucc = findSuccAll(pData);
-    distanceDict = Dict();
-    for i in pData.II
-        for j in allSucc[i]
-            distanceDict[i,j] = detCal(pData,i,j);
+            allSucc = findSuccAll(pData);
+            distanceDict = Dict();
+            for i in pData.II
+                for j in allSucc[i]
+                    distanceDict[i,j] = detCal(pData,i,j);
+                end
+            end
+            # our decomposition method
+            tic();
+            include("partSolve_Callback_tightened.jl");
+            timedecomp = toc();
+            gapdecomp = (ubCost - lbCost)/ubCost;
+
+            push!(dDict[Ωsize[Ωl]],[tbest,xbest,lbCost,ubCost,gapdecomp,timedecomp]);
+            n += 1;
+        catch
+            println("Error in Solving Process!");
         end
     end
-    # our decomposition method
-    tic();
-    include("partSolve_Callback_tightened.jl");
-    timedecomp = toc();
-    gapdecomp = (ubCost - lbCost)/ubCost;
-
-    dDict[Ωsize[Ωl]] = [tbest,xbest,lbCost,ubCost,gapdecomp,timedecomp];
+    save("test_Ext_budget.jld","dDict",dDict);
 end
-save("test_Ext_budget.jld","dDict",dDict);
 
 ################################################################
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
@@ -37,37 +46,29 @@ save("test_Ext_budget.jld","dDict",dDict);
 @everywhere include("header.jl");
 
 filePath = "/home/haoxiang/PERT_tests/14_Lognormal_Exponential";
-Ωsize = 500;
-Ω = 1:Ωsize;
 ϵ = 1e-2;
-pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
-data_value = load("test_Ext_value.jld");
-tdet = data_value["dDict"][1];
-xdet = data_value["dDict"][2];
-
-texp = data_value["dDict"][5];
-xexp = data_value["dDict"][6];
-
-tFull = data_value["dDict"][10];
-xFull = data_value["dDict"][11];
-
-tdOnly = data_value["dDict"][14];
-xdOnly = data_value["dDict"][15];
-
-tHOnly = data_value["dDict"][18];
-xHOnly = data_value["dDict"][19];
-
-ubList = [];
-for n in 1:30
-    println("----------------Iteration $(n)----------------");
-    disData1,Ω = autoUGen("LogNormal",Hparams,"Exponential",dparams,500,1 - pData.p0);
-    disData1 = orderdisData(disData1,Ω);
-    ubdet1 = ubCal(pData,disData1,Ω,xdet,tdet,999999);
-    ubexp1 = ubCal(pData,disData1,Ω,xexp,texp,999999);
-    ubFull1 = ubCal(pData,disData1,Ω,xFull,tFull,999999);
-    ubdOnly1 = ubCal(pData,disData1,Ω,xdOnly,tdOnly,999999);
-    ubHOnly1 = ubCal(pData,disData1,Ω,xHOnly,tHOnly,999999);
-    push!(ubList,[ubdet1,ubexp1,ubFull1,ubdOnly1,ubHOnly1]);
-    println(n," ",[ubdet1,ubexp1,ubFull1,ubdOnly1,ubHOnly1]);
+pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,500);
+data_budget = load("test_Ext_budget.jld");
+xFull = Dict();
+tFull = Dict();
+ubbudget = Dict();
+for n in 1:20
+    xFull[n] = Dict();
+    tFull[n] = Dict();
+    ubbudget[n] = Dict();
+    for Ωl in 1:length(Ωsize)
+        xFull[n][Ωsize[Ωl]] = data_budget["dDict"][Ωsize[Ωl]][n][2];
+        tFull[n][Ωsize[Ωl]] = data_budget["dDict"][Ωsize[Ωl]][n][1];
+    end
 end
-save("test_Ext_value_Out.jld","ubList",ubList);
+
+disData1,Ω = autoUGen("LogNormal",Hparams,"Exponential",dparams,2000,1 - pData.p0);
+disData1 = orderdisData(disData1,Ω);
+ubTempList = [];
+for Ωl in 1:length(Ωsize)
+    for n in 1:20
+        ubTemp = ubCal(pData,disData1,Ω,xFull[n][Ωsize[Ωl]],tFull[n][Ωsize[Ωl]],999999);
+        ubbudget[n][Ωsize[Ωl]] = ubTemp;
+    end
+end
+save("test_Ext_budget_Out.jld","ubbudget",ubbudget);

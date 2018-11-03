@@ -116,7 +116,7 @@ xHOnly = data_value["dDict"][19];
 ubList = [];
 for n in 1:30
     println("----------------Iteration $(n)----------------");
-    disData1,Ω = autoUGen("LogNormal",Hparams,"Exponential",dparams,500,1 - pData.p0);
+    disData1,Ω = autoUGen("LogNormal",Hparams,"Exponential",dparams,2000,1 - pData.p0);
     disData1 = orderdisData(disData1,Ω);
     ubdet1 = ubCal(pData,disData1,Ω,xdet,tdet,999999);
     ubexp1 = ubCal(pData,disData1,Ω,xexp,texp,999999);
