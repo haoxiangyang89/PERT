@@ -46,6 +46,10 @@ tic();
 include("partSolve_Callback_tightened.jl");
 timedecomp = toc();
 gapdecomp = (ubCost - lbCost)/ubCost;
+ubFull = ubCost;
+lbFull = lbCost;
+xFull = deepcopy(xbest);
+tFull = deepcopy(tbest);
 
 # extensive formulation
 tic();
@@ -61,7 +65,7 @@ gapext = (mext.objVal - mext.objBound)/mext.objVal;
 ubext = ubCal(pData,disData,Ω,xext,text,999999);
 print(ubdet," ",ubexp," ",ubext);
 dDict = [tdet,xdet,fdet,ubdet,texp,xexp,fexp,Gexp,ubexp,
-            tbest,xbest,lbCost,ubCost,gapdecomp,timedecomp];
+            tFull,xFull,lbFull,ubFull,gapdecomp,timedecomp];
             text,xext,fext,gext,ubmp,lbmp,gapext,timeext];
 save("test_Ext_time_d.jld","dDict",dDict);
 
