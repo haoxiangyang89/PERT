@@ -31,12 +31,12 @@ for Ωl in 1:length(Ωsize)
             gapdecomp = (ubCost - lbCost)/ubCost;
 
             push!(dDict[Ωsize[Ωl]],[tbest,xbest,lbCost,ubCost,gapdecomp,timedecomp]);
+            save("test_Ext_budget.jld","dDict",dDict);
             n += 1;
         catch
             println("Error in Solving Process!");
         end
     end
-    save("test_Ext_budget.jld","dDict",dDict);
 end
 
 ################################################################
