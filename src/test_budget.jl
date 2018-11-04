@@ -7,7 +7,7 @@ addprocs(20);
 filePath = "/home/haoxiang/PERT_tests/14_Lognormal_Exponential/";
 Ωsize = [10,50,100,200,500,1000];
 dDict = Dict();
-for Ωl in 1:length(Ωsize)
+for Ωl in 5:length(Ωsize)
     Ω = 1:Ωsize[Ωl];
     ϵ = 1e-2;
     dDict[Ωsize[Ωl]] = [];
@@ -57,18 +57,22 @@ for n in 1:20
     tFull[n] = Dict();
     ubbudget[n] = Dict();
     for Ωl in 1:length(Ωsize)
-        xFull[n][Ωsize[Ωl]] = data_budget["dDict"][Ωsize[Ωl]][n][2];
-        tFull[n][Ωsize[Ωl]] = data_budget["dDict"][Ωsize[Ωl]][n][1];
+        if n in keys(data_budget["dDict"][Ωsize[Ωl]])
+            xFull[n][Ωsize[Ωl]] = data_budget["dDict"][Ωsize[Ωl]][n][2];
+            tFull[n][Ωsize[Ωl]] = data_budget["dDict"][Ωsize[Ωl]][n][1];
+        end
     end
 end
 
-disData1,Ω = autoUGen("LogNormal",Hparams,"Exponential",dparams,2000,1 - pData.p0);
+disData1,Ω = autoUGen("LogNormal",Hparams,"Exponential",dparams,5000,1 - pData.p0);
 disData1 = orderdisData(disData1,Ω);
 ubTempList = [];
 for Ωl in 1:length(Ωsize)
     for n in 1:20
-        ubTemp = ubCal(pData,disData1,Ω,xFull[n][Ωsize[Ωl]],tFull[n][Ωsize[Ωl]],999999);
-        ubbudget[n][Ωsize[Ωl]] = ubTemp;
+        if Ωsize[Ωl] in keys(xFull[n])
+            ubTemp = ubCal(pData,disData1,Ω,xFull[n][Ωsize[Ωl]],tFull[n][Ωsize[Ωl]],999999);
+            ubbudget[n][Ωsize[Ωl]] = ubTemp;
+        end
     end
 end
 save("test_Ext_budget_Out.jld","ubbudget",ubbudget);

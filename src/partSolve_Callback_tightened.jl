@@ -244,8 +244,6 @@ while keepIter
     for ω in Ω
         θCurrent[ω] = getvalue(mp[:θ][ω]);
     end
-    cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
-    cutSetNew = selectCuts2(cutSet,cutSel);
 
     # need to come up with a rule to partition: gradient descent like binary search
     # check θInt vs. θhat: why the lower bound and the upper bound do not converge quickly --->
@@ -257,6 +255,8 @@ while keepIter
     if (ubCost - lbCost)/ubCost < ϵ
         keepIter = false;
     else
+        cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
+        cutSetNew = selectCuts2(cutSet,cutSel);
         GCurrent = GList[length(GList)];
         GFrac = Dict();
         for i in pData.II

@@ -6,7 +6,7 @@ addprocs(20);
 
 #filePath = "/Users/haoxiangyang/Desktop/PERT_tests/75_Lognormal_Exponential/"
 filePath = "/home/haoxiang/PERT_tests/14_Lognormal_Exponential/";
-Ωsize = [500,1000];
+Ωsize = [200,500,1000];
 dDict = Dict();
 for Ωl in 1:length(Ωsize)
     Ω = 1:Ωsize[Ωl];
@@ -35,7 +35,6 @@ for Ωl in 1:length(Ωsize)
     lbmp = mext.objBound;
     gapext = (mext.objVal - mext.objBound)/mext.objVal;
     ubext = ubCal(pData,disData,Ω,xext,text,999999);
-    print(ubdet," ",ubexp," ",ubext);
     dDict[Ωsize[Ωl]] = [tbest,xbest,lbCost,ubCost,gapdecomp,timedecomp,
                         text,xext,lbmp,ubmp,gapext,timeext];
 end
