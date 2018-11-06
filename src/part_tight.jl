@@ -266,6 +266,9 @@ function iniPart(pData,disData,Ω,sN,MM)
         tList[i] = [];
     end
     ubList = [];
+    ubMin = Inf;
+    tBest = Dict();
+    xBest = Dict();
     for m in 1:MM
         #randList = rand(Ω,sN);
         disData1 = Dict();
@@ -278,6 +281,16 @@ function iniPart(pData,disData,Ω,sN,MM)
         text,xext,fext,gext,mext = extForm_cheat(pData,disData1,Ω1,1e-4,999999);
         ubext = ubCalP(pData,disData,Ω,xext,text,999999);
         push!(ubList,ubext);
+        # record the best solution
+        if ubext < ubMin
+            ubMin = ubext;
+            for i in pData.II
+                tBest[i] = text[i];
+                for j in pData.Ji[i]
+                    xBest[i,j] = xext[i,j];
+                end
+            end
+        end
         for i in pData.II
             push!(tList[i],text[i]);
         end
@@ -290,7 +303,7 @@ function iniPart(pData,disData,Ω,sN,MM)
         tHend = minimum([ω for ω in keys(H) if H[ω] >= maximum(tList[i])]);
         push!(tHList,[i,tHstart,tHend]);
     end
-    return ubList,tHList;
+    return ubList,tHList,ubMin,tBest,xBest;
 end
 
 function splitAny(PartSet,PartDet,splitInfo)
