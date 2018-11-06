@@ -78,6 +78,7 @@ for i in pData.II
 end
 xbest = Dict();
 tbest = Dict();
+θbest = Dict();
 lbCost = -Inf;
 lbCostList = [];
 ubCostList = [ubdet];
@@ -130,6 +131,9 @@ function partBenders(cb)
                 xbest[i,j] = xhat[i,j];
             end
         end
+        for ω in Ω
+            θbest[ω] = θInt[ω];
+        end
     end
     push!(ubCostList,ubTemp);
 
@@ -172,9 +176,9 @@ ubList,tHList,ubInc,tInc,xInc,θInc = iniPart(pData,disData,Ω,sN,MM);
 # mp = Model(solver = GurobiSolver());
 mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7));
 @variables(mp, begin
-  θ[Ω] >= 0
-  0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
-  t[i in pData.II] >= 0
+  θ[ω in Ω] >= 0, start = θInc[ω]
+  0 <= x[i in pData.II,j in pData.Ji[i]] <= 1, start = xInc[i,j]
+  t[i in pData.II] >= 0, start = tInc[i]
   y[i in pData.II, par in 1:length(divSet[i])], Bin
 end);
 @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
@@ -233,6 +237,19 @@ while keepIter
     push!(timeHist,tIter);
     lbCost = getobjectivevalue(mp);
     push!(lbHist,lbCost);
+    # update the current best solution
+    if minimum(ubCostList) < ubInc
+        for i in pData.II
+            tInc[i] = tbest[i];
+            for j in pData.Ji[i]
+                xInc[i,j] = xbest[i,j];
+            end
+        end
+        for ω in Ω
+            θInc[i,j] = θbest[ω];
+        end
+    end
+
     # only select currently tight cuts
     for i in pData.II
         tCurrent[i] = getvalue(mp[:t][i]);
@@ -299,9 +316,9 @@ while keepIter
     # mp = Model(solver = GurobiSolver());
     mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7));
     @variables(mp, begin
-      θ[Ω] >= 0
-      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
-      t[i in pData.II] >= 0
+      θ[ω in Ω] >= 0, start = θInc[ω]
+      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1, start = xInc[i,j]
+      t[i in pData.II] >= 0, start = tInc[i]
       y[i in pData.II, par in 1:length(divSet[i])], Bin
     end);
     @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
