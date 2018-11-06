@@ -255,7 +255,7 @@ while keepIter
             end
         end
         for ω in Ω
-            θInc[i,j] = θbest[ω];
+            θInc[ω] = θbest[ω];
         end
     end
 
