@@ -324,8 +324,6 @@ timeHist = [];
 cutHist = [];
 intSolHist = [];
 
-ubList,tHList,ubInc,tInc,xInc,θInc = iniPart(pData,disData,Ω,sN,MM);
-
 # move the createMaster_Callback here
 #mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
 mp = Model(solver = CplexSolver());

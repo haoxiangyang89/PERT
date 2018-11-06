@@ -192,8 +192,6 @@ cutHist = [];
 intSolHist = [];
 yhistList = [];
 
-ubList,tHList,ubInc,tInc,xInc,θInc = iniPart(pData,disData,Ω,sN,MM);
-
 # move the createMaster_Callback here
 # mp = Model(solver = GurobiSolver());
 mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7));

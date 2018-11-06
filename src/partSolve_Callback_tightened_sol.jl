@@ -176,11 +176,20 @@ ubList,tHList,ubInc,tInc,xInc,θInc = iniPart(pData,disData,Ω,sN,MM);
 # mp = Model(solver = GurobiSolver());
 mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7));
 @variables(mp, begin
-  θ[ω in Ω] >= 0, start = θInc[ω]
-  0 <= x[i in pData.II,j in pData.Ji[i]] <= 1, start = xInc[i,j]
-  t[i in pData.II] >= 0, start = tInc[i]
+  θ[ω in Ω] >= 0
+  0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
+  t[i in pData.II] >= 0
   y[i in pData.II, par in 1:length(divSet[i])], Bin
 end);
+for i in pData.II
+    setvalue(t[i], tInc[i]);
+    for j in pData.Ji[i]
+        setvalue(x[i,j],xInc[i,j]);
+    end
+end
+for ω in Ω
+    setvalue(θ[ω],θInc[ω]);
+end
 @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
 @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
 @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
@@ -316,11 +325,20 @@ while keepIter
     # mp = Model(solver = GurobiSolver());
     mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7));
     @variables(mp, begin
-      θ[ω in Ω] >= 0, start = θInc[ω]
-      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1, start = xInc[i,j]
-      t[i in pData.II] >= 0, start = tInc[i]
+      θ[ω in Ω] >= 0
+      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
+      t[i in pData.II] >= 0
       y[i in pData.II, par in 1:length(divSet[i])], Bin
     end);
+    for i in pData.II
+        setvalue(t[i], tInc[i]);
+        for j in pData.Ji[i]
+            setvalue(x[i,j],xInc[i,j]);
+        end
+    end
+    for ω in Ω
+        setvalue(θ[ω],θInc[ω]);
+    end
     @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
     @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
