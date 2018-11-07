@@ -11,12 +11,15 @@ pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
 # filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_Lognormal_Exponential/"
 dDict = Dict();
 Ωsize = [10,50,100,200,500,1000];
+ErrorData = [];
 for fileInd in 1:length(pathList)
     dDict[fileInd] = Dict();
     filePath = pathList[fileInd];
-    pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,5000);
+    global pData1;
+    global disDataSet1;
+    pData1, disDataSet1, nameD, nameH, dparams, Hparams = genData(filePath,5000);
     global Ω1 = 1:5000;
-    global disData1 = disDataSet[1];
+    global disData1 = disDataSet1[1];
     for Ωl in 1:length(Ωsize)
         global Ω = 1:Ωsize[Ωl];
         global ϵ = 1e-2;
@@ -25,9 +28,10 @@ for fileInd in 1:length(pathList)
         n = 1;
         while n <= 20
             try
+            global pData;
+            global disDataSet;
             pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl]);
             global disData = disDataSet[1];
-            global pData = pData;
 
             global allSucc = findSuccAll(pData);
             global distanceDict = Dict();
@@ -44,12 +48,13 @@ for fileInd in 1:length(pathList)
             xFull = deepcopy(xbest);
             tFull = deepcopy(tbest);
 
-            ubTemp = ubCalP(pData,disData1,Ω1,xFull,tFull,999999);
+            ubTemp = ubCalP(pData1,disData1,Ω1,xFull,tFull,999999);
             push!(dDict[fileInd][Ωsize[Ωl]],[tFull,xFull,lbCost,ubCost,gapdecomp,timedecomp,ubTemp]);
             save("test_Ext_budget.jld","dDict",dDict);
             n += 1;
             catch
             println("Error in Data!");
+            push!(ErrorData,(fileInd,disData));
             end
         end
     end
