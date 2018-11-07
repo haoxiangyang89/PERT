@@ -325,7 +325,7 @@ cutHist = [];
 intSolHist = [];
 
 # move the createMaster_Callback here
-mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+mp = Model(solver = GurobiSolver(IntFeasTol = 1e-7,FeasibilityTol = 1e-7));
 # mp = Model(solver = CplexSolver());
 @variables(mp, begin
   θ[Ω] >= 0
@@ -448,7 +448,7 @@ while keepIter
     cutSet = deepcopy(cutSetNew);
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9,FeasibilityTol = 1e-9));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-7,FeasibilityTol = 1e-7));
     # mp = Model(solver = CplexSolver());
     @variables(mp, begin
       θ[Ω] >= 0

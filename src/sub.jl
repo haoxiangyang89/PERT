@@ -237,8 +237,8 @@ end
 function subPull(pData,dDω,xhat,that,Ghatω,M = 9999999)
 
     # sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
-    #sp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
-    sp = Model(solver = GurobiSolver(OutputFlag = 0, IntFeasTol = 1e-9, FeasibilityTol = 1e-9));
+    #sp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-7,CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_SCRIND = 0));
+    sp = Model(solver = GurobiSolver(OutputFlag = 0, IntFeasTol = 1e-7, FeasibilityTol = 1e-7));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     @variable(sp, s[i in pData.II, j in pData.Ji[i]] >= 0);
@@ -282,7 +282,7 @@ function subPull(pData,dDω,xhat,that,Ghatω,M = 9999999)
 end
 
 function subMixed(pData,dDω,xhat,that,Ghatω,ωCurr,Ω,M = 9999999,returnOpt = 0)
-    sp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    sp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-7,CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_SCRIND = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     @variable(sp, s[i in pData.II, j in pData.Ji[i]] >= 0);
@@ -345,7 +345,7 @@ function subMixed(pData,dDω,xhat,that,Ghatω,ωCurr,Ω,M = 9999999,returnOpt = 
 end
 
 function subF(pData,dDω,that,xhat,Fhat,M = 999999)
-    sp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    sp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-7,CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_SCRIND = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     @variable(sp, s[i in pData.II, j in pData.Ji[i]] >= 0);
@@ -393,8 +393,8 @@ end
 function subLag(pData,dDω,xhat,that,Ghatω,γhat,M = 9999999)
 
     # sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
-    #sp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
-    sp = Model(solver = GurobiSolver(OutputFlag = 0, IntFeasTol = 1e-9, FeasibilityTol = 1e-9));
+    #sp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-7,CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_SCRIND = 0));
+    sp = Model(solver = GurobiSolver(OutputFlag = 0, IntFeasTol = 1e-7, FeasibilityTol = 1e-7));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     @variable(sp, s[i in pData.II, j in pData.Ji[i]] >= 0);

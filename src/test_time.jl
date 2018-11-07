@@ -22,8 +22,10 @@ for Ωl in 1:length(Ωsize)
         end
     end
     # our decomposition method
+    global sN = 20;
+    global MM = 25;
     tic();
-    include("partSolve_Callback_tightened.jl");
+    include("partSolve_Callback_tightened_sol.jl");
     timedecomp = toc();
     gapdecomp = (ubCost - lbCost)/ubCost;
 
