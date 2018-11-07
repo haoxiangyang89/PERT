@@ -40,10 +40,10 @@ texp,xexp,fexp,Gexp,mexp = expModel(pData,eH,ed);
 ubexp = ubCalP(pData,disData,Ω,xexp,texp,999999);
 
 # our decomposition method
+global sN = 20;
+global MM = 25;
 tic();
-#tbest,xbest,lbCost,ubCost = partitionSolve(pData,disData,0.001);
-#include("partSolve_Callback.jl");
-include("partSolve_Callback_tightened.jl");
+include("partSolve_Callback_tightened_sol.jl");
 timedecomp = toc();
 gapdecomp = (ubCost - lbCost)/ubCost;
 ubFull = ubCost;

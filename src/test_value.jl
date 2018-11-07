@@ -10,6 +10,8 @@ pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
 
 # filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_Lognormal_Exponential/"
 dDict = Dict();
+global sN = 20;
+global MM = 25;
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
     Ωsize = 500;
@@ -57,7 +59,7 @@ for fileInd in 1:length(pathList)
     tdOnly,xdOnly,fdOnly,gdOnly,mdOnly = extForm_cheat(pData,disData,Ω,1e-4,999999);
     timedOnly = toc();
     disData = deepcopy(disData1);
-    ubdOnly = ubCal(pData,disData,Ω,xdOnly,tdOnly,999999);
+    ubdOnly = ubCalP(pData,disData,Ω,xdOnly,tdOnly,999999);
 
     # HOnly solution
     for ω in Ω
@@ -77,7 +79,7 @@ for fileInd in 1:length(pathList)
     xHOnly = deepcopy(xbest);
     tHOnly = deepcopy(tbest);
     disData = deepcopy(disData1);
-    ubHOnly = ubCal(pData,disData,Ω,xHOnly,tHOnly,999999);
+    ubHOnly = ubCalP(pData,disData,Ω,xHOnly,tHOnly,999999);
 
     # full solution
     tic();

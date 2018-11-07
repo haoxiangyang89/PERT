@@ -193,8 +193,8 @@ intSolHist = [];
 yhistList = [];
 
 # move the createMaster_Callback here
-mp = Model(solver = GurobiSolver(IntFeasTol = 1e-7, FeasibilityTol = 1e-7));
-# mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7));
+mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8));
+# mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-8,CPX_PARAM_EPINT = 1e-8));
 @variables(mp, begin
   θ[Ω] >= 0
   0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -321,8 +321,8 @@ while keepIter
     end
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-7, FeasibilityTol = 1e-7));
-    # mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8));
+    # mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-8,CPX_PARAM_EPINT = 1e-8));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
