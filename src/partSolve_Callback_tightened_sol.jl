@@ -186,6 +186,13 @@ for i in pData.II
     for j in pData.Ji[i]
         setvalue(x[i,j],xInc[i,j]);
     end
+    for par in 1:length(divSet[i])
+        if (tInc[i] >= H[divSet[i][par].startH])&(tInc[i] < H[divSet[i][par].endH])
+            setvalue(y[i,par],1);
+        else
+            setvalue(y[i,par],0);
+        end
+    end
 end
 for ω in Ω
     setvalue(θ[ω],θInc[ω]);
@@ -334,6 +341,13 @@ while keepIter
         setvalue(t[i], tInc[i]);
         for j in pData.Ji[i]
             setvalue(x[i,j],xInc[i,j]);
+        end
+        for par in 1:length(divSet[i])
+            if (tInc[i] >= H[divSet[i][par].startH])&(tInc[i] < H[divSet[i][par].endH])
+                setvalue(y[i,par],1);
+            else
+                setvalue(y[i,par],0);
+            end
         end
     end
     for ω in Ω
