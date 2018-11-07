@@ -13,18 +13,18 @@ dDict = Dict();
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
     Ωsize = 5;
-    @everywhere Ω = 1:Ωsize;
+    Ω = 1:Ωsize;
     ϵ = 1e-2;
-    @everywhere pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
+    pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
     # data = load("test_cuts.jld");
     # disData = deepcopy(data["disData"]);
-    @everywhere disData = disDataSet[1];
+    disData = disDataSet[1];
     # dataDet = load("test_Ext_time_exponential.jld");
-    @everywhere allSucc = findSuccAll(pData);
-    @everywhere distanceDict = Dict();
+    allSucc = findSuccAll(pData);
+    distanceDict = Dict();
     for i in pData.II
         for j in allSucc[i]
-            @everywhere distanceDict[i,j] = detCal(pData,i,j);
+            distanceDict[i,j] = detCal(pData,i,j);
         end
     end
 
@@ -46,9 +46,9 @@ for fileInd in 1:length(pathList)
     ubexp = ubCalP(pData,disData,Ω,xexp,texp,999999);
 
     # dOnly solution
-    @everywhere disData1 = deepcopy(disData);
+    disData1 = deepcopy(disData);
     for ω in Ω
-        @everywhere disData[ω].H = mean(buildDistrn(nameH,Hparams));
+        disData[ω].H = mean(buildDistrn(nameH,Hparams));
     end
     tic();
     tdOnly,xdOnly,fdOnly,gdOnly,mdOnly = extForm_cheat(pData,disData,Ω,1e-4,999999);
@@ -60,9 +60,9 @@ for fileInd in 1:length(pathList)
     for ω in Ω
         for i in pData.II
             if i != 0
-                @everywhere disData[ω].d[i] = mean(buildDistrn(nameD,dparams[i]));
+                disData[ω].d[i] = mean(buildDistrn(nameD,dparams[i]));
                 if disData[ω].d[i] < 1e-4
-                    @everywhere disData[ω].d[i] = 0;
+                    disData[ω].d[i] = 0;
                 end
             end
         end
@@ -73,12 +73,12 @@ for fileInd in 1:length(pathList)
     gapHOnly = (ubCost - lbCost)/ubCost;
     xHOnly = deepcopy(xbest);
     tHOnly = deepcopy(tbest);
-    @everywhere disData = deepcopy(disData1);
+    disData = deepcopy(disData1);
     ubHOnly = ubCal(pData,disData,Ω,xHOnly,tHOnly,999999);
 
     # full solution
     tic();
-    include("partSolve_Callback_tightened.jl");
+    include("partSolve_Callback_tightened_sol.jl");
     timeFull = toc();
     gapFull = (ubCost - lbCost)/ubCost;
     ubFull = ubCost;
