@@ -96,7 +96,7 @@ for fileInd in 1:length(pathList)
                 tHOnly,xHOnly,ubHOnly,gapHOnly];
 
     ubList = [];
-    for n in 1:30
+    for n in 1:20
         println("----------------Iteration $(n)----------------");
         disData1,Ω = autoUGen("LogNormal",Hparams,"Exponential",dparams,2000,1 - pData.p0);
         disData1 = orderdisData(disData1,Ω);
