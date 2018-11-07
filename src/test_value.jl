@@ -15,14 +15,15 @@ for fileInd in 1:length(pathList)
     Ωsize = 500;
     global Ω = 1:Ωsize;
     global ϵ = 1e-2;
+    global pData;
     pData, disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
     global pData = pData;
     # data = load("test_cuts.jld");
     # disData = deepcopy(data["disData"]);
     global disData = disDataSet[1];
     # dataDet = load("test_Ext_time_exponential.jld");
-    allSucc = findSuccAll(pData);
-    distanceDict = Dict();
+    global allSucc = findSuccAll(pData);
+    global distanceDict = Dict();
     for i in pData.II
         for j in allSucc[i]
             distanceDict[i,j] = detCal(pData,i,j);
@@ -47,6 +48,7 @@ for fileInd in 1:length(pathList)
     ubexp = ubCalP(pData,disData,Ω,xexp,texp,999999);
 
     # dOnly solution
+    global disData1;
     disData1 = deepcopy(disData);
     for ω in Ω
         disData[ω].H = mean(buildDistrn(nameH,Hparams));
