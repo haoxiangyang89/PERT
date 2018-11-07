@@ -1,5 +1,6 @@
 function createMaster(pData,disData,Ω,Tmax = 999999)
-    mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    mp = Model(solver = GurobiSolver(OutputFlag = 0, IntFeasTol = 1e-9, FeasibilityTol = 1e-9));
+    #mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -30,7 +31,8 @@ function createMaster_Par(pData,disData,Ω,partCurrent,partDet,cutSet,M = 999999
 
     # partCurrent is a list of scenario arrays, each element is a partition of scenarios
     # cutSet includes the cuts generated
-    mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    #mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    mp = Model(solver = GurobiSolver(OutputFlag = 0, IntFeasTol = 1e-9, FeasibilityTol = 1e-9));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -74,7 +76,8 @@ function createMaster_Mixed(pData,disData,Ω,ωInfo,cutSet,M = 9999999)
         H[ω] = disData[ω].H;
     end
     # cutSet includes the cuts generated
-    mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    mp = Model(solver = GurobiSolver(OutputFlag = 0, IntFeasTol = 1e-9, FeasibilityTol = 1e-9));
+    #mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -124,7 +127,8 @@ function createMaster_MixedL(pData,disData,Ω,ωInfo,cutSet,partCurrentTemp,part
         end
     end
     # cutSet includes the cuts generated
-    mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    #mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    mp = Model(solver = GurobiSolver(OutputFlag = 0, IntFeasTol = 1e-9, FeasibilityTol = 1e-9));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -172,7 +176,8 @@ function masterF(pData,disData,Ω,ωInfo,cutSet,Tmax = 999999)
     end
 
     # the master with generated columns
-    mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    #mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    mp = Model(solver = GurobiSolver(OutputFlag = 0, IntFeasTol = 1e-9, FeasibilityTol = 1e-9));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -223,7 +228,8 @@ function createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDic
         H[ω] = disData[ω].H;
     end
 
-    mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    #mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    mp = Model(solver = GurobiSolver(OutputFlag = 0, IntFeasTol = 1e-9, FeasibilityTol = 1e-9));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -299,7 +305,8 @@ function createMaster_DivRel(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distance
         H[ω] = disData[ω].H;
     end
 
-    mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    #mp = Model(solver = CplexSolver(CPX_PARAM_EPINT = 1e-9,CPX_PARAM_EPRHS = 1e-9,CPX_PARAM_SCRIND = 0));
+    mp = Model(solver = GurobiSolver(OutputFlag = 0, IntFeasTol = 1e-9, FeasibilityTol = 1e-9));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1

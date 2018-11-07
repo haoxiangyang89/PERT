@@ -12,13 +12,14 @@ pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
 dDict = Dict();
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
-    Ωsize = 5;
-    Ω = 1:Ωsize;
-    ϵ = 1e-2;
-    pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
+    Ωsize = 500;
+    global Ω = 1:Ωsize;
+    global ϵ = 1e-2;
+    pData, disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
+    global pData = pData;
     # data = load("test_cuts.jld");
     # disData = deepcopy(data["disData"]);
-    disData = disDataSet[1];
+    global disData = disDataSet[1];
     # dataDet = load("test_Ext_time_exponential.jld");
     allSucc = findSuccAll(pData);
     distanceDict = Dict();
@@ -78,7 +79,7 @@ for fileInd in 1:length(pathList)
 
     # full solution
     tic();
-    include("partSolve_Callback_tightened_sol.jl");
+    include("partSolve_Callback_tightened.jl");
     timeFull = toc();
     gapFull = (ubCost - lbCost)/ubCost;
     ubFull = ubCost;
@@ -93,7 +94,7 @@ for fileInd in 1:length(pathList)
                 tHOnly,xHOnly,ubHOnly,gapHOnly];
 
     ubList = [];
-    for n in 1:1
+    for n in 1:30
         println("----------------Iteration $(n)----------------");
         disData1,Ω = autoUGen("LogNormal",Hparams,"Exponential",dparams,2000,1 - pData.p0);
         disData1 = orderdisData(disData1,Ω);
