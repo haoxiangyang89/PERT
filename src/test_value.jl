@@ -73,7 +73,7 @@ for fileInd in 1:length(pathList)
         end
     end
     tic();
-    include("partSolve_Callback_tightened.jl");
+    include("partSolve_Callback_tightened_sol.jl");
     timeHOnly = toc();
     gapHOnly = (ubCost - lbCost)/ubCost;
     xHOnly = deepcopy(xbest);
@@ -83,7 +83,7 @@ for fileInd in 1:length(pathList)
 
     # full solution
     tic();
-    include("partSolve_Callback_tightened.jl");
+    include("partSolve_Callback_tightened_sol.jl");
     timeFull = toc();
     gapFull = (ubCost - lbCost)/ubCost;
     ubFull = ubCost;
@@ -100,13 +100,13 @@ for fileInd in 1:length(pathList)
     ubList = [];
     for n in 1:20
         println("----------------Iteration $(n)----------------");
-        disData1,Ω = autoUGen("LogNormal",Hparams,"Exponential",dparams,2000,1 - pData.p0);
+        disData1,Ω = autoUGen("LogNormal",Hparams,"Exponential",dparams,5000,1 - pData.p0);
         disData1 = orderdisData(disData1,Ω);
-        ubdet1 = ubCal(pData,disData1,Ω,xdet,tdet,999999);
-        ubexp1 = ubCal(pData,disData1,Ω,xexp,texp,999999);
-        ubFull1 = ubCal(pData,disData1,Ω,xFull,tFull,999999);
-        ubdOnly1 = ubCal(pData,disData1,Ω,xdOnly,tdOnly,999999);
-        ubHOnly1 = ubCal(pData,disData1,Ω,xHOnly,tHOnly,999999);
+        ubdet1 = ubCalP(pData,disData1,Ω,xdet,tdet,999999);
+        ubexp1 = ubCalP(pData,disData1,Ω,xexp,texp,999999);
+        ubFull1 = ubCalP(pData,disData1,Ω,xFull,tFull,999999);
+        ubdOnly1 = ubCalP(pData,disData1,Ω,xdOnly,tdOnly,999999);
+        ubHOnly1 = ubCalP(pData,disData1,Ω,xHOnly,tHOnly,999999);
         push!(ubList,[ubdet1,ubexp1,ubFull1,ubdOnly1,ubHOnly1]);
         println(n," ",[ubdet1,ubexp1,ubFull1,ubdOnly1,ubHOnly1]);
     end
