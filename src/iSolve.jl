@@ -1,7 +1,7 @@
 # build the LP to obtain the earliest possible starting time of an activity
 function iSolve(pData,iTarget,ubTemp = 9999999)
+    mp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
     # mp = Model(solver = GurobiSolver(OutputFlag = 0));
-    mp = Model(solver = GurobiSolver(OutputFlag = 0));
     @variable(mp, t[i in pData.II] >= 0);
     @variable(mp, 0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);
 
@@ -20,7 +20,8 @@ end
 
 # build the LP to obtain the latest possible starting time of an activity
 function lSolve(pData,iTarget,ubTemp = 999999)
-    mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    mp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
+    # mp = Model(solver = GurobiSolver(OutputFlag = 0));
     @variable(mp, t[i in pData.II] >= 0);
     @variable(mp, 0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);
 
@@ -39,8 +40,8 @@ end
 
 # build the LP to obtain the big M
 function iSolve_NC(pData,dDω,iTarget,brInfoω)
+    mp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
     # mp = Model(solver = GurobiSolver(OutputFlag = 0));
-    mp = Model(solver = GurobiSolver(OutputFlag = 0));
     @variable(mp, t[i in pData.II] >= 0);
     Dω = Dict();
 

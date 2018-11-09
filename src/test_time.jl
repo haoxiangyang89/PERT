@@ -1,4 +1,4 @@
-addprocs(20);
+addprocs(30);
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
 # test sbb
@@ -11,16 +11,18 @@ pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
 
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
-    Ωsize = [100,200,500,1000];
+    Ωsize = [100,200,300,400,500,750,1000];
     dDict = Dict();
     for Ωl in 1:length(Ωsize)
-        Ω = 1:Ωsize[Ωl];
-        ϵ = 1e-2;
+        global Ω = 1:Ωsize[Ωl];
+        global ϵ = 1e-2;
+        global pData;
         pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl]);
-        disData = disDataSet[1];
+        global pData = pData;
+        global disData = disDataSet[1];
 
-        allSucc = findSuccAll(pData);
-        distanceDict = Dict();
+        global allSucc = findSuccAll(pData);
+        global distanceDict = Dict();
         for i in pData.II
             for j in allSucc[i]
                 distanceDict[i,j] = detCal(pData,i,j);
@@ -30,7 +32,7 @@ for fileInd in 1:length(pathList)
         global sN = 20;
         global MM = 25;
         tic();
-        include("partSolve_Callback_tightened_sol.jl");
+        include("partSolve_Callback_tightened.jl");
         timedecomp = toc();
         gapdecomp = (ubCost - lbCost)/ubCost;
 

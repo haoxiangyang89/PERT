@@ -371,7 +371,8 @@ function obtainDet(pData,disData,Ω,mpTemp,ub,divSet,divDet)
 end
 
 function detCal(pData,i,j)
-    mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    mp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
+    #mp = Model(solver = GurobiSolver(OutputFlag = 0));
     @variables(mp, begin
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
       t[i in pData.II] >= 0

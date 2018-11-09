@@ -1,6 +1,7 @@
 # script for two-stage expected time expected magnitude disruption program
 function expModel(pData,eH,ed,M = 9999999)
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9));
+    mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-8,CPX_PARAM_EPINT = 1e-8));
+    # mp = Model(solver = GurobiSolver(IntFeasTol = 1e-9));
 
     @variable(mp,t0[i in pData.II] >= 0);
     @variable(mp,0 <= x0[i in pData.II, j in pData.Ji[i]] <= 1);

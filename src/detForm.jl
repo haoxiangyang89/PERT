@@ -2,7 +2,8 @@
 
 function detBuild(pData)
     # build the deterministic crashing optimization problem
-    mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    # mp = Model(solver = GurobiSolver(OutputFlag = 0));
+    mp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
     # mp = Model(solver = ClpSolver());
 
     @variable(mp, t[i in pData.II] >= 0);

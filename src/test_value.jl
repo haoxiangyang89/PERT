@@ -1,4 +1,4 @@
-addprocs(20);
+addprocs(30);
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
 # test sbb
@@ -10,6 +10,7 @@ pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
 
 # filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_Lognormal_Exponential/"
 dDict = Dict();
+ubList = Dict();
 global sN = 20;
 global MM = 25;
 for fileInd in 1:length(pathList)
@@ -73,7 +74,7 @@ for fileInd in 1:length(pathList)
         end
     end
     tic();
-    include("partSolve_Callback_tightened_sol.jl");
+    include("partSolve_Callback_tightened.jl");
     timeHOnly = toc();
     gapHOnly = (ubCost - lbCost)/ubCost;
     xHOnly = deepcopy(xbest);
@@ -83,7 +84,7 @@ for fileInd in 1:length(pathList)
 
     # full solution
     tic();
-    include("partSolve_Callback_tightened_sol.jl");
+    include("partSolve_Callback_tightened.jl");
     timeFull = toc();
     gapFull = (ubCost - lbCost)/ubCost;
     ubFull = ubCost;
@@ -97,7 +98,7 @@ for fileInd in 1:length(pathList)
                 tdOnly,xdOnly,gdOnly,ubdOnly,
                 tHOnly,xHOnly,ubHOnly,gapHOnly];
 
-    ubList = [];
+    ubList[fileInd] = [];
     for n in 1:20
         println("----------------Iteration $(n)----------------");
         disData1,Ω = autoUGen("LogNormal",Hparams,"Exponential",dparams,5000,1 - pData.p0);
@@ -107,7 +108,7 @@ for fileInd in 1:length(pathList)
         ubFull1 = ubCalP(pData,disData1,Ω,xFull,tFull,999999);
         ubdOnly1 = ubCalP(pData,disData1,Ω,xdOnly,tdOnly,999999);
         ubHOnly1 = ubCalP(pData,disData1,Ω,xHOnly,tHOnly,999999);
-        push!(ubList,[ubdet1,ubexp1,ubFull1,ubdOnly1,ubHOnly1]);
+        push!(ubList[fileInd],[ubdet1,ubexp1,ubFull1,ubdOnly1,ubHOnly1]);
         println(n," ",[ubdet1,ubexp1,ubFull1,ubdOnly1,ubHOnly1]);
     end
     save("test_Ext_value.jld","dDict",dDict,"ubList",ubList);
