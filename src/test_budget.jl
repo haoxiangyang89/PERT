@@ -10,7 +10,7 @@ pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
 
 # filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_Lognormal_Exponential/"
 dDict = Dict();
-Ωsize = [10,50,100,200,500,1000];
+Ωsize = [10,20,50,75,100,200,300,400,500];
 ErrorData = [];
 for fileInd in 1:length(pathList)
     dDict[fileInd] = Dict();
