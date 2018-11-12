@@ -9,10 +9,12 @@ pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
             "/home/haoxiang/PERT_tests/14_Lognormal_Exponential/",
             "/home/haoxiang/PERT_tests/19_Lognormal_Exponential/"];
 
+ErrorData = [];
+dDict = Dict();
 for fileInd in 1:length(pathList)
+    dDict[fileInd] = Dict();
     filePath = pathList[fileInd];
     Ωsize = [100,200,300,400,500,750,1000];
-    dDict = Dict();
     for Ωl in 1:length(Ωsize)
         global Ω = 1:Ωsize[Ωl];
         global ϵ = 1e-2;
@@ -29,12 +31,19 @@ for fileInd in 1:length(pathList)
             end
         end
         # our decomposition method
-        global sN = 20;
-        global MM = 25;
         tic();
-        include("partSolve_Callback_tightened.jl");
+        try
+            include("partSolve_Callback_tightened.jl");
+        catch
+            push!(ErrorData,disData);
+            save("ErrorData.jld","data",ErrorData);
+        end
         timedecomp = toc();
         gapdecomp = (ubCost - lbCost)/ubCost;
+        ubFull = ubCost;
+        lbFull = lbCost;
+        xFull = deepcopy(xbest);
+        tFull = deepcopy(tbest);
 
         # extensive formulation
         tic();
@@ -44,8 +53,8 @@ for fileInd in 1:length(pathList)
         lbmp = mext.objBound;
         gapext = (mext.objVal - mext.objBound)/mext.objVal;
         ubext = ubCal(pData,disData,Ω,xext,text,999999);
-        dDict[Ωsize[Ωl]] = [tbest,xbest,lbCost,ubCost,gapdecomp,timedecomp,
-                            text,xext,lbmp,ubmp,gapext,timeext];
+        dDict[fileInd][Ωsize[Ωl]] = [tFull,xFull,lbFull,ubFull,gapdecomp,timedecomp,
+                            text,xext,lbmp,ubmp,ubext,gapext,timeext];
+        save("test_Ext_time.jld","dDict",dDict);
     end
-    save("test_Ext_time.jld","dDict",dDict);
 end
