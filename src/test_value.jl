@@ -1,4 +1,4 @@
-addprocs(20);
+addprocs(30);
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
 # test sbb
@@ -10,8 +10,6 @@ pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
 
 # filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_Lognormal_Exponential/"
 dDict = Dict();
-global sN = 20;
-global MM = 25;
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
     Ωsize = 500;
@@ -73,7 +71,7 @@ for fileInd in 1:length(pathList)
         end
     end
     tic();
-    include("partSolve_Callback_tightened_sol.jl");
+    include("partSolve_Callback_tightened.jl");
     timeHOnly = toc();
     gapHOnly = (ubCost - lbCost)/ubCost;
     xHOnly = deepcopy(xbest);
@@ -83,7 +81,7 @@ for fileInd in 1:length(pathList)
 
     # full solution
     tic();
-    include("partSolve_Callback_tightened_sol.jl");
+    include("partSolve_Callback_tightened.jl");
     timeFull = toc();
     gapFull = (ubCost - lbCost)/ubCost;
     ubFull = ubCost;
