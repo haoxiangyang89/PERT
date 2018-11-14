@@ -19,6 +19,7 @@ for fileInd in 1:length(pathList)
     dDict[fileInd] = Dict();
     filePath = pathList[fileInd];
     disData1 = data1[fileInd];
+    Ω1 = 1:length(disData1);
     for Ωl in 1:length(Ωsize)
         global Ω = 1:Ωsize[Ωl];
         global ϵ = 1e-2;
@@ -58,7 +59,7 @@ for fileInd in 1:length(pathList)
                 tFull = deepcopy(tbest);
             end
 
-            ubTemp = ubCalP(pData1,disData1,Ω1,xFull,tFull,999999);
+            ubTemp = ubCalP(pData,disData1,Ω1,xFull,tFull,999999);
             push!(dDict[fileInd][Ωsize[Ωl]],[tFull,xFull,lbCost,ubCost,gapdecomp,timedecomp,ubTemp]);
             save("test_Ext_budget.jld","dDict",dDict);
             n += 1;
