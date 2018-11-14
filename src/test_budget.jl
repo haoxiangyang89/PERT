@@ -20,16 +20,16 @@ for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
     disData1 = data1[fileInd];
     for Ωl in 1:length(Ωsize)
-        global Ω = 1:Ωsize1[Ωl];
+        global Ω = 1:Ωsize[Ωl];
         global ϵ = 1e-2;
-        dDict[fileInd][Ωsize1[Ωl]] = [];
+        dDict[fileInd][Ωsize[Ωl]] = [];
         ubbudget = [];
         n = 1;
         while n <= 20
             # try
             global pData;
             global disDataSet;
-            pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize1[Ωl]);
+            pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl]);
             global disData = disDataSet[1];
 
             global allSucc = findSuccAll(pData);
@@ -59,7 +59,7 @@ for fileInd in 1:length(pathList)
             end
 
             ubTemp = ubCalP(pData1,disData1,Ω1,xFull,tFull,999999);
-            push!(dDict[fileInd][Ωsize1[Ωl]],[tFull,xFull,lbCost,ubCost,gapdecomp,timedecomp,ubTemp]);
+            push!(dDict[fileInd][Ωsize[Ωl]],[tFull,xFull,lbCost,ubCost,gapdecomp,timedecomp,ubTemp]);
             save("test_Ext_budget.jld","dDict",dDict);
             n += 1;
             # catch
