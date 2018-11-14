@@ -16,13 +16,14 @@ for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
     dDict[fileInd] = Dict();
     for Ωl in 1:length(Ωsize)
-        Ω = 1:Ωsize[Ωl];
-        ϵ = 1e-2;
+        global Ω = 1:Ωsize[Ωl];
+        global ϵ = 1e-2;
+        global pData;
         pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl]);
-        disData = disDataSet[1];
+        global disData = disDataSet[1];
 
-        allSucc = findSuccAll(pData);
-        distanceDict = Dict();
+        global allSucc = findSuccAll(pData);
+        global distanceDict = Dict();
         for i in pData.II
             for j in allSucc[i]
                 distanceDict[i,j] = detCal(pData,i,j);
