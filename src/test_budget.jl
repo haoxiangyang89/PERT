@@ -1,4 +1,4 @@
-addprocs(20);
+addprocs(30);
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
 # test sbb
@@ -11,26 +11,25 @@ pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
 # filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_Lognormal_Exponential/"
 dDict = Dict();
 Ωsize = [10,20,50,75,100,200,300,400,500];
-ErrorData = [];
+sNList = [0,0,0,0,20,20,20,20,20];
+MMList = [0,0,0,0,5,10,15,20,25];
+data5000Raw = load("data5000.jld");
+data1 = data5000Raw["dataUB"];
 for fileInd in 1:length(pathList)
     dDict[fileInd] = Dict();
     filePath = pathList[fileInd];
-    global pData1;
-    global disDataSet1;
-    pData1, disDataSet1, nameD, nameH, dparams, Hparams = genData(filePath,5000);
-    global Ω1 = 1:5000;
-    global disData1 = disDataSet1[1];
+    disData1 = data1[fileInd];
     for Ωl in 1:length(Ωsize)
-        global Ω = 1:Ωsize[Ωl];
+        global Ω = 1:Ωsize1[Ωl];
         global ϵ = 1e-2;
-        dDict[fileInd][Ωsize[Ωl]] = [];
+        dDict[fileInd][Ωsize1[Ωl]] = [];
         ubbudget = [];
         n = 1;
         while n <= 20
-            try
+            # try
             global pData;
             global disDataSet;
-            pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl]);
+            pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize1[Ωl]);
             global disData = disDataSet[1];
 
             global allSucc = findSuccAll(pData);
@@ -41,21 +40,32 @@ for fileInd in 1:length(pathList)
                 end
             end
             # our decomposition method
-            tic();
-            include("partSolve_Callback_tightened.jl");
-            timedecomp = toc();
-            gapdecomp = (ubCost - lbCost)/ubCost;
-            xFull = deepcopy(xbest);
-            tFull = deepcopy(tbest);
+            if Ωl < 5
+                tic();
+                include("partSolve_Callback_tightened.jl");
+                timedecomp = toc();
+                gapdecomp = (ubCost - lbCost)/ubCost;
+                xFull = deepcopy(xbest);
+                tFull = deepcopy(tbest);
+            else
+                global sN = sNList[Ωl];
+                global MM = MMList[Ωl];
+                tic();
+                include("partSolve_Callback_tightened_sol.jl");
+                timedecomp = toc();
+                gapdecomp = (ubCost - lbCost)/ubCost;
+                xFull = deepcopy(xbest);
+                tFull = deepcopy(tbest);
+            end
 
             ubTemp = ubCalP(pData1,disData1,Ω1,xFull,tFull,999999);
-            push!(dDict[fileInd][Ωsize[Ωl]],[tFull,xFull,lbCost,ubCost,gapdecomp,timedecomp,ubTemp]);
+            push!(dDict[fileInd][Ωsize1[Ωl]],[tFull,xFull,lbCost,ubCost,gapdecomp,timedecomp,ubTemp]);
             save("test_Ext_budget.jld","dDict",dDict);
             n += 1;
-            catch
-            println("Error in Data!");
-            push!(ErrorData,(fileInd,disData));
-            end
+            # catch
+            # println("Error in Data!");
+            # push!(ErrorData,(fileInd,disData));
+            # end
         end
     end
 end
