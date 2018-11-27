@@ -159,7 +159,7 @@ end
 # automatically uncertainty data generation: stratified
 function autoUGenStrata(nameH, Hparams, nameD, dparams, Ωt, Ωd, totalProb)
     disData = Dict();
-    Ω = 1:Ωn;
+    Ω = 1:(Ωt*Ωd);
     distrH = buildDistrn(nameH,Hparams);
 
     distrD = Dict();
