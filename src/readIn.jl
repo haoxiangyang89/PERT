@@ -283,27 +283,26 @@ function loadData(filePath,fName = "test.jld")
     return disDataSet;
 end
 
-function gridNetGen(n,m,pAddress,kAddress)
-    # grid network generation
-    nodeSet = [];
-    arcSet = [];
-    counter = 0;
-    for i in 0:m
-        # row
-        for j in 0:n
-            # column
-            counter += 1;
-            push!(nodeSet, counter);
-            if i < m
-                push!(arcSet,(counter, counter + n + 1));
-            end
-            if j < n
-                push!(arcSet,(counter, counter + 1));
-            end
-        end
-    end
+function genDataStrata(filePath,startaNo,sampleNo,dataSize = 1,pName = "test_P.csv",kName = "test_K.csv",ϕName = "test_Phi.csv",hName = "test_H.csv", saveOpt = 0)
+    # under the file path, look for test_P, test_K and test_Phi
+    pInputAdd = joinpath(filePath,pName);
+    kInputAdd = joinpath(filePath,kName);
+    ϕInputAdd = joinpath(filePath,ϕName);
+    hInputAdd = joinpath(filePath,hName);
 
-    # output the p file and k file given the size of the grid
-    writedlm(pAddress,pData,",");
-    writedlm(kAddress,kData,",");
+    pData = readInP(pInputAdd,kInputAdd);
+    nameD,dparams = readInUnc(ϕInputAdd);
+    nameH,Hparams = readH(hInputAdd);
+
+    disDataSet = [];
+
+    for ds in 1:dataSize
+        disData,Ω = autoUGenStrata(nameH,Hparams,nameD,dparams,startaNo,sampleNo,1 - pData.p0);
+        push!(disDataSet,disData);
+    end
+    if saveOpt == 0
+        return pData,disDataSet,nameD,nameH,dparams,Hparams;
+    else
+        save("test.jld","pData",pData,"disDataSet",disDataSet);
+    end
 end
