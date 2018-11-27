@@ -298,6 +298,7 @@ function genDataStrata(filePath,startaNo,sampleNo,dataSize = 1,pName = "test_P.c
 
     for ds in 1:dataSize
         disData,Ω = autoUGenStrata(nameH,Hparams,nameD,dparams,startaNo,sampleNo,1 - pData.p0);
+        disData = orderdisData(disData,Ω);
         push!(disDataSet,disData);
     end
     if saveOpt == 0
