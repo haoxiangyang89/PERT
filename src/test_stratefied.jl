@@ -29,7 +29,7 @@ for fileInd in 1:length(pathList)
             global disData = disDataSet[1];
             Ω = 1:(strataList[j]*sampleList[j]);
             tic();
-            text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-2,999999);
+            text,xext,fext,gext,mext = extForm_cheat_new(pData,disData,Ω,1e-2,999999);
             timeext = toc();
             ubmp = mext.objVal;
             lbmp = mext.objBound;

@@ -58,9 +58,11 @@ tt3 <- t.test(values11$dOnly,values11$FULL,alternative = "greater",paired = TRUE
 tt4 <- t.test(values11$HOnly,values11$FULL,alternative = "greater",paired = TRUE)
 
 time11 <- read.csv("/Users/haoxiangyang/Desktop/Git/PERT/src/time_11.csv",header = FALSE)
-png(file = "/Users/haoxiangyang/Desktop/Git/PERT/Writeup/case11_time.png", width= 10,height=6,units = 'in',res = 300);
-plot(time11$V1,time11$V2,pch = 20, col = "#377EB8", xlab = "sample size", ylab = "log(Time (sec))",
-     ylim = c(0,3500), cex = 2)
+time11 <- read.csv("/Users/haoxiangyang/Desktop/Git/PERT/src/time_14.csv",header = FALSE)
+png(file = "/Users/haoxiangyang/Desktop/Git/PERT/Writeup/case14_time.png", width= 10,height=6,units = 'in',res = 300);
+plot(time11$V1,time11$V2,pch = 20, col = "#377EB8", xlab = "sample size", ylab = "Time (sec)",
+     ylim = c(0,10000), cex = 2)
 points(time11$V1,time11$V3,pch = 20, col = "#E41A1C", cex = 2)
 legend("topleft",c("Decomposition","Extensive"),col = c("#377EB8","#E41A1C"),pch = 20);
+dev.off();
 dev.off();

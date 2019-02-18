@@ -231,6 +231,7 @@ function prunePart(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSu
     return divDet;
 end
 
+# find all subsequent nodes of activity i
 function findSuccAll(pData)
     allSucc = Dict();
     for i in pData.II
