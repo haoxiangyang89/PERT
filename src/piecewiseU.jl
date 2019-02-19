@@ -1,4 +1,4 @@
-import Base.Random.rand
+import Base.Random.rand,Base.mean
 
 struct piecewiseUniformSampler <: Sampleable{Univariate,Continuous}
     endPoints::Vector{Float64}
@@ -21,8 +21,8 @@ end
 function mean(s::piecewiseUniformSampler)
     # calculate the meann of the piecewise sampler
     y = 0
-    for i in 1:lenth(s.mass)
-        y += s.mass[i]*(s.endPoints[i+1] - s.endPoints[i])/2;
+    for i in 1:length(s.mass)
+        y += s.mass[i]*(s.endPoints[i+1] + s.endPoints[i])/2;
     end
     y
 end
