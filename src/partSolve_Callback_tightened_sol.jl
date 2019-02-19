@@ -1,3 +1,4 @@
+# calculate the largest possible starting time for each activity in any disrupted scenario
 Tmax = disData[length(Ω)].H + longestPath(pData)[0];
 pdData = deepcopy(pData);
 for i in pData.II
@@ -13,6 +14,7 @@ for i in pData.II
 end
 Tmax1 = lDict[0];
 
+# obtain how much time is from activity i to its successors j in the nominal case
 allSucc = findSuccAll(pData);
 distanceDict = Dict();
 for i in pData.II
@@ -21,6 +23,7 @@ for i in pData.II
     end
 end
 
+# sort the disruption time
 H = Dict();
 H[0] = 0;
 # remove the duplicate ones
@@ -93,7 +96,6 @@ ycoreList = [];
 errorList = [];
 
 function partBenders(cb)
-    println("lazy");
     # the callback function
     that = Dict();
     xhat = Dict();
@@ -160,8 +162,34 @@ function partBenders(cb)
     push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
     GCurrent = [dataList[ω][5] for ω in Ω];
     push!(GList,GCurrent);
+    println(["lazy",ubCost,MathProgBase.cbgetbestbound(cb)]);
 end
 
+function setSolcb(cb)
+    if setSolBool
+        for i in pData.II
+            setsolutionvalue(cb, t[i], tInc[i]);
+            for j in pData.Ji[i]
+                setsolutionvalue(cb, x[i,j], xInc[i,j]);
+            end
+            for par in 1:length(divSet[i])
+                if (tInc[i] >= H[divSet[i][par].startH])&(tInc[i] < H[divSet[i][par].endH])
+                    setsolutionvalue(cb, y[i,par],1);
+                else
+                    setsolutionvalue(cb, y[i,par],0);
+                end
+            end
+        end
+        for ω in Ω
+            setsolutionvalue(cb, θ[ω],θInc[ω]);
+        end
+        addsolution(cb);
+        println("Solution Updated");
+        @everywhere global setSolBool = false;
+    end
+end
+
+# solve smaller extensive formulation problem to obtain a good upper bound
 keepIter = true;
 lbHist = [];
 ubHist = [];
@@ -169,8 +197,10 @@ timeHist = [];
 cutHist = [];
 intSolHist = [];
 yhistList = [];
-
+# ubList is the list of upper bounds, tHList is the list of each activity's range of starting time
 ubList,tHList,ubInc,tInc,xInc,θInc = iniPart(pData,disData,Ω,sN,MM);
+# pre-separate the partition
+divSet,divDet = splitPar_CI(divSet,divDet,tHList);
 
 # move the createMaster_Callback here
 mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noThreads));
@@ -206,6 +236,7 @@ end
 @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
 
 @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
+global setSolBool = true;
 while keepIter
     tCurrent = Dict();
     xCurrent = Dict();
@@ -247,6 +278,8 @@ while keepIter
     end
 
     addlazycallback(mp, partBenders);
+    global setSolBool = true;
+    addheuristiccallback(mp, setSolcb);
     tic();
     solve(mp);
     tIter = toc();
@@ -311,9 +344,10 @@ while keepIter
         end
         #divSet,divDet = splitPar(divSet,divDet,newPartition);
         divSet,divDet = splitPar3(divSet,divDet,newPartition);
+        push!(cutHist,sum(length(cutSet[l][2]) for l in 1:length(cutSet)));
+        cutSet = deepcopy(cutSetNew);
+
     end
-    push!(cutHist,sum(length(cutSet[l][2]) for l in 1:length(cutSet)));
-    cutSet = deepcopy(cutSetNew);
 
     # correct all ycoreList
     for ll in 1:length(ycoreList)

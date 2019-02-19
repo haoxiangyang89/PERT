@@ -276,9 +276,9 @@ while keepIter
         end
         #divSet,divDet = splitPar(divSet,divDet,newPartition);
         divSet,divDet = splitPar3(divSet,divDet,newPartition);
+        push!(cutHist,sum(length(cutSet[l][2]) for l in 1:length(cutSet)));
+        cutSet = deepcopy(cutSetNew);
     end
-    push!(cutHist,sum(length(cutSet[l][2]) for l in 1:length(cutSet)));
-    cutSet = deepcopy(cutSetNew);
 
     # correct all ycoreList
     for ll in 1:length(ycoreList)
