@@ -17,3 +17,12 @@ function rand(s::piecewiseUniformSampler)
     x = (remain + s.mass[j])/s.mass[j]*(s.endPoints[j+1] - s.endPoints[j]) + s.endPoints[j];
     x
 end
+
+function mean(s::piecewiseUniformSampler)
+    # calculate the meann of the piecewise sampler
+    y = 0
+    for i in 1:lenth(s.mass)
+        y += s.mass[i]*(s.endPoints[i+1] - s.endPoints[i])/2;
+    end
+    y
+end
