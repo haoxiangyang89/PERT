@@ -23,7 +23,7 @@ function buildDistrn(nameDistr,paramDistr)
         mass = paramDistr[2];
         distrObj = piecewiseUniformSampler(endPts,mass);
     elseif nameDistr == "Singleton"
-        endPts = [paramDistr[1]];
+        endPts = [paramDistr[1],paramDistr[1]];
         mass = [1];
         distrObj = piecewiseUniformSampler(endPts,mass);
     end
