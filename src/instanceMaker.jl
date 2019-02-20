@@ -1,5 +1,5 @@
 # serial example maker
-function serialMaker(n,k,D0,d0,e0,p0,B,nameH,Hparams,Ωsize)
+function serialMaker(n,k,D0,d0,e0,p0,B,b0,nameH,Hparams,Ωsize)
     # 0 as the last activity
     II = [0];
     Ji = Dict();
@@ -19,7 +19,7 @@ function serialMaker(n,k,D0,d0,e0,p0,B,nameH,Hparams,Ωsize)
 
         Ji[i] = [1];
         b[i] = Dict();
-        b[i][1] = 1;
+        b[i][1] = b0;
         eff[i] = Dict();
         eff[i][1] = e0;
     end
@@ -55,9 +55,10 @@ function serialMaker(n,k,D0,d0,e0,p0,B,nameH,Hparams,Ωsize)
     end
     distrD[0] = 0;
     disData = Dict();
-    H = mean(buildDistrn(nameH,Hparams))
+    #H = mean(buildDistrn(nameH,Hparams))
     #disData[1] = disInfo(H,distrD,1 - pData.p0)
     disData,Ω = autoUGen(nameH,Hparams,"Singleton",distrD,Ωsize,1 - pData.p0);
+    disData = orderdisData(disData,Ω);
 
-    return pData,disData;
+    return pData,disData,Ω;
 end
