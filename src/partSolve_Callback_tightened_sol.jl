@@ -79,8 +79,8 @@ for i in pData.II
         end
     end
 end
-xbest = Dict();
-tbest = Dict();
+xbest = deepcopy(xdet);
+tbest = deepcopy(tdet);
 θbest = Dict();
 lbCost = -Inf;
 lbCostList = [];
