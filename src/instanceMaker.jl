@@ -126,3 +126,83 @@ function serialMaker2(n,k,D0,d0,e0,p0,B,b0,nameH,Hparams,Ωsize)
 
     return pData,disData,Ω;
 end
+
+function specialMaker(n,k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
+    # make the special case where Full << exp/HOnly/dOnly/det
+    II = [0,1,2,3,4];
+    for i in 1:n
+        push!(II,4+i);
+    end
+
+    Pre = Dict();
+    Succ = Dict();
+    for i in II
+        Pre[i] = [];
+        Succ[i] = [];
+    end
+
+    K = [(1,2),(3,4)];
+    push!(Pre[2],1);
+    push!(Pre[4],3);
+    for i in 1:n
+        push!(K,(4,4+i));
+        push!(Pre[4+i],4);
+        push!(Succ[4],4+i);
+    end
+
+    for i in II
+        if i != 0
+            push!(K,(i,0));
+            push!(Pre[0],i);
+            push!(Succ[i],0);
+        end
+    end
+
+    Ji = Dict();
+    D = Dict();
+    D[0] = 0;
+    Ji[0] = [];
+
+    b = Dict();
+    b[0] = Dict();
+    eff = Dict();
+    eff[0] = Dict();
+
+    # set up the activity duration, crashing budget and effect
+    D[1] = k*D0;
+    D[2] = D0;
+    D[3] = k*D0;
+    D[4] = D0;
+    for i in 1:n
+        D[4+i] = D0;
+    end
+    for i in II
+        Ji[i] = [1];
+        b[i] = Dict();
+        b[i][1] = b0;
+        eff[i] = Dict();
+        eff[i][1] = e0;
+    end
+    pData = pInfo(II,Ji,D,b,eff,B,p0,K,Pre,Succ);
+
+    # set up the activity disruption information
+    distrD = Dict();
+    distrName = Dict();
+    for i in 0:4
+        distrName[i] = "Singleton";
+    end
+    distrD[1] = d0;
+    distrD[2] = k*d0;
+    distrD[3] = 0;
+    distrD[4] = 0;
+    distrD[0] = 0;
+
+    for i in 1:n
+        distrName[i] = "DiscreteNonParametric";
+        distrD[4+i] = [[0,(k-1)*D0/pd - 1],[1-pd,pd]];
+    end
+    disData = Dict();
+    disData,Ω = autoUGen(nameH,Hparams,["DiscreteNonParametric"],distrD,Ωsize,1 - pData.p0);
+    disData = orderdisData(disData,Ω);
+
+end

@@ -26,6 +26,10 @@ function buildDistrn(nameDistr,paramDistr)
         endPts = [paramDistr[1],paramDistr[1]];
         mass = [1];
         distrObj = piecewiseUniformSampler(endPts,mass);
+    elseif nameDistr == "DiscreteNonParametric"
+        xs = paramDistr[1];
+        ps = paramDistr[2];
+        distrObj = DiscreteNonParametric(xs,ps);
     end
 
     return distrObj;
@@ -141,7 +145,11 @@ function autoUGen(nameH, Hparams, nameD, dparams, Ωn, totalProb)
 
     distrD = Dict();
     for i in keys(dparams)
-        distrD[i] = buildDistrn(nameD,dparams[i]);
+        if typeof(nameD) == String
+            distrD[i] = buildDistrn(nameD,dparams[i]);
+        else
+            distrD[i] = buildDistrn(nameD,dparams[i]);
+        end
     end
 
     for ω in Ω
