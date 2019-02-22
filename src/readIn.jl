@@ -29,7 +29,7 @@ function buildDistrn(nameDistr,paramDistr)
     elseif nameDistr == "Categorical"
         ps = paramDistr[1];
         xs = paramDistr[2];
-        distrObj = CategoricalSampler(ps,xs);
+        distrObj = CategoricalSamplerNew(ps,xs);
     end
 
     return distrObj;

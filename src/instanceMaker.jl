@@ -203,4 +203,6 @@ function specialMaker(k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
     disData = Dict();
     disData,Ω = autoUGen(nameH,Hparams,distrName,distrD,Ωsize,1 - pData.p0);
     disData = orderdisData(disData,Ω);
+
+    return pData,disData,Ω;
 end
