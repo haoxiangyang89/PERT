@@ -198,7 +198,7 @@ function specialMaker(k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
     distrD[0] = 0;
     distrD[5] = (k-1)*D0 - pd;
     distrName[6] = "Categorical";
-    distrD[6] = [[1-pd,pd]];
+    distrD[6] = [[1-pd,pd],[0,(k-1)*D0/pd - 1]];
 
     disData = Dict();
     disData,Ω = autoUGen(nameH,Hparams,distrName,distrD,Ωsize,1 - pData.p0);

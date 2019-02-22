@@ -6,8 +6,8 @@ struct piecewiseUniformSampler <: Sampleable{Univariate,Continuous}
 end
 
 struct CategoricalSampler <: Sampleable{Univariate,Discrete}
-    category::Vector{Float64}
     mass::Vector{Float64}
+    category::Vector{Float64}
 end
 
 function rand(s::piecewiseUniformSampler)
