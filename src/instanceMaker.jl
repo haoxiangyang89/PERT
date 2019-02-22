@@ -197,8 +197,8 @@ function specialMaker(k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
     distrD[4] = 0;
     distrD[0] = 0;
     distrD[5] = (k-1)*D0 - pd;
-    distrName[6] = "DiscreteNonParametric";
-    distrD[6] = [[0,(k-1)*D0/pd - 1],[1-pd,pd]];
+    distrName[6] = "Categorical";
+    distrD[6] = [[1-pd,pd]];
 
     disData = Dict();
     disData,Ω = autoUGen(nameH,Hparams,distrName,distrD,Ωsize,1 - pData.p0);

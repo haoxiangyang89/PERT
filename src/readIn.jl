@@ -26,10 +26,10 @@ function buildDistrn(nameDistr,paramDistr)
         endPts = [paramDistr[1],paramDistr[1]];
         mass = [1];
         distrObj = piecewiseUniformSampler(endPts,mass);
-    elseif nameDistr == "DiscreteNonParametric"
-        xs = paramDistr[1];
-        ps = paramDistr[2];
-        distrObj = DiscreteNonParametric(xs,ps);
+    elseif nameDistr == "Categorical"
+        ps = paramDistr[1];
+        xs = paramDistr[2];
+        distrObj = CategoricalSampler(ps,xs);
     end
 
     return distrObj;

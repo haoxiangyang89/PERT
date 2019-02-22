@@ -5,6 +5,11 @@ struct piecewiseUniformSampler <: Sampleable{Univariate,Continuous}
     mass::Vector{Float64}
 end
 
+struct CategoricalSampler <: Sampleable{Univariate,Discrete}
+    category::Vector{Float64}
+    mass::Vector{Float64}
+end
+
 function rand(s::piecewiseUniformSampler)
     l = rand();
     pieces = length(s.mass);
@@ -25,4 +30,8 @@ function mean(s::piecewiseUniformSampler)
         y += s.mass[i]*(s.endPoints[i+1] + s.endPoints[i])/2;
     end
     y
+end
+
+function rand(s::CategoricalSampler)
+    s.category[rand(Categorical(s.mass))]
 end
