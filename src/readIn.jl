@@ -148,7 +148,7 @@ function autoUGen(nameH, Hparams, nameD, dparams, Ωn, totalProb)
         if typeof(nameD) == String
             distrD[i] = buildDistrn(nameD,dparams[i]);
         else
-            distrD[i] = buildDistrn(nameD,dparams[i]);
+            distrD[i] = buildDistrn(nameD[i],dparams[i]);
         end
     end
 

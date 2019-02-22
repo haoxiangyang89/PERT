@@ -127,10 +127,10 @@ function serialMaker2(n,k,D0,d0,e0,p0,B,b0,nameH,Hparams,Ωsize)
     return pData,disData,Ω;
 end
 
-function specialMaker(n,k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
+function specialMaker(k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
     # make the special case where Full << exp/HOnly/dOnly/det
     II = [0,1,2,3,4];
-    for i in 1:n
+    for i in 1:2
         push!(II,4+i);
     end
 
@@ -141,10 +141,10 @@ function specialMaker(n,k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
         Succ[i] = [];
     end
 
-    K = [(1,2),(3,4)];
+    K = [(1,2),(3,4),(4,5),(4,6)];
     push!(Pre[2],1);
     push!(Pre[4],3);
-    for i in 1:n
+    for i in 1:2
         push!(K,(4,4+i));
         push!(Pre[4+i],4);
         push!(Succ[4],4+i);
@@ -173,7 +173,7 @@ function specialMaker(n,k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
     D[2] = D0;
     D[3] = k*D0;
     D[4] = D0;
-    for i in 1:n
+    for i in 1:2
         D[4+i] = D0;
     end
     for i in II
@@ -188,7 +188,7 @@ function specialMaker(n,k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
     # set up the activity disruption information
     distrD = Dict();
     distrName = Dict();
-    for i in 0:4
+    for i in 0:5
         distrName[i] = "Singleton";
     end
     distrD[1] = d0;
@@ -196,13 +196,11 @@ function specialMaker(n,k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
     distrD[3] = 0;
     distrD[4] = 0;
     distrD[0] = 0;
+    distrD[5] = (k-1)*D0 - pd;
+    distrName[6] = "DiscreteNonParametric";
+    distrD[6] = [[0,(k-1)*D0/pd - 1],[1-pd,pd]];
 
-    for i in 1:n
-        distrName[i] = "DiscreteNonParametric";
-        distrD[4+i] = [[0,(k-1)*D0/pd - 1],[1-pd,pd]];
-    end
     disData = Dict();
-    disData,Ω = autoUGen(nameH,Hparams,["DiscreteNonParametric"],distrD,Ωsize,1 - pData.p0);
+    disData,Ω = autoUGen(nameH,Hparams,distrName,distrD,Ωsize,1 - pData.p0);
     disData = orderdisData(disData,Ω);
-
 end
