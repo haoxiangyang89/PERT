@@ -35,3 +35,12 @@ end
 function rand(s::CategoricalSamplerNew)
     s.category[rand(Categorical(s.mass))]
 end
+
+function mean(s::CategoricalSamplerNew)
+    # calculate the meann of the piecewise sampler
+    y = 0
+    for i in 1:length(s.mass)
+        y += s.mass[i]*s.category[i];
+    end
+    y
+end

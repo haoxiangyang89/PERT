@@ -127,7 +127,7 @@ function serialMaker2(n,k,D0,d0,e0,p0,B,b0,nameH,Hparams,Ωsize)
     return pData,disData,Ω;
 end
 
-function specialMaker(k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
+function specialMaker(k,k1,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize,distrName,distrD)
     # make the special case where Full << exp/HOnly/dOnly/det
     II = [0,1,2,3,4];
     for i in 1:2
@@ -141,9 +141,11 @@ function specialMaker(k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
         Succ[i] = [];
     end
 
-    K = [(1,2),(3,4),(4,5),(4,6)];
+    K = [(1,2),(3,4)];
     push!(Pre[2],1);
+    push!(Succ[1],2);
     push!(Pre[4],3);
+    push!(Succ[3],4);
     for i in 1:2
         push!(K,(4,4+i));
         push!(Pre[4+i],4);
@@ -171,7 +173,7 @@ function specialMaker(k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
     # set up the activity duration, crashing budget and effect
     D[1] = k*D0;
     D[2] = D0;
-    D[3] = k*D0;
+    D[3] = k1*D0;
     D[4] = D0;
     for i in 1:2
         D[4+i] = D0;
@@ -186,20 +188,6 @@ function specialMaker(k,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize)
     pData = pInfo(II,Ji,D,b,eff,B,p0,K,Pre,Succ);
 
     # set up the activity disruption information
-    distrD = Dict();
-    distrName = Dict();
-    for i in 0:5
-        distrName[i] = "Singleton";
-    end
-    distrD[1] = d0;
-    distrD[2] = k*d0;
-    distrD[3] = 0;
-    distrD[4] = 0;
-    distrD[0] = 0;
-    distrD[5] = (k-1)*D0 - pd;
-    distrName[6] = "Categorical";
-    distrD[6] = [[1-pd,pd],[0,(k-1)*D0/pd - 1]];
-
     disData = Dict();
     disData,Ω = autoUGen(nameH,Hparams,distrName,distrD,Ωsize,1 - pData.p0);
     disData = orderdisData(disData,Ω);
