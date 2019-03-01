@@ -39,6 +39,7 @@ def detBuild(pData):
 def expModel(pData,eH,ed,M = 9999999):
     # script for two-stage expected time expected magnitude disruption program
     mp = Model('expected_model')
+    mp.Params.OutputFlag = 0
     
     # set up variables
     t0 = mp.addVars(pData.II, lb = 0, name = "t0")
@@ -97,9 +98,10 @@ def extForm(pData,disData,Omega,prec = 1e-4,TL = 36000):
         M[omega] = sum(max(pData.D[i],pData.D[i]+disData[omega].d[i]) for i in pData.II if i != 0)
         
     mp = Model('extensive_model')
-    mp.Params.IntFeasTol = 1e-9
+    mp.Params.IntFeasTol = 1e-8
     mp.Params.TimeLimit = TL
     mp.Params.MIPGap = prec
+    mp.Params.OutputFlag = 0
     
     HDiff = {}
     for omega in Omega:

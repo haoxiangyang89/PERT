@@ -93,7 +93,6 @@ tcoreList = [];
 xcoreList = [];
 ycoreList = [];
 θcoreList = [];
-errorList = [];
 
 function partBenders(cb)
     # the callback function

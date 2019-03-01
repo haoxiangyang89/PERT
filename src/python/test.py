@@ -20,7 +20,7 @@ from extForm import *
 from ubCalFunc import *
 from tighten import *
 
-OmegaSize = 1
+OmegaSize = 50
 pData,disDataSet,nameD,nameH,dparams,Hparams = genData('/Users/haoxiangyang/Desktop/PERT_tests/14_Lognormal_Exponential/',OmegaSize)
 Omega = list(range(OmegaSize))
 disData = disDataSet[0]

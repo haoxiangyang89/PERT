@@ -27,4 +27,9 @@ class disInfo:
         self.H = H
         self.d = d
         self.prDis = prDis
-        
+
+# define the partition type
+class partType:
+    def __init__(self,startH,endH):
+        self.startH = startH
+        self.endH = endH

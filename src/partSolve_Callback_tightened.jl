@@ -200,7 +200,6 @@ while keepIter
             πk = cutSet[nc][2][l][3];
             λk = cutSet[nc][2][l][4];
             γk = cutSet[nc][2][l][5];
-            rhsExpr = vk;
             @constraint(mp, θ[ω] >= vk + sum(πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]) +
                 sum(λk[i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) +
                 sum(γk[i,par]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par])
