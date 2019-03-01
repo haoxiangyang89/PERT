@@ -252,7 +252,7 @@ function findSuccAll(pData)
     return allSucc;
 end
 
-function iniPart(pData,disData,Ω,sN,MM)
+function iniPart(pData,disData,Ω,sN,MM,returnOpt = 0)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     H = Dict();
     H[0] = 0;
@@ -271,6 +271,8 @@ function iniPart(pData,disData,Ω,sN,MM)
     tBest = Dict();
     xBest = Dict();
     θBest = Dict();
+    textList = [];
+    xextList = [];
     for m in 1:MM
         #randList = rand(Ω,sN);
         disData1 = Dict();
@@ -281,6 +283,8 @@ function iniPart(pData,disData,Ω,sN,MM)
             disData1[i].prDis = (1 - pData.p0)/length(Ω1);
         end
         text,xext,fext,gext,mext = extForm_cheat(pData,disData1,Ω1,1e-4,999999);
+        push!(textList,text);
+        push!(xextList,xext);
         ubext,cωList = ubCalP(pData,disData,Ω,xext,text,999999,1);
         push!(ubList,ubext);
         # record the best solution
@@ -308,7 +312,11 @@ function iniPart(pData,disData,Ω,sN,MM)
         tHend = minimum([ω for ω in keys(H) if H[ω] >= maximum(tList[i])]);
         push!(tHList,[i,tHstart,tHend]);
     end
-    return ubList,tHList,ubMin,tBest,xBest,θBest;
+    if returnOpt == 0
+        return ubList,tHList,ubMin,tBest,xBest,θBest;
+    else
+        return ubList,tHList,ubMin,tBest,xBest,θBest,textList,xextList;
+    end
 end
 
 function splitAny(PartSet,PartDet,splitInfo)

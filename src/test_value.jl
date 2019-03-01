@@ -13,11 +13,11 @@ pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
 dDict = Dict();
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
-    Ωsize = 500;
+    Ωsize = 50;
     global Ω = 1:Ωsize;
     global ϵ = 1e-2;
     global pData;
-    pData, disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
+    pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
     global pData = pData;
     # data = load("test_cuts.jld");
     # disData = deepcopy(data["disData"]);

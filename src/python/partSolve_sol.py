@@ -189,7 +189,7 @@ for ii in range(len(textList)):
     ycoreItem = {}
     for i in pData.II:
         for par in range(len(divSet[i])):
-            if (tbest[i] >= H[divSet[i][par].startH])and(tbest[i] < H[divSet[i][par].endH]):
+            if (textList[ii][i] >= H[divSet[i][par].startH])and(textList[ii][i] < H[divSet[i][par].endH]):
                 ycoreItem[i,par] = 1
             else:
                 ycoreItem[i,par] = 0
