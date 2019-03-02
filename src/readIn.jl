@@ -145,7 +145,7 @@ function autoUGen(nameH, Hparams, nameD, dparams, Ωn, totalProb)
 
     distrD = Dict();
     for i in keys(dparams)
-        if typeof(nameD) == typeof(a) == Dict{Any,Any}
+        if typeof(nameD) == Dict{Any,Any}
             distrD[i] = buildDistrn(nameD[i],dparams[i]);
         else
             distrD[i] = buildDistrn(nameD,dparams[i]);
