@@ -13,7 +13,7 @@ pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
 dDict = Dict();
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
-    Ωsize = 50;
+    Ωsize = 500;
     global Ω = 1:Ωsize;
     global ϵ = 1e-2;
     global pData;
@@ -71,6 +71,7 @@ for fileInd in 1:length(pathList)
             end
         end
     end
+    #tHOnly,xHOnly,fHOnly,gHOnly,mHOnly = extForm_cheat(pData,disData,Ω,1e-4,999999);
     tic();
     include("partSolve_Callback_tightened.jl");
     timeHOnly = toc();
@@ -81,6 +82,7 @@ for fileInd in 1:length(pathList)
     ubHOnly = ubCalP(pData,disData,Ω,xHOnly,tHOnly,999999);
 
     # full solution
+    #tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999);
     tic();
     include("partSolve_Callback_tightened.jl");
     timeFull = toc();

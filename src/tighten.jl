@@ -262,6 +262,161 @@ function brInfoExt(pData,disData,Ω,brInfo,ωSeq)
     return brInfo;
 end
 
+# exploit the logical relationships to tighten the divSet and divDet
+# assume for every activity, there are only three partitions [-1,0,1]
+function divExploit(pData,disData,H,PartSet,PartDet,distanceDict)
+    iterBool = true;
+    earlyT = Dict();
+    lateT = Dict();
+    for i in pData.II
+        # earlyT is the index of H that is right before the earliest possible starting time of i
+        # earlyT is the index of H that is right after the latest possible starting time of i
+        earlyT[i] = 0;
+        lateT[i] = maximum(keys(H));
+        for l in 1:length(PartSet[i])
+            if PartDet[i][l] == 1
+                earlyT[i] = PartSet[i][l].endH;
+            end
+        end
+        for l in length(PartSet[i]):-1:1
+            if PartDet[i][l] == -1
+                lateT[i] = PartSet[i][l].startH;
+            end
+        end
+    end
+    while iterBool
+        # if the partition is updated then keep iteration
+        iterBool = false;
+        for i in pData.II
+            earlyPoss = H[earlyT[i]];
+            latePoss = H[lateT[i]];
+            for j in pData.II
+                if (i,j) in keys(distanceDict)
+                    # if j is after i
+                    if latePoss > H[maximum([PartSet[j][l].endH for l in 1:length(PartSet[j]) if PartDet[j][l] == 0])] - distanceDict[i,j]
+                        latePoss = H[maximum([PartSet[j][l].endH for l in 1:length(PartSet[j]) if PartDet[j][l] == 0])] - distanceDict[i,j];
+                    end
+                elseif (j,i) in keys(distanceDict)
+                    # if j is before i
+                    if earlyPoss < H[minimum([PartSet[j][l].startH for l in 1:length(PartSet[j]) if PartDet[j][l] == 0])] + distanceDict[j,i]
+                        earlyPoss = H[minimum([PartSet[j][l].startH for l in 1:length(PartSet[j]) if PartDet[j][l] == 0])] + distanceDict[j,i];
+                    end
+                end
+            end
+            lateSet = [hInd for hInd in keys(H) if H[hInd] > latePoss];
+            if lateSet != []
+                lateTNew = minimum(lateSet);
+            else
+                lateTNew = maximum(keys(H));
+            end
+            earlySet = [hInd for hInd in keys(H) if H[hInd] <= earlyPoss];
+            earlyTNew = maximum(earlySet);
+            if lateTNew < lateT[i]
+                lateT[i] = lateTNew;
+                iterBool = true;
+            end
+            if earlyTNew > earlyT[i]
+                earlyT[i] = earlyTNew;
+                iterBool = true;
+            end
+        end
+    end
+
+    divSetNew = Dict();
+    divDetNew = Dict();
+    for i in pData.II
+        divSetNew[i] = [];
+        divDetNew[i] = [];
+        for l in 1:length(PartSet[i])
+            # 1 set
+            if earlyT[i] >= PartSet[i][l].endH
+                push!(divSetNew[i],deepcopy(PartSet[i][l]));
+                push!(divDetNew[i],1);
+            elseif (earlyT[i] > PartSet[i][l].startH)&(earlyT[i] < PartSet[i][l].endH)&(PartDet[i][l] == 0)
+                divSetNew[i][length(divSetNew[i])].endH = earlyT[i];
+                push!(divSetNew[i],deepcopy(PartSet[i][l]));
+                divSetNew[i][length(divSetNew[i])].startH = earlyT[i];
+                push!(divDetNew[i],0);
+            else
+                push!(divSetNew[i],deepcopy(PartSet[i][l]));
+                push!(divDetNew[i],0);
+            end
+        end
+        for l in length(divSetNew[i]):-1:1
+            # -1 set
+            if lateT[i] <= divSetNew[i][l].startH
+                divDetNew[i][l] = -1;
+            elseif (lateT[i] >= divSetNew[i][l].startH)&(lateT[i] < divSetNew[i][l].endH)&(divDetNew[i][l] == 0)
+                if l + 1 <= length(divSetNew[i])
+                    # if there is another partition after this
+                    divSetNew[i][l+1].startH = lateT[i];
+                    divSetNew[i][l].endH = lateT[i];
+                else
+                    # if this is the last partition
+                    push!(divSetNew[i],deepcopy(PartSet[i][l]));
+                    divSetNew[i][l].endH = lateT[i];
+                    divSetNew[i][l+1].startH = lateT[i];
+                    push!(divDetNew[i],-1);
+                end
+            end
+        end
+    end
+    return divSetNew,divDetNew;
+end
+
+# break the divSet and get 2 updated divSets and divDets
+function breakDiv(pData,disData,H,divSet,divDet,iBreak,locBreak,distanceDict)
+    # iBreak is the activity to branch on
+    # locBreak is the point of H to break on
+
+    # obtain the branching pieces
+    stopBool = false;
+    currentDiv = 1;
+    while !(stopBool)
+        if (locBreak < divSet[iBreak][currentDiv].endH)&(locBreak >= divSet[iBreak][currentDiv].startH)
+            stopBool = true;
+        else
+            currentDiv += 1;
+        end
+    end
+
+    newPartSet1 = deepcopy(divSet);
+    newPartDet1 = deepcopy(divDet);
+    newPartSet1[iBreak] = Array{partType,1}();
+    newPartDet1[iBreak] = Array{Int64,1}();
+    for l in 1:length(divSet[iBreak])
+        if l == currentDiv
+            push!(newPartSet1[iBreak],partType(divSet[iBreak][l].startH,locBreak));
+            push!(newPartDet1[iBreak],1);
+            push!(newPartSet1[iBreak],partType(locBreak,divSet[iBreak][l].endH));
+            push!(newPartDet1[iBreak],0);
+        else
+            push!(newPartSet1[iBreak],divSet[iBreak][l]);
+            push!(newPartDet1[iBreak],divDet[iBreak][l]);
+        end
+    end
+    divSet1,divDet1 = divExploit(pData,disData,H,newPartSet1,newPartDet1,distanceDict);
+
+    newPartSet2 = deepcopy(divSet);
+    newPartDet2 = deepcopy(divDet);
+    newPartSet2[iBreak] = Array{partType,1}();
+    newPartDet2[iBreak] = Array{Int64,1}();
+    for l in 1:length(divSet[iBreak])
+        if l == currentDiv
+            push!(newPartSet2[iBreak],partType(divSet[iBreak][l].startH,locBreak));
+            push!(newPartDet2[iBreak],0);
+            push!(newPartSet2[iBreak],partType(locBreak,divSet[iBreak][l].endH));
+            push!(newPartDet2[iBreak],-1);
+        else
+            push!(newPartSet2[iBreak],divSet[iBreak][l]);
+            push!(newPartDet2[iBreak],divDet[iBreak][l]);
+        end
+    end
+    divSet2,divDet2 = divExploit(pData,disData,H,newPartSet2,newPartDet2,distanceDict);
+
+    return divSet1,divDet1,divSet2,divDet2;
+end
+
 function obtainBds(pData,disData,Ω,mpTemp,ub)
     H = Dict();
     H[0] = 0;

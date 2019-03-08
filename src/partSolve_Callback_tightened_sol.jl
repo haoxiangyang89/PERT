@@ -79,19 +79,13 @@ for i in pData.II
         end
     end
 end
-xbest = deepcopy(xdet);
-tbest = deepcopy(tdet);
+
 θbest = Dict();
 lbCost = -Inf;
-lbCostList = [];
-ubCostList = [ubdet];
-ubCost = ubdet;
+lbCostList = [lbCost];
 GList = [];
 cutSel = Dict();
 cutThreshold = 10;
-tcoreList = [];
-xcoreList = [];
-ycoreList = [];
 
 function partBenders(cb)
     # the callback function
@@ -112,9 +106,12 @@ function partBenders(cb)
     for ω in Ω
         θhat[ω] = getvalue(θ[ω]);
     end
-    push!(tcoreList,that);
-    push!(xcoreList,xhat);
-    push!(ycoreList,yhat);
+    tTemp = deepcopy(that);
+    xTemp = deepcopy(xhat);
+    yTemp = deepcopy(yhat);
+    push!(tcoreList,tTemp);
+    push!(xcoreList,xTemp);
+    push!(ycoreList,yTemp);
 
     # generate cuts
     πdict = Dict();
@@ -197,8 +194,16 @@ yhistList = [];
 # ubList is the list of upper bounds, tHList is the list of each activity's range of starting time
 #ubList,tHList,ubInc,tInc,xInc,θInc = iniPart(pData,disData,Ω,sN,MM);
 ubList,tHList,ubInc,tInc,xInc,θInc,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1);
+xbest = deepcopy(xInc);
+tbest = deepcopy(tInc);
+ubCost = min(ubInc,ubdet);
+ubCostList = [ubCost];
+
 # pre-separate the partition
 divSet,divDet = splitPar_CI(divSet,divDet,tHList);
+tcoreList = [];
+xcoreList = [];
+ycoreList = [];
 for l in 1:length(textList)
     push!(tcoreList,textList[l]);
     push!(xcoreList,xextList[l]);
@@ -207,13 +212,14 @@ for l in 1:length(textList)
         for par in 1:length(divSet[i])
             if (textList[l][i] >= H[divSet[i][par].startH])&(textList[l][i] < H[divSet[i][par].endH])
                 ycoreItem[i,par] = 1;
-            elseif (abs(textList[l][i] - H[length(Ω) + 1]) < 1e-4)&(divSet[i][par].endH == length(Ω) + 1)
+            elseif (abs(textList[l][i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
                 ycoreItem[i,par] = 1;
             else
                 ycoreItem[i,par] = 0;
             end
         end
     end
+    push!(ycoreList,ycoreItem);
 end
 
 # move the createMaster_Callback here
@@ -251,7 +257,6 @@ while keepIter
             πk = cutSet[nc][2][l][3];
             λk = cutSet[nc][2][l][4];
             γk = cutSet[nc][2][l][5];
-            rhsExpr = vk;
             @constraint(mp, θ[ω] >= vk + sum(πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]) +
                 sum(λk[i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) +
                 sum(γk[i,par]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par])
@@ -276,32 +281,43 @@ while keepIter
     end
 
     # find the current best upper bound from coreList
-    lbmin = Inf;
+    lbmin = ubInc;
     coreMinind = -1;
-    θbest = Dict();
+    θbestR = Dict();
     for l in 1:length(tcoreList)
-        θcore = Dict();
-        for ω in Ω
-            θcore[ω] = sub_divT(pData,disData[ω],ω,tcoreList[l],xcoreList[l],ycoreList[l],divSet,H,lDict);
-        end
+        θcore = pmap(ω -> sub_divT(pData,disData[ω],ω,tcoreList[l],xcoreList[l],ycoreList[l],divSet,H,lDict),Ω);
         lbcore = pData.p0*(tcoreList[l][0]) + sum(θcore[ω]*disData[ω].prDis for ω in Ω);
         if lbcore < lbmin
             lbmin = lbcore;
             coreMinind = l;
-            θbest = θcore;
+            for ω in 1:length(Ω)
+                θbestR[Ω[ω]] = θcore[ω];
+            end
         end
     end
-    for i in pData.II
-        setvalue(t[i], tcoreList[coreMinind][i]);
-        for j in pData.Ji[i]
-            setvalue(x[i,j],xcoreList[coreMinind][i,j]);
+    if coreMinind != -1
+        for i in pData.II
+            setvalue(t[i], tcoreList[coreMinind][i]);
+            for j in pData.Ji[i]
+                setvalue(x[i,j],xcoreList[coreMinind][i,j]);
+            end
+            for par in 1:length(divSet[i])
+                setvalue(y[i,par],ycoreList[coreMinind][i,par]);
+            end
         end
-        for par in 1:length(divSet[i])
-            setvalue(y[i,par],ycoreList[coreMinind][i,par]);
+        for ω in Ω
+            setvalue(θ[ω],θbestR[ω]);
         end
-    end
-    for ω in Ω
-        setvalue(θ[ω],θbest[ω]);
+    else
+        for i in pData.II
+            setvalue(t[i], tInc[i]);
+            for j in pData.Ji[i]
+                setvalue(x[i,j],xInc[i,j]);
+            end
+        end
+        for ω in Ω
+            setvalue(θ[ω],θInc[ω]);
+        end
     end
 
     addlazycallback(mp, partBenders);
@@ -324,6 +340,7 @@ while keepIter
         for ω in Ω
             θInc[ω] = θbest[ω];
         end
+        ubInc = minimum(ubCostList);
     end
 
     # only select currently tight cuts
@@ -350,8 +367,8 @@ while keepIter
     if (ubCost - lbCost)/ubCost < ϵ
         keepIter = false;
     else
-        cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
-        cutSetNew = selectCuts2(cutSet,cutSel);
+        # cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
+        # cutSetNew = selectCuts2(cutSet,cutSel);
         GCurrent = GList[length(GList)];
         GFrac = Dict();
         for i in pData.II
@@ -372,7 +389,7 @@ while keepIter
         #divSet,divDet = splitPar(divSet,divDet,newPartition);
         divSet,divDet = splitPar3(divSet,divDet,newPartition);
         push!(cutHist,sum(length(cutSet[l][2]) for l in 1:length(cutSet)));
-        cutSet = deepcopy(cutSetNew);
+        # cutSet = deepcopy(cutSetNew);
     end
 
     # correct all ycoreList
@@ -381,7 +398,7 @@ while keepIter
             for par in 1:length(divSet[i])
                 if (tcoreList[ll][i] >= H[divSet[i][par].startH])&(tcoreList[ll][i] < H[divSet[i][par].endH])
                     ycoreList[ll][i,par] = 1;
-                elseif (abs(tcoreList[ll][i] - H[length(Ω) + 1]) < 1e-4)&(divSet[i][par].endH == length(Ω) + 1)
+                elseif (abs(tcoreList[ll][i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
                     ycoreList[ll][i,par] = 1;
                 else
                     ycoreList[ll][i,par] = 0;
