@@ -89,7 +89,7 @@ for i in pData.II
 end
 
 # pre-separate the partition
-divSet,divDet = splitPar_CI(divSet,divDet,tHList);
+#divSet,divDet = splitPar_CI(divSet,divDet,tHList);
 tcoreList = [];
 xcoreList = [];
 ycoreList = [];
@@ -112,69 +112,74 @@ for l in 1:length(textList)
 end
 
 function partBenders(cb)
-    println("lazy");
-    # the callback function
-    that = Dict();
-    xhat = Dict();
-    θhat = Dict();
-    yhat = Dict();
-    # obtain the solution at the current node
-    for i in pData.II
-        that[i] = getvalue(t[i]);
-        for j in pData.Ji[i]
-            xhat[i,j] = getvalue(x[i,j]);
-        end
-        for par in 1:length(divSet[i])
-            yhat[i,par] = round(getvalue(y[i,par]));
-        end
-    end
-    for ω in Ω
-        θhat[ω] = getvalue(θ[ω]);
-    end
-    push!(tcoreList,that);
-    push!(xcoreList,xhat);
-    push!(ycoreList,yhat);
-
-    # generate cuts
-    πdict = Dict();
-    λdict = Dict();
-    γdict = Dict();
-    vk = Dict();
-    θInt = Dict();
-    ubCost = minimum(ubCostList);
-    ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1);
-    if ubCost > ubTemp
+    currentLB = MathProgBase.cbgetbestbound(cb);
+    println("lazy,$(currentLB)");
+    if currentLB <= minimum(ubCostList)
+        # the callback function
+        that = Dict();
+        xhat = Dict();
+        θhat = Dict();
+        yhat = Dict();
+        # obtain the solution at the current node
         for i in pData.II
-            tbest[i] = that[i];
+            that[i] = getvalue(t[i]);
             for j in pData.Ji[i]
-                xbest[i,j] = xhat[i,j];
+                xhat[i,j] = getvalue(x[i,j]);
+            end
+            for par in 1:length(divSet[i])
+                yhat[i,par] = round(getvalue(y[i,par]));
             end
         end
-    end
-    push!(ubCostList,ubTemp);
-
-    #dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
-    # obtain the cores
-    tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
-    dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
-    for ω in Ω
-        πdict[ω] = dataList[ω][1];
-        λdict[ω] = dataList[ω][2];
-        γdict[ω] = dataList[ω][3];
-        vk[ω] = dataList[ω][4];
-    end
-    cutDual = [];
-    for ω in Ω
-        if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
-            push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
-            @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*(t[i] - that[i]) for i in pData.II) +
-                sum(sum(λdict[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                sum(sum(γdict[ω][i,par]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
+        for ω in Ω
+            θhat[ω] = getvalue(θ[ω]);
         end
+        push!(tcoreList,that);
+        push!(xcoreList,xhat);
+        push!(ycoreList,yhat);
+
+        # generate cuts
+        πdict = Dict();
+        λdict = Dict();
+        γdict = Dict();
+        vk = Dict();
+        θInt = Dict();
+        ubCost = minimum(ubCostList);
+        ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1);
+        if ubCost > ubTemp
+            for i in pData.II
+                tbest[i] = that[i];
+                for j in pData.Ji[i]
+                    xbest[i,j] = xhat[i,j];
+                end
+            end
+        end
+        push!(ubCostList,ubTemp);
+
+        #dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
+        # obtain the cores
+        tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
+        dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
+        for ω in Ω
+            πdict[ω] = dataList[ω][1];
+            λdict[ω] = dataList[ω][2];
+            γdict[ω] = dataList[ω][3];
+            vk[ω] = dataList[ω][4];
+        end
+        cutDual = [];
+        for ω in Ω
+            if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
+                push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
+                @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*(t[i] - that[i]) for i in pData.II) +
+                    sum(sum(λdict[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
+                    sum(sum(γdict[ω][i,par]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
+            end
+        end
+        push!(cutSet,[[deepcopy(that),deepcopy(xhat),deepcopy(yhat),deepcopy(divSet)],cutDual]);
+        GCurrent = [dataList[ω][5] for ω in Ω];
+        push!(GList,GCurrent);
+    else
+        return JuMP.StopTheSolver;
     end
-    push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
-    GCurrent = [dataList[ω][5] for ω in Ω];
-    push!(GList,GCurrent);
 end
 
 keepIter = true;
@@ -219,6 +224,7 @@ while keepIter
 
     # move the createMaster_Callback here
     mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noThreads));
+    # mp = Model(solver = GurobiSolver(Threads = noThreads));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -233,8 +239,8 @@ while keepIter
     @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
     @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
 
-#    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
-    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) + sum((t[i] - tbest[i])^2 for i in pData.II));
+    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
+    # @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) + sum((t[i] - tbest[i])^2 for i in pData.II));
 
     ybest = Dict();
     for i in pData.II
@@ -367,7 +373,51 @@ while keepIter
                 end
                 locBreak = Int64(floor((GFrac[lGFracInd][1]*2/3 + GFrac[lGFracInd][2]*1/3)));
                 divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreak,distanceDict);
+                lGFracInd1 = -1;
+                largest1 = -Inf;
+                fracTopLG = -1;
+                fracBotLG = -1;
+                for i in pData.II
+                    if (!(i in allSucc[lGFracInd]))&(!(lGFracInd in allSucc[i]))&(i != lGFracInd)
+                        if GFrac[i] != []
+                            fracTop = min(GFrac[i][2],maximum([divSet1[i][par].endH for par in 1:length(divSet1[i]) if divDet1[i][par] == 0]));
+                            fracBot = max(GFrac[i][1],minimum([divSet1[i][par].startH for par in 1:length(divSet1[i]) if divDet1[i][par] == 0]));
+                            #println(i," ",fracTop," ",fracBot);
+                            if fracTop - fracBot > largest1
+                                largest1 = fracTop - fracBot;
+                                lGFracInd1 = i;
+                                fracTopLG = fracTop;
+                                fracBotLG = fracBot;
+                            end
+                        end
+                    end
+                end
+                newPartition1 = [(lGFracInd1,fracBotLG,fracTopLG)];
+                #newPartition1 = [(lGFracInd,locBreak,GFrac[lGFracInd][2])];
+                divSet1,divDet1 = splitPar(divSet1,divDet1,newPartition1);
                 push!(treeList,[divSet1,divDet1,lbCost,deepcopy(cutSet),0]);
+
+                lGFracInd2 = -1;
+                largest2 = -Inf;
+                fracTopLG = -1;
+                fracBotLG = -1;
+                for i in pData.II
+                    if (!(i in allSucc[lGFracInd]))&(!(lGFracInd in allSucc[i]))&(i != lGFracInd)
+                        if GFrac[i] != []
+                            fracTop = min(GFrac[i][2],maximum([divSet2[i][par].endH for par in 1:length(divSet2[i]) if divDet2[i][par] == 0]));
+                            fracBot = max(GFrac[i][1],minimum([divSet2[i][par].startH for par in 1:length(divSet2[i]) if divDet2[i][par] == 0]));
+                            if fracTop - fracBot > largest2
+                                largest2 = fracTop - fracBot;
+                                lGFracInd2 = i;
+                                fracTopLG = fracTop;
+                                fracBotLG = fracBot;
+                            end
+                        end
+                    end
+                end
+                newPartition2 = [(lGFracInd2,fracBotLG,fracTopLG)];
+                #newPartition2 = [(lGFracInd,GFrac[lGFracInd][1],locBreak)];
+                divSet2,divDet2 = splitPar(divSet2,divDet2,newPartition2);
                 push!(treeList,[divSet2,divDet2,lbCost,deepcopy(cutSet),0]);
             end
             # divSet,divDet = splitPar(divSet,divDet,newPartition);

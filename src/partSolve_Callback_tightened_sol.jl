@@ -14,7 +14,6 @@ for i in pData.II
 end
 Tmax1 = lDict[0];
 
-# obtain how much time is from activity i to its successors j in the nominal case
 allSucc = findSuccAll(pData);
 distanceDict = Dict();
 for i in pData.II
@@ -23,7 +22,6 @@ for i in pData.II
     end
 end
 
-# sort the disruption time
 H = Dict();
 H[0] = 0;
 # remove the duplicate ones
@@ -41,10 +39,21 @@ for hIter in keys(H)
     HRev[H[hIter]] = hIter;
 end
 
-# start with an upper bound based on the deterministic solution
-tdet,xdet,fdet = detBuild(pData);
-ubdet = ubCalP(pData,disData,Ω,xdet,tdet,Tmax1);
-brInfo = precludeRelNew(pData,H,ubdet);
+# start with an upper bound based on the smaller stochastic solution
+ubList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1);
+lbCost = -Inf;
+lbCostList = [];
+ubCost = ubInc;
+ubCostList = [ubCost];
+
+GList = [];
+cutSel = Dict();
+tcoreList = [];
+xcoreList = [];
+ycoreList = [];
+errorList = [];
+
+brInfo = precludeRelNew(pData,H,ubCost);
 
 # initialize cutSet and divSet
 cutSet = [];
@@ -80,127 +89,8 @@ for i in pData.II
     end
 end
 
-θbest = Dict();
-lbCost = -Inf;
-lbCostList = [lbCost];
-GList = [];
-cutSel = Dict();
-cutThreshold = 10;
-
-function partBenders(cb)
-    # the callback function
-    that = Dict();
-    xhat = Dict();
-    θhat = Dict();
-    yhat = Dict();
-    # obtain the solution at the current node
-    for i in pData.II
-        that[i] = getvalue(t[i]);
-        for j in pData.Ji[i]
-            xhat[i,j] = getvalue(x[i,j]);
-        end
-        for par in 1:length(divSet[i])
-            yhat[i,par] = round(getvalue(y[i,par]));
-        end
-    end
-    for ω in Ω
-        θhat[ω] = getvalue(θ[ω]);
-    end
-    tTemp = deepcopy(that);
-    xTemp = deepcopy(xhat);
-    yTemp = deepcopy(yhat);
-    push!(tcoreList,tTemp);
-    push!(xcoreList,xTemp);
-    push!(ycoreList,yTemp);
-
-    # generate cuts
-    πdict = Dict();
-    λdict = Dict();
-    γdict = Dict();
-    vk = Dict();
-    θInt = Dict();
-    ubCost = minimum(ubCostList);
-    ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1);
-    if ubCost > ubTemp
-        for i in pData.II
-            tbest[i] = that[i];
-            for j in pData.Ji[i]
-                xbest[i,j] = xhat[i,j];
-            end
-        end
-        for ω in Ω
-            θbest[ω] = θInt[ω];
-        end
-    end
-    push!(ubCostList,ubTemp);
-
-    #dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
-    # obtain the cores
-    tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
-    dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
-    for ω in Ω
-        πdict[ω] = dataList[ω][1];
-        λdict[ω] = dataList[ω][2];
-        γdict[ω] = dataList[ω][3];
-        vk[ω] = dataList[ω][4];
-    end
-    cutDual = [];
-    for ω in Ω
-        if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
-            push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
-            @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*(t[i] - that[i]) for i in pData.II) +
-                sum(sum(λdict[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                sum(sum(γdict[ω][i,par]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
-        end
-    end
-    push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
-    GCurrent = [dataList[ω][5] for ω in Ω];
-    push!(GList,GCurrent);
-    println(["lazy",ubCost,MathProgBase.cbgetbestbound(cb)]);
-end
-
-function setSolcb(cb)
-    if setSolBool
-        for i in pData.II
-            setsolutionvalue(cb, t[i], tInc[i]);
-            for j in pData.Ji[i]
-                setsolutionvalue(cb, x[i,j], xInc[i,j]);
-            end
-            for par in 1:length(divSet[i])
-                if (tInc[i] >= H[divSet[i][par].startH])&(tInc[i] < H[divSet[i][par].endH])
-                    setsolutionvalue(cb, y[i,par],1);
-                else
-                    setsolutionvalue(cb, y[i,par],0);
-                end
-            end
-        end
-        for ω in Ω
-            setsolutionvalue(cb, θ[ω],θInc[ω]);
-        end
-        addsolution(cb);
-        println("Solution Updated");
-        @everywhere global setSolBool = false;
-    end
-end
-
-# solve smaller extensive formulation problem to obtain a good upper bound
-keepIter = true;
-lbHist = [];
-ubHist = [];
-timeHist = [];
-cutHist = [];
-intSolHist = [];
-yhistList = [];
-# ubList is the list of upper bounds, tHList is the list of each activity's range of starting time
-#ubList,tHList,ubInc,tInc,xInc,θInc = iniPart(pData,disData,Ω,sN,MM);
-ubList,tHList,ubInc,tInc,xInc,θInc,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1);
-xbest = deepcopy(xInc);
-tbest = deepcopy(tInc);
-ubCost = min(ubInc,ubdet);
-ubCostList = [ubCost];
-
 # pre-separate the partition
-divSet,divDet = splitPar_CI(divSet,divDet,tHList);
+#divSet,divDet = splitPar_CI(divSet,divDet,tHList);
 tcoreList = [];
 xcoreList = [];
 ycoreList = [];
@@ -222,26 +112,118 @@ for l in 1:length(textList)
     push!(ycoreList,ycoreItem);
 end
 
-# move the createMaster_Callback here
-mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noThreads));
-# mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7));
-@variables(mp, begin
-  θ[ω in Ω] >= 0
-  0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
-  t[i in pData.II] >= 0
-  y[i in pData.II, par in 1:length(divSet[i])], Bin
-end);
-@constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
-@constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
-@constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
-@constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSet[i][par].endH]*y[i,par] for par in 1:length(divSet[i])));
-@constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSet[i])));
-@constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
-@constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
+function partBenders(cb)
+    currentLB = MathProgBase.cbgetbestbound(cb);
+    println("lazy,$(currentLB)");
+    if currentLB <= minimum(ubCostList)
+        # the callback function
+        that = Dict();
+        xhat = Dict();
+        θhat = Dict();
+        yhat = Dict();
+        # obtain the solution at the current node
+        for i in pData.II
+            that[i] = getvalue(t[i]);
+            for j in pData.Ji[i]
+                xhat[i,j] = getvalue(x[i,j]);
+            end
+            for par in 1:length(divSet[i])
+                yhat[i,par] = round(getvalue(y[i,par]));
+            end
+        end
+        for ω in Ω
+            θhat[ω] = getvalue(θ[ω]);
+        end
+        push!(tcoreList,that);
+        push!(xcoreList,xhat);
+        push!(ycoreList,yhat);
 
-@objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
-global setSolBool = true;
+        # generate cuts
+        πdict = Dict();
+        λdict = Dict();
+        γdict = Dict();
+        vk = Dict();
+        θInt = Dict();
+        ubCost = minimum(ubCostList);
+        ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1);
+        if ubCost > ubTemp
+            for i in pData.II
+                tbest[i] = that[i];
+                for j in pData.Ji[i]
+                    xbest[i,j] = xhat[i,j];
+                end
+            end
+        end
+        push!(ubCostList,ubTemp);
+
+        #dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
+        # obtain the cores
+        tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
+        dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
+        for ω in Ω
+            πdict[ω] = dataList[ω][1];
+            λdict[ω] = dataList[ω][2];
+            γdict[ω] = dataList[ω][3];
+            vk[ω] = dataList[ω][4];
+        end
+        cutDual = [];
+        for ω in Ω
+            if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
+                push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
+                @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*(t[i] - that[i]) for i in pData.II) +
+                    sum(sum(λdict[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
+                    sum(sum(γdict[ω][i,par]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
+            end
+        end
+        push!(cutSet,[[deepcopy(that),deepcopy(xhat),deepcopy(yhat),deepcopy(divSet)],cutDual]);
+        GCurrent = [dataList[ω][5] for ω in Ω];
+        push!(GList,GCurrent);
+    else
+        return JuMP.StopTheSolver;
+    end
+end
+
+keepIter = true;
+lbHist = [];
+ubHist = [];
+timeHist = [];
+cutHist = [];
+intSolHist = [];
+yhistList = [];
+
 while keepIter
+    # correct all ycoreList
+    for ll in 1:length(ycoreList)
+        for i in pData.II
+            for par in 1:length(divSet[i])
+                if (tcoreList[ll][i] >= H[divSet[i][par].startH])&(tcoreList[ll][i] < H[divSet[i][par].endH])
+                    ycoreList[ll][i,par] = 1;
+                else
+                    ycoreList[ll][i,par] = 0;
+                end
+            end
+        end
+    end
+
+    # move the createMaster_Callback here
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noThreads));
+    # mp = Model(solver = GurobiSolver(Threads = noThreads));
+    @variables(mp, begin
+      θ[Ω] >= 0
+      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
+      t[i in pData.II] >= 0
+      y[i in pData.II, par in 1:length(divSet[i])], Bin
+    end);
+    @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
+    @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+    @constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSet[i][par].endH]*y[i,par] for par in 1:length(divSet[i])));
+    @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSet[i])));
+    @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
+    @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
+
+    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
+
     tCurrent = Dict();
     xCurrent = Dict();
     θCurrent = Dict();
@@ -257,7 +239,7 @@ while keepIter
             πk = cutSet[nc][2][l][3];
             λk = cutSet[nc][2][l][4];
             γk = cutSet[nc][2][l][5];
-            @constraint(mp, θ[ω] >= vk + sum(πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]) +
+            @constraint(mp, mp[:θ][ω] >= vk + sum(πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]) +
                 sum(λk[i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) +
                 sum(γk[i,par]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par])
                 for par in 1:length(cutSet[nc][1][4][i])) for i in pData.II));
@@ -281,43 +263,40 @@ while keepIter
     end
 
     # find the current best upper bound from coreList
-    lbmin = ubInc;
-    coreMinind = -1;
-    θbestR = Dict();
-    for l in 1:length(tcoreList)
-        θcore = pmap(ω -> sub_divT(pData,disData[ω],ω,tcoreList[l],xcoreList[l],ycoreList[l],divSet,H,lDict),Ω);
-        lbcore = pData.p0*(tcoreList[l][0]) + sum(θcore[ω]*disData[ω].prDis for ω in Ω);
-        if lbcore < lbmin
-            lbmin = lbcore;
-            coreMinind = l;
-            for ω in 1:length(Ω)
-                θbestR[Ω[ω]] = θcore[ω];
+    # lbmin = ubInc;
+    # coreMinind = -1;
+    # θbestR = Dict();
+    # for l in 1:length(tcoreList)
+    #     θcore = pmap(ω -> sub_divT(pData,disData[ω],ω,tcoreList[l],xcoreList[l],ycoreList[l],divSet,H,lDict),Ω);
+    #     lbcore = pData.p0*(tcoreList[l][0]) + sum(θcore[ω]*disData[ω].prDis for ω in Ω);
+    #     if lbcore < lbmin
+    #         lbmin = lbcore;
+    #         coreMinind = l;
+    #         for ω in 1:length(Ω)
+    #             θbestR[Ω[ω]] = θcore[ω];
+    #         end
+    #     end
+    # end
+    ybest = Dict();
+    for i in pData.II
+        setvalue(t[i], tbest[i]);
+        for j in pData.Ji[i]
+            setvalue(x[i,j],xbest[i,j]);
+        end
+        for par in 1:length(divSet[i])
+            if (tbest[i] >= H[divSet[i][par].startH])&(tbest[i] < H[divSet[i][par].endH])
+                ybest[i,par] = 1;
+            elseif (abs(tbest[i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
+                ybest[i,par] = 1;
+            else
+                ybest[i,par] = 0;
             end
+            setvalue(y[i,par],ybest[i,par]);
         end
     end
-    if coreMinind != -1
-        for i in pData.II
-            setvalue(t[i], tcoreList[coreMinind][i]);
-            for j in pData.Ji[i]
-                setvalue(x[i,j],xcoreList[coreMinind][i,j]);
-            end
-            for par in 1:length(divSet[i])
-                setvalue(y[i,par],ycoreList[coreMinind][i,par]);
-            end
-        end
-        for ω in Ω
-            setvalue(θ[ω],θbestR[ω]);
-        end
-    else
-        for i in pData.II
-            setvalue(t[i], tInc[i]);
-            for j in pData.Ji[i]
-                setvalue(x[i,j],xInc[i,j]);
-            end
-        end
-        for ω in Ω
-            setvalue(θ[ω],θInc[ω]);
-        end
+    θbest = pmap(ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict),Ω);
+    for ω in Ω
+        setvalue(θ[ω],θbest[ω]);
     end
 
     addlazycallback(mp, partBenders);
@@ -327,21 +306,9 @@ while keepIter
     solve(mp);
     tIter = toc();
     push!(timeHist,tIter);
+
     lbCost = getobjectivevalue(mp);
     push!(lbHist,lbCost);
-    # update the current best solution
-    if minimum(ubCostList) < ubInc
-        for i in pData.II
-            tInc[i] = tbest[i];
-            for j in pData.Ji[i]
-                xInc[i,j] = xbest[i,j];
-            end
-        end
-        for ω in Ω
-            θInc[ω] = θbest[ω];
-        end
-        ubInc = minimum(ubCostList);
-    end
 
     # only select currently tight cuts
     for i in pData.II
@@ -391,40 +358,6 @@ while keepIter
         push!(cutHist,sum(length(cutSet[l][2]) for l in 1:length(cutSet)));
         # cutSet = deepcopy(cutSetNew);
     end
-
-    # correct all ycoreList
-    for ll in 1:length(ycoreList)
-        for i in pData.II
-            for par in 1:length(divSet[i])
-                if (tcoreList[ll][i] >= H[divSet[i][par].startH])&(tcoreList[ll][i] < H[divSet[i][par].endH])
-                    ycoreList[ll][i,par] = 1;
-                elseif (abs(tcoreList[ll][i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
-                    ycoreList[ll][i,par] = 1;
-                else
-                    ycoreList[ll][i,par] = 0;
-                end
-            end
-        end
-    end
-
-    # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noThreads));
-    # mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7));
-    @variables(mp, begin
-      θ[ω in Ω] >= 0
-      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
-      t[i in pData.II] >= 0
-      y[i in pData.II, par in 1:length(divSet[i])], Bin
-    end);
-    @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
-    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
-    @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
-    @constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSet[i][par].endH]*y[i,par] for par in 1:length(divSet[i])));
-    @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSet[i])));
-    @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
-    @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
-
-    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
 end
 
 # need a cut selection process within the callback

@@ -194,3 +194,48 @@ function specialMaker(k,k1,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize,distrName,di
 
     return pData,disData,Ω;
 end
+
+# experiments file generator
+function experimentgen(filePath,dataSize,Ωsize,Hskewness,Hμ,Dmag,Doption = "r",pName = "test_P.csv",kName = "test_K.csv")
+    # read in the deterministic network
+    pInputAdd = joinpath(filePath,pName);
+    kInputAdd = joinpath(filePath,kName);
+
+    pData = readInP(pInputAdd,kInputAdd);
+    nameD = "Exponential";
+    nameH = "PiecewiseU";
+    tdet,xdet,fdet = detBuild(pData);
+    TDet = tdet[0];
+
+    # determine the H and d distributions
+    #Hparams = [[0,(1 - Hskewness)*TDet,TDet],[Hskewness,1 - Hskewness]];
+    Hparams = [[0,Hμ,Hμ/(1 - Hskewness)],[Hskewness,1-Hskewness]];
+    dparams = Dict();
+    if Doption == "a"
+        for i in pData.II
+            dparams[i] = Dmag*pData.D[i];
+        end
+    elseif Doption == "d"
+        dInd = sortperm([pData.D[i] for i in pData.II if i != 0]);
+        for i in 1:length(dInd)
+            dparams[dInd[i]] = Dmag*pData.D[length(dInd) - i + 1];
+        end
+    else
+        randInd = randperm(length(pData.II) - 1);       # excluding 0
+        for i in pData.II
+            if i != 0
+                dparams[i] = Dmag*pData.D[randInd[i]];
+            end
+        end
+    end
+
+    disDataSet = [];
+    # generate the data and save to filePath
+    for ds in 1:dataSize
+        disData,Ω = autoUGen(nameH,Hparams,nameD,dparams,Ωsize,1 - pData.p0);
+        disData = orderdisData(disData,Ω);
+        push!(disDataSet,disData);
+    end
+
+    return disDataSet;
+end

@@ -30,6 +30,11 @@ function buildDistrn(nameDistr,paramDistr)
         ps = paramDistr[1];
         xs = paramDistr[2];
         distrObj = CategoricalSamplerNew(ps,xs);
+    elseif nameDistr == "Triangular"
+        a = paramDistr[1];
+        b = paramDistr[2];
+        c = paramDistr[3];
+        distrObj = TriangularDist(a, b, c);
     end
 
     return distrObj;
