@@ -1,4 +1,4 @@
-function solveMP_para(divSet,divDet,cutSet,tcoreList,xcoreList,ycoreList,ubCost,tbest,xbest,noTh)
+function solveMP_para(pData,disData,divSet,divDet,cutSet,tcoreList,xcoreList,ycoreList,ubCost,tbest,xbest,noTh)
     function partBenders(cb)
         currentLB = MathProgBase.cbgetbestbound(cb);
         println("lazy,$(currentLB)");
