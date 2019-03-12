@@ -214,7 +214,9 @@ function experimentgen(filePath,dataSize,Ωsize,Hskewness,μp,Dmag,Doption = "r"
     dparams = Dict();
     if Doption == "a"
         for i in pData.II
-            dparams[i] = Dmag*pData.D[i];
+            if i != 0
+                dparams[i] = Dmag*pData.D[i];
+            end
         end
     elseif Doption == "d"
         dInd = sortperm([pData.D[i] for i in pData.II if i != 0]);
