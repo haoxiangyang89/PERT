@@ -169,7 +169,7 @@ function solveMP_para(pData,disData,H,Ω,lDict,allSucc,distanceDict,divSet,divDe
     mpStatus = solve(mp);
     mpObj = getobjectivevalue(mp);
 
-    return mpStatus,mpObj,GList,tbest,xbest,minimum(ubCostList);
+    return mpStatus,mpObj,GList,tbest,xbest,minimum(ubCostList),cutSet;
 end
 
 function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
@@ -361,6 +361,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
             for ibatch in 1:length(divSetList)
                 if (mpSolveList[ibatch][2] < ubCost)&(mpSolveList[ibatch][1] == :Optimal)
                     GList = mpSolveList[ibatch][3];
+                    cutSet = mpSolveList[ibatch][7];
                     GCurrent = GList[length(GList)];
                     GFrac = Dict();
                     lbCost = mpSolveList[ibatch][2];
