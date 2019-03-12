@@ -169,7 +169,7 @@ function solveMP_para(pData,disData,H,Ω,lDict,allSucc,distanceDict,divSet,divDe
     mpStatus = solve(mp);
     mpObj = getobjectivevalue(mp);
 
-    return mpStatus,mpObj,GList,tbest,xbest,minimum(ubCostList),cutSet;
+    return mpStatus,mpObj,GList,tbest,xbest,minimum(ubCostList),cutSet,tcoreList,xcoreList,ycoreList;
 end
 
 function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
@@ -335,7 +335,16 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
             ubCost,tbest,xbest,noTh),1:length(divSetList));
         tIter = toc();
         push!(timeHist,tIter);
-        ubCost = minimum([mpSolveList[ib][6] for ib in 1:length(divSetList)]);
+        for ib in 1:length(divSetList)
+            if mpSolveList[ib][6] < ubCost
+                ubCost = mpSolveList[ib][6];
+                tbest = mpSolveList[ib][4];
+                xbest = mpSolveList[ib][5];
+            end
+            tcoreList.append!(mpSolveList[ib][8]);
+            xcoreList.append!(mpSolveList[ib][9]);
+            ycoreList.append!(mpSolveList[ib][10]);
+        end
         push!(ubHist,ubCost);
         for ibatch in 1:length(divSetList)
             mpStatus = mpSolveList[ibatch][1];
@@ -448,4 +457,5 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     end
 
     # need a cut selection process within the callback
+    return tbest,xbest,ubCost,lbOverAll;
 end
