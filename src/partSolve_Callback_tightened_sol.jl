@@ -190,6 +190,15 @@ timeHist = [];
 cutHist = [];
 intSolHist = [];
 yhistList = [];
+mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noThreads));
+# mp = Model(solver = GurobiSolver(Threads = noThreads));
+@variables(mp, begin
+  θ[Ω] >= 0
+  0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
+  t[i in pData.II] >= 0
+  y[i in pData.II, par in 1:length(divSet[i])], Bin
+end);
+
 
 while keepIter
     # correct all ycoreList

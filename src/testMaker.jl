@@ -20,6 +20,20 @@ for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
     for Hskewness in HsList
         pData,disDataSet = experimentgen(filePath,dataSize,Ωsize,Hskewness,μp,Dmag);
-        save(filePath*"test1_$()_$(Hskewness).jld","pData",pData,"disDataSet",disDataSet);
+        save(filePath*"test1_$(fileInd)_$(Hskewness).jld","pData",pData,"disDataSet",disDataSet);
+    end
+end
+
+# make the d test
+Dmag = 1000;
+μp = 1/2;
+Hskewness = 1/2;
+dataSize = 50;
+Ωsize = 100;
+for fileInd in 1:length(pathList)
+    filePath = pathList[fileInd];
+    for dOpt in ["a","d","r"]
+        pData,disDataSet = experimentgen(filePath,dataSize,Ωsize,Hskewness,μp,Dmag,dOpt);
+        save(filePath*"test2_$(fileInd)_$(dOpt).jld","pData",pData,"disDataSet",disDataSet);
     end
 end
