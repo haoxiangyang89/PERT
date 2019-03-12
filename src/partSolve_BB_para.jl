@@ -341,9 +341,9 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
                 tbest = mpSolveList[ib][4];
                 xbest = mpSolveList[ib][5];
             end
-            tcoreList.append!(mpSolveList[ib][8]);
-            xcoreList.append!(mpSolveList[ib][9]);
-            ycoreList.append!(mpSolveList[ib][10]);
+            append!(tcoreList,mpSolveList[ib][8]);
+            append!(xcoreList,mpSolveList[ib][9]);
+            append!(ycoreList,mpSolveList[ib][10]);
         end
         push!(ubHist,ubCost);
         for ibatch in 1:length(divSetList)
