@@ -72,6 +72,6 @@ for fileInd in 1:length(pathList)
                                 tHOnly,xHOnly,fHOnly,ubHOnly,
                                 tFull,xFull,ubFull];
         end
+        save(filePath*"test1_data.jld","dDict",dDict);
     end
-    save(filePath*"test1_data.jld","dDict",dDict);
 end
