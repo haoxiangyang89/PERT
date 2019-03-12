@@ -196,7 +196,7 @@ function specialMaker(k,k1,D0,d0,e0,p0,pd,B,b0,nameH,Hparams,Ωsize,distrName,di
 end
 
 # experiments file generator
-function experimentgen(filePath,dataSize,Ωsize,Hskewness,Hμ,Dmag,Doption = "r",pName = "test_P.csv",kName = "test_K.csv")
+function experimentgen(filePath,dataSize,Ωsize,Hskewness,μp,Dmag,Doption = "r",pName = "test_P.csv",kName = "test_K.csv")
     # read in the deterministic network
     pInputAdd = joinpath(filePath,pName);
     kInputAdd = joinpath(filePath,kName);
@@ -209,6 +209,7 @@ function experimentgen(filePath,dataSize,Ωsize,Hskewness,Hμ,Dmag,Doption = "r"
 
     # determine the H and d distributions
     #Hparams = [[0,(1 - Hskewness)*TDet,TDet],[Hskewness,1 - Hskewness]];
+    Hμ = μp*TDet;
     Hparams = [[0,Hμ,Hμ/(1 - Hskewness)],[Hskewness,1-Hskewness]];
     dparams = Dict();
     if Doption == "a"
@@ -237,5 +238,5 @@ function experimentgen(filePath,dataSize,Ωsize,Hskewness,Hμ,Dmag,Doption = "r"
         push!(disDataSet,disData);
     end
 
-    return disDataSet;
+    return pData,disDataSet;
 end
