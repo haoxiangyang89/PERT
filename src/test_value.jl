@@ -9,7 +9,7 @@ pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
             "/home/haoxiang/PERT_tests/14_Lognormal_Exponential/",
             "/home/haoxiang/PERT_tests/19_Lognormal_Exponential/"];
 
-# filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_Lognormal_Exponential/"
+# filePath = "/Users/haoxiangyang/Desktop/PERT_tests/current/14_Lognormal_Exponential/"
 dDict = Dict();
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];

@@ -1,4 +1,6 @@
-function solveMP_para(pData,disData,divSet,divDet,cutSet,tcoreList,xcoreList,ycoreList,ubCost,tbest,xbest,noTh)
+function solveMP_para(pData,disData,H,Ω,lDict,allSucc,distanceDict,divSet,divDet,cutSet,tcoreList,xcoreList,ycoreList,ubCost,tbest,xbest,noTh)
+    Tmax1 =lDict[0];
+    GList = [];
     function partBenders(cb)
         currentLB = MathProgBase.cbgetbestbound(cb);
         println("lazy,$(currentLB)");
@@ -218,7 +220,6 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,ϵ = 1e-2)
     ubCost = ubInc;
     ubCostList = [ubCost];
 
-    GList = [];
     cutSel = Dict();
     tcoreList = [];
     xcoreList = [];
@@ -299,7 +300,6 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,ϵ = 1e-2)
 
     while keepIter
         # select the node with lowest lower bound
-        mpList = [];
         divSetList = [];
         divDetList = [];
         cutSetList = [];
@@ -327,19 +327,21 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,ϵ = 1e-2)
             lbOverAll = Inf;
         end
 
-        noTh = div(noThreads,batchNo);
+        noTh = div(noThreads,length(divSetList));
         tic();
         #mpStatus = solve(mp);
-        mpSolveList = pmap(ib -> solveMP_para(divSetList[ib],divDetList[ib],cutSetList[ib],tcoreList,xcoreList,ycoreList,ubCost,tbest,xbest,noTh),1:length(divSetList));
+        mpSolveList = pmap(ib -> solveMP_para(pData,disData,H,Ω,lDict,allSucc,distanceDict,
+            divSetList[ib],divDetList[ib],cutSetList[ib],tcoreList,xcoreList,ycoreList,
+            ubCost,tbest,xbest,noTh),1:length(divSetList));
         tIter = toc();
         push!(timeHist,tIter);
-        ubCost = minimum([mpSolveList[ib][5] for ib in 1:length(divSetList)]);
+        ubCost = minimum([mpSolveList[ib][6] for ib in 1:length(divSetList)]);
         push!(ubHist,ubCost);
         for ibatch in 1:length(divSetList)
             mpStatus = mpSolveList[ibatch][1];
             mpObj = mpSolveList[ibatch][2];
             if mpStatus == :Optimal
-                if mpObj < lbCost
+                if mpObj < lbOverAll
                     lbOverAll = mpObj;
                 end
             end
@@ -361,6 +363,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,ϵ = 1e-2)
                     GList = mpSolveList[ibatch][3];
                     GCurrent = GList[length(GList)];
                     GFrac = Dict();
+                    lbCost = mpSolveList[ibatch][2];
                     for i in pData.II
                         GFraciList = [disData[ω].H for ω in Ω if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)];
                         if GFraciList != []
@@ -410,7 +413,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,ϵ = 1e-2)
                     end
                     newPartition1 = [(lGFracInd1,fracBotLG,fracTopLG)];
                     #newPartition1 = [(lGFracInd,locBreak,GFrac[lGFracInd][2])];
-                    divSet1,divDet1 = splitPar(divSet1,divDet1,newPartition1);
+                    divSet1,divDet1 = splitPar3(divSet1,divDet1,newPartition1);
                     push!(treeList,[divSet1,divDet1,lbCost,deepcopy(cutSet),0]);
 
                     lGFracInd2 = -1;
@@ -433,7 +436,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,ϵ = 1e-2)
                     end
                     newPartition2 = [(lGFracInd2,fracBotLG,fracTopLG)];
                     #newPartition2 = [(lGFracInd,GFrac[lGFracInd][1],locBreak)];
-                    divSet2,divDet2 = splitPar(divSet2,divDet2,newPartition2);
+                    divSet2,divDet2 = splitPar3(divSet2,divDet2,newPartition2);
                     push!(treeList,[divSet2,divDet2,lbCost,deepcopy(cutSet),0]);
                 end
                 # divSet,divDet = splitPar(divSet,divDet,newPartition);
