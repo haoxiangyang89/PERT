@@ -252,7 +252,7 @@ function findSuccAll(pData)
     return allSucc;
 end
 
-function iniPart(pData,disData,Ω,sN,MM,returnOpt = 0)
+function iniPart(pData,disData,Ω,sN,MM,returnOpt = 0,noThreads = 30)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     H = Dict();
     H[0] = 0;
@@ -282,7 +282,7 @@ function iniPart(pData,disData,Ω,sN,MM,returnOpt = 0)
             disData1[i] = deepcopy(disData[randList[i]]);
             disData1[i].prDis = (1 - pData.p0)/length(Ω1);
         end
-        text,xext,fext,gext,mext = extForm_cheat(pData,disData1,Ω1,1e-4,999999);
+        text,xext,fext,gext,mext = extForm_cheat(pData,disData1,Ω1,1e-4,999999,noThreads);
         for i in pData.II
             if abs(text[i]) <= 1e-5
                 text[i] = 0.0;

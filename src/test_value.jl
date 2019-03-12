@@ -55,7 +55,7 @@ for fileInd in 1:length(pathList)
         disData[ω].H = mean(buildDistrn(nameH,Hparams));
     end
     tic();
-    tdOnly,xdOnly,fdOnly,gdOnly,mdOnly = extForm_cheat(pData,disData,Ω,1e-4,999999);
+    tdOnly,xdOnly,fdOnly,gdOnly,mdOnly = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
     timedOnly = toc();
     disData = deepcopy(disData1);
     ubdOnly = ubCalP(pData,disData,Ω,xdOnly,tdOnly,999999);
@@ -71,7 +71,7 @@ for fileInd in 1:length(pathList)
             end
         end
     end
-    #tHOnly,xHOnly,fHOnly,gHOnly,mHOnly = extForm_cheat(pData,disData,Ω,1e-4,999999);
+    #tHOnly,xHOnly,fHOnly,gHOnly,mHOnly = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
     tic();
     include("partSolve_Callback_tightened.jl");
     timeHOnly = toc();
@@ -82,7 +82,7 @@ for fileInd in 1:length(pathList)
     ubHOnly = ubCalP(pData,disData,Ω,xHOnly,tHOnly,999999);
 
     # full solution
-    #tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999);
+    #tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
     tic();
     include("partSolve_Callback_tightened.jl");
     timeFull = toc();

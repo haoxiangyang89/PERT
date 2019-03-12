@@ -172,7 +172,7 @@ function solveMP_para(pData,disData,H,Ω,lDict,allSucc,distanceDict,divSet,divDe
     return mpStatus,mpObj,GList,tbest,xbest,minimum(ubCostList);
 end
 
-function partSolve_BB_para(pData,disData,Ω,sN,MM,ϵ = 1e-2)
+function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II
@@ -214,7 +214,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,ϵ = 1e-2)
     end
 
     # start with an upper bound based on the smaller stochastic solution
-    ubList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1);
+    ubList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
     lbCost = -Inf;
     lbCostList = [];
     ubCost = ubInc;
