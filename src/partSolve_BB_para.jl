@@ -297,6 +297,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     treeList = [];
     push!(treeList,[divSet,divDet,lbCost,cutSet,0]);
     batchNo = 5;
+    lbOverAll = -Inf;
 
     while keepIter
         # select the node with lowest lower bound

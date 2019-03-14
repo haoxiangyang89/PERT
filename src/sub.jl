@@ -1090,6 +1090,7 @@ function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,
     end
 
     if returnOpt == 0
+        println(ωCurr);
         return πdict,λdict,γdict,vhat,Ghat;
     else
         return πdict,λdict,γdict,vhat,sp;
