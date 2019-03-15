@@ -1,3 +1,8 @@
+function subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore)
+    dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
+    return dataList;
+end
+
 function solveMP_para(pData,disData,H,Ω,lDict,allSucc,distanceDict,divSet,divDet,cutSet,tcoreList,xcoreList,ycoreList,ubCost,tbest,xbest,noTh)
     Tmax1 =lDict[0];
     GList = [];
@@ -48,7 +53,8 @@ function solveMP_para(pData,disData,H,Ω,lDict,allSucc,distanceDict,divSet,divDe
             #dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
             # obtain the cores
             tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
-            dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
+            # here is the issue, pack it in a function prevent separating it
+            dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore);
             for ω in Ω
                 πdict[ω] = dataList[ω][1];
                 λdict[ω] = dataList[ω][2];
@@ -333,7 +339,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
         #mpStatus = solve(mp);
         mpSolveList = pmap(ib -> solveMP_para(pData,disData,H,Ω,lDict,allSucc,distanceDict,
             divSetList[ib],divDetList[ib],cutSetList[ib],tcoreList,xcoreList,ycoreList,
-            ubCost,tbest,xbest,noTh),1:length(divSetList));
+            ubCost,tbest,xbest,noTh),1:length(divSetList)); # some of the function is not run with full number of cores
         tIter = toc();
         push!(timeHist,tIter);
         for ib in 1:length(divSetList)
