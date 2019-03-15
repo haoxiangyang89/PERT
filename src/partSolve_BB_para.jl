@@ -1,3 +1,8 @@
+function subPara1(pData,disData,tbest,xbest,ybest,divSet,H,lDict)
+    θList = pmap(ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict),Ω);
+    return θList;
+end
+
 function subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore)
     dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
     return dataList;
@@ -129,7 +134,7 @@ function solveMP_para(pData,disData,H,Ω,lDict,allSucc,distanceDict,divSet,divDe
             setvalue(y[i,par],ybest[i,par]);
         end
     end
-    θbest = pmap(ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict),Ω);
+    θbest = subPara1(pData,disData,tbest,xbest,ybest,divSet,H,lDict);
     for ω in Ω
         setvalue(θ[ω],θbest[ω]);
     end
