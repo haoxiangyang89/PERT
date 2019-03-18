@@ -165,7 +165,7 @@ function solveMP_para(data)
     # @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) + sum((t[i] - tbest[i])^2 for i in pData.II));
 
     # find a feasible solution and plug in the best feasible solution
-    tcoreInd = testFeas(pData,disData,H,divSet,divDet,tcoreList,ubcoreList);
+    tcoreInd = testFeas(pData,H,divSet,divDet,tcoreList,ubcoreList);
     if tcoreInd != -1
         yfeas = Dict();
         tfeas = tcoreList[tcoreInd];

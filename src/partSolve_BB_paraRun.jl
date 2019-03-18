@@ -126,7 +126,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     global lbOverAll = -Inf;
 
 
-    function runPara(pData,disData,treeList,tcoreList,xcoreList,ycoreList,H,Ω,lDict,allSucc,distanceDict,ubCost,tbest,xbest,batchNo)
+    function runPara(pData,disData,treeList,tcoreList,xcoreList,ycoreList,ubcoreList,H,Ω,lDict,allSucc,distanceDict,ubCost,tbest,xbest,batchNo)
         npList = [ib for ib in 2:batchNo+1];
         wpList = [ib for ib in workers() if !(ib in npList)];
         global keepIter = true;
@@ -154,7 +154,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
                             println(p," ",selectNode);
                             treeList[selectNode][5] = 0;
                             mpSolveInfo = remotecall_fetch(solveMP_para,p,[pData,disData,H,Ω,lDict,allSucc,distanceDict,treeList[selectNode][1],
-                                                        treeList[selectNode][2],treeList[selectNode][4],tcoreList,xcoreList,ycoreList,
+                                                        treeList[selectNode][2],treeList[selectNode][4],tcoreList,xcoreList,ycoreList,ubcoreList,
                                                         ubCost,tbest,xbest,noTh,wpList]);
                             if mpSolveInfo[6] < ubCost
                                 ubCost = mpSolveInfo[6];
