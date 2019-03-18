@@ -56,6 +56,10 @@ function solveMP_para(data)
 
     Tmax1 =lDict[0];
     GList = [];
+    tcoreNew = [];
+    xcoreNew = [];
+    ycoreNew = [];
+    ubcoreNew = [];
     function partBenders(cb)
         currentLB = MathProgBase.cbgetbestbound(cb);
         println("lazy,$(currentLB)");
@@ -81,6 +85,9 @@ function solveMP_para(data)
             push!(tcoreList,that);
             push!(xcoreList,xhat);
             push!(ycoreList,yhat);
+            push!(tcoreNew,that);
+            push!(xcoreNew,xhat);
+            push!(ycoreNew,yhat);
 
             # generate cuts
             πdict = Dict();
@@ -91,6 +98,7 @@ function solveMP_para(data)
             ubCost = minimum(ubCostList);
             ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1,wp);
             push!(ubcoreList,ubTemp);
+            push!(ubcoreNew,ubTemp);
 
             if ubCost > ubTemp
                 for i in pData.II
@@ -233,5 +241,5 @@ function solveMP_para(data)
     mpStatus = solve(mp);
     mpObj = getobjectivevalue(mp);
 
-    return mpStatus,mpObj,GList,tbest,xbest,minimum(ubCostList),cutSet,tcoreList,xcoreList,ycoreList,ubcoreList;
+    return mpStatus,mpObj,GList,tbest,xbest,minimum(ubCostList),cutSet,tcoreNew,xcoreNew,ycoreNew,ubcoreNew;
 end
