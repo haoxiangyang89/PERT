@@ -40,11 +40,10 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     end
 
     # start with an upper bound based on the smaller stochastic solution
-    ubList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
+    ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
     lbCost = -Inf;
     lbCostList = [];
     global ubCost = ubInc;
-    global ubCostList = [ubCost];
 
     cutSel = Dict();
     tcoreList = [];
@@ -93,9 +92,11 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     tcoreList = [];
     xcoreList = [];
     ycoreList = [];
+    ubcoreList = [];
     for l in 1:length(textList)
         push!(tcoreList,textList[l]);
         push!(xcoreList,xextList[l]);
+        push!(ubcoreList,ubextList[l]);
         ycoreItem = Dict();
         for i in pData.II
             for par in 1:length(divSet[i])
@@ -127,10 +128,12 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
 
     function runPara(pData,disData,treeList,tcoreList,xcoreList,ycoreList,H,Ω,lDict,allSucc,distanceDict,ubCost,tbest,xbest,batchNo)
         npList = [ib for ib in 2:batchNo+1];
+        wpList = [ib for ib in workers() if !(ib in npList)];
         global keepIter = true;
         global noTh = div(noThreads,batchNo);
         @sync begin
-            for p in npList
+            for ip in 1:length(npList)
+                p = npList[ip];
                 @async begin
                     while true
                         # if all nodes are processed and no nodes are being processed, exit
@@ -151,24 +154,21 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
                             println(p," ",selectNode);
                             treeList[selectNode][5] = 0;
                             mpSolveInfo = remotecall_fetch(solveMP_para,p,[pData,disData,H,Ω,lDict,allSucc,distanceDict,treeList[selectNode][1],
-                                                        treeList[selectNode][2],treeList[selectNode][3],tcoreList,xcoreList,ycoreList,
-                                                        ubCost,tbest,xbest,noTh]);
-                            println(mpSolveInfo);
-                            treeList[selectNode][5] = 1;
-                            for ib in 1:length(divSetList)
-                                if mpSolveInfo[ib][6] < ubCost
-                                    ubCost = mpSolveInfo[ib][6];
-                                    tbest = mpSolveInfo[ib][4];
-                                    xbest = mpSolveInfo[ib][5];
-                                end
-                                append!(tcoreList,mpSolveInfo[ib][8]);
-                                append!(xcoreList,mpSolveInfo[ib][9]);
-                                append!(ycoreList,mpSolveInfo[ib][10]);
+                                                        treeList[selectNode][2],treeList[selectNode][4],tcoreList,xcoreList,ycoreList,
+                                                        ubCost,tbest,xbest,noTh,wpList]);
+                            if mpSolveInfo[6] < ubCost
+                                ubCost = mpSolveInfo[6];
+                                tbest = mpSolveInfo[4];
+                                xbest = mpSolveInfo[5];
                             end
+                            append!(tcoreList,mpSolveInfo[8]);
+                            append!(xcoreList,mpSolveInfo[9]);
+                            append!(ycoreList,mpSolveInfo[10]);
+                            append!(ubcoreList,mpSolveInfo[11]);
                             # compare the current lb with the current best lb
                             lbOverAll = minimum([treeList[l][3] for l in 1:length(treeList) if treeList[l][5] != 1]);
-                            mpStatus = mpSolveInfo[ibatch][1];
-                            mpObj = mpSolveInfo[ibatch][2];
+                            mpStatus = mpSolveInfo[1];
+                            mpObj = mpSolveInfo[2];
                             if mpStatus == :Optimal
                                 if mpObj < lbOverAll
                                     lbOverAll = mpObj;
@@ -177,13 +177,13 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
                             if (ubCost - lbOverAll)/ubCost < ϵ
                                 keepIter = false;
                             else
-                                if (mpSolveInfo[ibatch][2] < ubCost)&(mpSolveInfo[ibatch][1] == :Optimal)
+                                if (mpSolveInfo[2] < ubCost)&(mpSolveInfo[1] == :Optimal)
                                     # branch the current node
-                                    GList = mpSolveInfo[ibatch][3];
-                                    cutSet = mpSolveInfo[ibatch][7];
+                                    GList = mpSolveInfo[3];
+                                    cutSet = mpSolveInfo[7];
                                     GCurrent = GList[length(GList)];
                                     GFrac = Dict();
-                                    lbCost = mpSolveInfo[ibatch][2];
+                                    lbCost = mpSolveInfo[2];
                                     for i in pData.II
                                         GFraciList = [disData[ω].H for ω in Ω if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)];
                                         if GFraciList != []
@@ -211,7 +211,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
                                         end
                                     end
                                     locBreak = Int64(floor((GFrac[lGFracInd][1]*2/3 + GFrac[lGFracInd][2]*1/3)));
-                                    divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSetList[ibatch],divDetList[ibatch],lGFracInd,locBreak,distanceDict);
+                                    divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,treeList[selectNode][1],treeList[selectNode][2],lGFracInd,locBreak,distanceDict);
                                     lGFracInd1 = -1;
                                     largest1 = -Inf;
                                     fracTopLG = -1;
@@ -233,7 +233,8 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
                                     end
                                     newPartition1 = [(lGFracInd1,fracBotLG,fracTopLG)];
                                     divSet1,divDet1 = splitPar3(divSet1,divDet1,newPartition1);
-                                    push!(treeList,[divSet1,divDet1,lbCost,deepcopy(cutSet),0]);
+                                    println(newPartition1);
+                                    push!(treeList,[divSet1,divDet1,lbCost,deepcopy(cutSet),-1]);
 
                                     lGFracInd2 = -1;
                                     largest2 = -Inf;
@@ -255,13 +256,18 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
                                     end
                                     newPartition2 = [(lGFracInd2,fracBotLG,fracTopLG)];
                                     divSet2,divDet2 = splitPar3(divSet2,divDet2,newPartition2);
-                                    push!(treeList,[divSet2,divDet2,lbCost,deepcopy(cutSet),0]);
+                                    println(newPartition2);
+                                    push!(treeList,[divSet2,divDet2,lbCost,deepcopy(cutSet),-1]);
+
+                                    treeList[selectNode][5] = 1;
+                                else
+                                    treeList[selectNode][5] = 1;
                                 end
                             end
                         else
                             # sleep if there is no current available nodes
                             println(p);
-                            remotecall_fetch(sleep, p, 10);
+                            remotecall_fetch(sleep, p, 30);
                         end
                     end
                 end

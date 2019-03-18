@@ -1,11 +1,36 @@
-function subPara1(pData,disData,Ω,tbest,xbest,ybest,divSet,H,lDict)
-    θList = pmap(ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict),Ω);
+function subPara1(pData,disData,Ω,tbest,xbest,ybest,divSet,H,lDict,wp = CachingPool(workers()))
+    θList = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict),Ω);
     return θList;
 end
 
-function subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore)
-    dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
+function subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp = CachingPool(workers()))
+    dataList = pmap(wp,ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
     return dataList;
+end
+
+function testFeas(pData,H,divSet,divDet,tcoreList,ubcoreList)
+    # test the feasibility of each of the past solution
+    tcoreInd = -1;
+    ubcoreMin = Inf;
+    for tSoli in 1:length(tcoreList)
+        tSol = tcoreList[tSoli];
+        feasBool = true;
+        for i in pData.II
+            ibSet = [l for l in 1:length(divSet[i]) if divDet[i][l] == 0];
+            iub = divSet[maximum(ibSet)].endH;
+            ilb = divSet[maximum(ibSet)].startH;
+            if (tSol[i] < ilb)|(tSol[i] >= iub)
+                feasBool = false;
+            end
+        end
+        if feasBool
+            if ubcoreList[tSoli] < ubcoreMin
+                tcoreInd = tSoli;
+                ubcoreMin = ubcoreList[tSoli];
+            end
+        end
+    end
+    return tcoreInd;
 end
 
 function solveMP_para(data)
@@ -22,10 +47,12 @@ function solveMP_para(data)
     tcoreList = data[11];
     xcoreList = data[12];
     ycoreList = data[13];
-    ubCost = data[14];
-    tbest = data[15];
-    xbest = data[16];
-    noTh = data[17];
+    ubcoreList = data[14];
+    ubCost = data[15];
+    tbest = data[16];
+    xbest = data[17];
+    noTh = data[18];
+    wp = CachingPool(data[19]);
 
     Tmax1 =lDict[0];
     GList = [];
@@ -62,7 +89,9 @@ function solveMP_para(data)
             vk = Dict();
             θInt = Dict();
             ubCost = minimum(ubCostList);
-            ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1);
+            ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1,wp);
+            push!(ubcoreList,that[0]*pData.p0 + sum(disData[ω].prDis*θInt[ω] for ω in Ω));
+
             if ubCost > ubTemp
                 for i in pData.II
                     tbest[i] = that[i];
@@ -77,7 +106,7 @@ function solveMP_para(data)
             # obtain the cores
             tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
             # here is the issue, pack it in a function prevent separating it
-            dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore);
+            dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp);
             for ω in Ω
                 πdict[ω] = dataList[ω][1];
                 λdict[ω] = dataList[ω][2];
@@ -135,26 +164,32 @@ function solveMP_para(data)
     @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
     # @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) + sum((t[i] - tbest[i])^2 for i in pData.II));
 
-    ybest = Dict();
-    for i in pData.II
-        setvalue(t[i], tbest[i]);
-        for j in pData.Ji[i]
-            setvalue(x[i,j],xbest[i,j]);
-        end
-        for par in 1:length(divSet[i])
-            if (tbest[i] >= H[divSet[i][par].startH])&(tbest[i] < H[divSet[i][par].endH])
-                ybest[i,par] = 1;
-            elseif (abs(tbest[i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
-                ybest[i,par] = 1;
-            else
-                ybest[i,par] = 0;
+    # find a feasible solution and plug in the best feasible solution
+    tcoreInd = testFeas(pData,disData,H,divSet,divDet,tcoreList,ubcoreList);
+    if tcoreInd != -1
+        yfeas = Dict();
+        tfeas = tcoreList[tcoreInd];
+        xfeas = xcoreList[xcoreInd];
+        for i in pData.II
+            setvalue(t[i], tfeas[i]);
+            for j in pData.Ji[i]
+                setvalue(x[i,j],xfeas[i,j]);
             end
-            setvalue(y[i,par],ybest[i,par]);
+            for par in 1:length(divSet[i])
+                if (tfeas[i] >= H[divSet[i][par].startH])&(tfeas[i] < H[divSet[i][par].endH])
+                    yfeas[i,par] = 1;
+                elseif (abs(tfeas[i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
+                    yfeas[i,par] = 1;
+                else
+                    yfeas[i,par] = 0;
+                end
+                setvalue(y[i,par],yfeas[i,par]);
+            end
         end
-    end
-    θbest = subPara1(pData,disData,Ω,tbest,xbest,ybest,divSet,H,lDict);
-    for ω in Ω
-        setvalue(θ[ω],θbest[ω]);
+        θfeas = subPara1(pData,disData,Ω,tfeas,xfeas,yfeas,divSet,H,lDict,wp);
+        for ω in Ω
+            setvalue(θ[ω],θfeas[ω]);
+        end
     end
 
     tCurrent = Dict();
@@ -198,5 +233,5 @@ function solveMP_para(data)
     mpStatus = solve(mp);
     mpObj = getobjectivevalue(mp);
 
-    return mpStatus,mpObj,GList,tbest,xbest,minimum(ubCostList),cutSet,tcoreList,xcoreList,ycoreList;
+    return mpStatus,mpObj,GList,tbest,xbest,minimum(ubCostList),cutSet,tcoreList,xcoreList,ycoreList,ubcoreList;
 end

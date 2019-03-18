@@ -146,10 +146,10 @@ function ubCal(pData,disData,Ω,xhat,that,bigM,returnOpt = 0)
     end
 end
 
-function ubCalP(pData,disData,Ω,xhat,that,bigM,returnOpt = 0)
+function ubCalP(pData,disData,Ω,xhat,that,bigM,returnOpt = 0,wp = CachingPool(workers()))
     # parallel version of calculating the upper bound
     ubCost = that[0]*pData.p0;
-    cωList = pmap(ω -> subIntC(pData,disData[ω],xhat,that,bigM), Ω);
+    cωList = pmap(wp,ω -> subIntC(pData,disData[ω],xhat,that,bigM), Ω);
     ubCost += sum(cωList[i]*disData[Ω[i]].prDis for i in 1:length(Ω));
     if returnOpt == 0
         return ubCost;
