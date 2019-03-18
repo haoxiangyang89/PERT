@@ -90,7 +90,7 @@ function solveMP_para(data)
             θInt = Dict();
             ubCost = minimum(ubCostList);
             ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1,wp);
-            push!(ubcoreList,that[0]*pData.p0 + sum(disData[ω].prDis*θInt[ω] for ω in Ω));
+            push!(ubcoreList,ubTemp);
 
             if ubCost > ubTemp
                 for i in pData.II
