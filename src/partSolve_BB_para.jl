@@ -17,8 +17,8 @@ function testFeas(pData,H,divSet,divDet,tcoreList,ubcoreList)
         feasBool = true;
         for i in pData.II
             ibSet = [l for l in 1:length(divSet[i]) if divDet[i][l] == 0];
-            iub = divSet[maximum(ibSet)].endH;
-            ilb = divSet[maximum(ibSet)].startH;
+            iub = divSet[i][maximum(ibSet)].endH;
+            ilb = divSet[i][maximum(ibSet)].startH;
             if (tSol[i] < ilb)|(tSol[i] >= iub)
                 feasBool = false;
             end
