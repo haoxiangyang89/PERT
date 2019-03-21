@@ -1,4 +1,4 @@
-function recoverInfo(II,D,eff,b,K,p0,B)
+function recoverpInfo(II,D,eff,b,K,p0,B)
     IIList = [i for i in II];
     Ddict = Dict();
     for i in 1:length(IIList)
@@ -28,7 +28,7 @@ function recoverInfo(II,D,eff,b,K,p0,B)
     return pd;
 end
 
-function recoverdInfo(II,HOriShare,disdShare,disPrShare)
+function recoverdInfo(II,HOriShare,disdShare,disPrShare,Tmax)
     Ω = [];
     disData = Dict();
     for ω in 1:length(HOriShare)
@@ -49,12 +49,12 @@ function recoverdis(distanceShare)
     allSucc = Dict();
     distanceDict = Dict();
     for i in 1:size(distanceShare)[1]
-        if distanceShare[i,1] in keys(allSucc)
-            push!(allSucc[distanceShare[i,1]],distanceShare[i,2]);
+        if Int(distanceShare[i,1]) in keys(allSucc)
+            push!(allSucc[Int(distanceShare[i,1])],Int(distanceShare[i,2]));
         else
-            allSucc[distanceShare[i,1]] = [distanceShare[i,2]];
+            allSucc[Int(distanceShare[i,1])] = [Int(distanceShare[i,2])];
         end
-        distanceDict[distanceShare[i,1],distanceShare[i,2]] = distanceShare[i,3];
+        distanceDict[Int(distanceShare[i,1]),Int(distanceShare[i,2])] = distanceShare[i,3];
     end
     return allSucc,distanceDict;
 end
@@ -104,6 +104,14 @@ function recoverCoreList(IIShare,IJPair,textShare,xextShare,ubextShare)
         push!(ubextList,ubextShare[iu]);
     end
     return textList,xextList,ubextList;
+end
+
+@everywhere function runRecover(IIShare,DShare,effShare,bShare,KShare,p0BShare,HOriShare,disdShare,disPrShare,distanceShare,lDictShare)
+    # recover the information and make them everywhere
+    global pData = recoverpInfo(IIShare,DShare,effShare,bShare,KShare,p0BShare[1],p0BShare[2]);
+    global (disData, H, Ω) = recoverdInfo(IIShare,HOriShare,disdShare,disPrShare,p0BShare[3]);
+    global (allSucc,distanceDict) = recoverdis(distanceShare);
+    global lDict = recoverlDict(IIShare,lDictShare);
 end
 
 function subPara1(pData,disData,Ω,tbest,xbest,ybest,divSet,H,lDict,wp = CachingPool(workers()))
@@ -368,8 +376,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubCost,tbest,xbest,b
                         selectNode = sort(openNodes, by = x -> x[1])[1][2];
                         println("On core: ",p," processing node: ",selectNode);
                         treeList[selectNode][5] = 0;
-                        mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[selectNode,tcore,xcore,weigthCore,ubCost,
-                            tbest,xbest,noTh,wpList]);
+                        mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[selectNode,tcore,xcore,weigthCore,ubCost,tbest,xbest,noTh,wpList]);
                         # update the cutList with the added cuts and two new nodes
                         # update the cutSet
                         if mpSolveInfo[6] < ubCost
@@ -526,9 +533,10 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     end
 
     # make the data SharedArray
-    p0BShare = SharedArray{Float64,1}(2);
+    p0BShare = SharedArray{Float64,1}(3);
     p0BShare[1] = pData.p0;
     p0BShare[2] = pData.B;
+    p0BShare[3] = Tmax;
     IIShare = SharedArray{Int,1}(length(pData.II));
     DShare = SharedArray{Int,1}(length(pData.II));
     for i in 1:length(pData.II)
@@ -565,11 +573,10 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
         end
         disPrShare[ω] = disData[Ω[ω]].prDis;
     end
-    # recover the information and make them everywhere
-    @everywhere global pData = recoverpInfo(IIShare,DShare,effShare,bShare,KShare,p0BShare[1],p0BShare[2]);
-    @everywhere global disData; global H; global Ω = recoverdInfo(IIShare,HOriShare,disdShare,disPrShare);
-    @everywhere global distanceDict; global allSucc = recoverdis(distanceShare);
-    @everywhere global lDict = recoverlDict(IIShare,lDictShare);
+
+    for i in workers()
+       remotecall_fetch(runRecover,i,IIShare,DShare,effShare,bShare,KShare,p0BShare,HOriShare,disdShare,disPrShare,distanceShare,lDictShare);
+    end
 
     # start with an upper bound based on the smaller stochastic solution
     ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
@@ -579,17 +586,17 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
 
     IJPair = [(i,j) for i in pData.II for j in pData.Ji[i]];
     textShare = SharedArray{Float64,2}((length(pData.II),length(textList)));
-    for i in pData.II
+    for i in 1:length(pData.II)
         for it in 1:length(textList)
-            textShare[i,it] = textList[it][i];
+            textShare[i,it] = textList[it][pData.II[i]];
         end
     end
     xextShare = SharedArray{Float64,2}((length(IJPair),length(xextList)));
     counter = 1;
     for i in pData.II
-        for j in pData.Ji
+        for j in pData.Ji[i]
             for itj in 1:length(xextList)
-                xextShare[counter,itj] = xextList[itj][IJPair[counter]];
+                xextShare[counter,itj] = xextList[itj][i,j];
             end
             counter += 1;
         end
@@ -598,7 +605,6 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     for itu in 1:length(ubextList)
         ubextShare[itu] = ubextList[itu];
     end
-    @everywhere global tcoreList; global xcoreList; global ubextList = recoverCoreList(IIShare,textShare,xextShare,ubextShare);
 
     brInfo = precludeRelNew(pData,H,ubCost);
 
