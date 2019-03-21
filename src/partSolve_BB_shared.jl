@@ -151,7 +151,7 @@ end
 
 function solveMP_para_Share(data)
     # input: selectNode,tcore,xcore,weigthCore,ubCost,tbest,xbest,noTh,wpList
-    divSet,divDet = recoverDiv(cutList[data[1]][8];
+    divSet,divDet = recoverDiv(cutList[data[1]][8]);
     ancestorList = treeList[data[1]][2];
     weightCore = data[4];
     ubCost = data[5];
