@@ -17,6 +17,7 @@ for fileInd in 1:length(pathList)
     global Ω = 1:Ωsize;
     global ϵ = 1e-2;
     global pData;
+    global r = 1e-6;
     pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
     global pData = pData;
     # data = load("test_cuts.jld");
@@ -82,7 +83,8 @@ for fileInd in 1:length(pathList)
     ubHOnly = ubCalP(pData,disData,Ω,xHOnly,tHOnly,999999);
 
     # full solution
-    #tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
+    #@time tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
+    #@time tFull,xFull,fFull,gFull,mFull = extForm_cheat_reg(pData,disData,Ω,1e-6,1e-4,999999,noThreads);
     tic();
     include("partSolve_Callback_tightened.jl");
     timeFull = toc();

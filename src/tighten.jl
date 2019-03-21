@@ -569,3 +569,25 @@ function avgCore(pData,divSet,tcoreList,xcoreList,ycoreList)
     end
     return tcore,xcore,ycore;
 end
+
+function avgCoreShare(pData,H,divSet,tcoreP,xcoreP,tcoreN,xcoreN,weightP)
+    tcoreO = Dict();
+    xcoreO = Dict();
+    ycoreO = Dict();
+    for i in pData.II
+        tcoreO[i] = (tcoreP[i]*weightP+tcoreN[i])/(weightP+1);
+        for j in pData.Ji[i]
+            xcoreO[i,j] = (xcoreP[i,j]*weightP+xcoreN[i,j])/(weightP+1);
+        end
+        for par in 1:length(divSet[i])
+            if (tcoreO[i] >= H[divSet[i][par].startH])&(tcoreO[i] < H[divSet[i][par].endH])
+                ycoreO[i,par] = 1;
+            elseif (abs(tcoreO[i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
+                ycoreO[i,par] = 1;
+            else
+                ycoreO[i,par] = 0;
+            end
+        end
+    end
+    return tcoreO,xcoreO,ycoreO;
+end

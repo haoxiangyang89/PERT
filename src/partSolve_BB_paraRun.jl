@@ -58,8 +58,9 @@ timedOnly = toc();
 disData = deepcopy(disData1);
 ubdOnly = ubCalP(pData,disData,Ω,xdOnly,tdOnly,999999);
 
-sN = 25;
-MM = 20;
+global sN = 25;
+global MM = 20;
+global r = 1e-6;
 tic();
 data = partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,1e-2);
 timeLast = toc();
