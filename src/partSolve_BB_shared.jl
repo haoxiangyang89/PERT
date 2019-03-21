@@ -82,14 +82,26 @@ function recoverDiv(divInfoShare)
     return divSet,divDet;
 end
 
-function recoverCoreList(IIShare,textShare,xextShare,ubextShare)
+function recoverCoreList(IIShare,IJPair,textShare,xextShare,ubextShare)
     textList = [];
     xextList = [];
     ubextList = [];
     for it in 1:size(textShare)[2]
+        tDict = Dict();
         for i in 1:length(IIShare)
-            tDict[IIShare[i]] =
+            tDict[IIShare[i]] = textShare[i,it];
         end
+        push!(textList,tDict);
+    end
+    for ijt in 1:size(xextShare)[2]
+        xDict = Dict();
+        for ij in 1:length(IJPair)
+            xDict[IJPair[ij]] = xextShare[ij,ijt];
+        end
+        push!(xextList,xDict);
+    end
+    for iu in 1:length(ubextShare)
+        push!(ubextList,ubextShare[iu]);
     end
     return textList,xextList,ubextList;
 end
