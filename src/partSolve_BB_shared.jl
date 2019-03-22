@@ -359,7 +359,7 @@ function solveMP_para_Share(data)
         divSetPrev,divDetPrev = recoverDiv(divData[nc]);
         IPPairPrev = [(i,par) for i in pData.II for par in 1:length(divSetPrev[i])];
         for npoint in 1:length(cutSet[nc])
-            for ωi in 1:cutSet[nc][npoint][1]
+            for ωi in cutSet[nc][npoint][1]
                 ω = cutSet[nc][npoint][1][ωi];
                 vk = cutSet[nc][npoint][5][ωi];
                 πk = cutSet[nc][npoint][2][:,ωi];
@@ -481,7 +481,7 @@ function solveMP_para_Share(data)
 end
 
 function runPara_Share(treeList,cutList,tcoreShare,xcoreShare,ubcoreShare,ubCost,tbest,xbest,batchNo)
-    npList = [ib for ib in 2:batchNo+1];
+    npList = workers()[1:batchNo];
     wpList = [ib for ib in workers() if !(ib in npList)];
     global keepIter = true;
     global noTh = div(noThreads,batchNo);
