@@ -50,18 +50,21 @@ function recoverdInfo(II,HOriShare,disdShare,disPrShare,Tmax)
         end
     end
     H[counter] = Tmax;
-    return disData,H,Ω;
+    HRev = Dict();
+    for hIter in keys(H)
+        HRev[H[hIter]] = hIter;
+    end
+    return disData,H,Ω,HRev;
 end
 
-function recoverdis(distanceShare)
+function recoverdis(IIShare,distanceShare)
     allSucc = Dict();
     distanceDict = Dict();
+    for i in IIShare
+        allSucc[i] = [];
+    end
     for i in 1:size(distanceShare)[1]
-        if Int(distanceShare[i,1]) in keys(allSucc)
-            push!(allSucc[Int(distanceShare[i,1])],Int(distanceShare[i,2]));
-        else
-            allSucc[Int(distanceShare[i,1])] = [Int(distanceShare[i,2])];
-        end
+        push!(allSucc[Int(distanceShare[i,1])],Int(distanceShare[i,2]));
         distanceDict[Int(distanceShare[i,1]),Int(distanceShare[i,2])] = distanceShare[i,3];
     end
     return allSucc,distanceDict;
@@ -130,8 +133,8 @@ end
 function runRecover(IIShare,DShare,effShare,bShare,KShare,p0BShare,HOriShare,disdShare,disPrShare,distanceShare,lDictShare)
     # recover the information and make them everywhere
     global pData = recoverpInfo(IIShare,DShare,effShare,bShare,KShare,p0BShare[1],p0BShare[2]);
-    global (disData, H, Ω) = recoverdInfo(IIShare,HOriShare,disdShare,disPrShare,p0BShare[3]);
-    global (allSucc,distanceDict) = recoverdis(distanceShare);
+    global (disData, H, Ω, HRev) = recoverdInfo(IIShare,HOriShare,disdShare,disPrShare,p0BShare[3]);
+    global (allSucc,distanceDict) = recoverdis(IIShare,distanceShare);
     global lDict = recoverlDict(IIShare,lDictShare);
 end
 
@@ -202,6 +205,7 @@ function solveMP_para_Share(data)
             xdict = Dict();
             θhat = SharedArray{Float64,1}((length(Ω)));
             yhat = SharedArray{Float64,1}((length(IPPair)));
+            ydict = Dict();
             # obtain the solution at the current node
             for i in pData.II
                 that[findfirst(pData.II,i)] = getvalue(t[i]);
@@ -212,6 +216,7 @@ function solveMP_para_Share(data)
                 end
                 for par in 1:length(divSet[i])
                     yhat[findfirst(IPPair,(i,par))] = round(getvalue(y[i,par]));
+                    ydict[i,par] = round(getvalue(y[i,par]));
                 end
             end
             for ω in 1:length(Ω)
@@ -225,15 +230,15 @@ function solveMP_para_Share(data)
             # generate cuts
             θInt = Dict();
             ubCost = minimum(ubCostList);
-            ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1,wp);
+            ubTemp,θInt = ubCalP(pData,disData,Ω,xdict,tdict,Tmax1,1,wp);
             push!(ubcoreList,ubTemp);
             push!(ubcoreNew,ubTemp);
 
             if ubCost > ubTemp
                 for i in pData.II
-                    tbest[i] = that[i];
+                    tbest[i] = that[findfirst(pData.II,i)];
                     for j in pData.Ji[i]
-                        xbest[i,j] = xhat[i,j];
+                        xbest[i,j] = xhat[findfirst(IJPair,(i,j))];
                     end
                 end
             end
@@ -243,7 +248,7 @@ function solveMP_para_Share(data)
             # obtain the cores
             tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
             # here is the issue, pack it in a function prevent separating it
-            dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp);
+            dataList = subPara(pData,disData,Ω,tdict,xdict,ydict,divSet,H,lDict,tcore,xcore,ycore,wp);
             cutScen = [ω for ω in Ω if dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)]];
             πSet = SharedArray{Float64,2}((length(pData.II),length(cutScen)));
             λSet = SharedArray{Float64,2}((length(IJPair),length(cutScen)));
@@ -252,8 +257,8 @@ function solveMP_para_Share(data)
             for ωi in 1:length(cutScen)
                 ω = cutScen[ωi];
                 vSet[ωi] = dataList[ω][4];
-                for i in 1:length(pData.II)
-                    πSet[i,ωi] = dataList[ω][1][pData.II[i]];
+                for i in pData.II
+                    πSet[findfirst(pData.II,i),ωi] = dataList[ω][1][i];
                     for j in pData.Ji[i]
                         λSet[findfirst(IJPair,(i,j)),ωi] = dataList[ω][2][i,j];
                     end
@@ -261,9 +266,9 @@ function solveMP_para_Share(data)
                         γSet[findfirst(IPPair,(i,par)),ωi] = dataList[ω][3][i,par];
                     end
                 end
-                @lazyconstraint(cb, θ[ω] >= vSet[ωi] + sum(πSet[findfirst(pData.II,i),ωi]*(t[i] - that[findfirst(pData.II,i)]) for i in pData.II) +
-                    sum(sum(λSet[findfirst(IJPair,(i,j)),ωi]*(x[i,j] - xhat[findfirst(IJPair,(i,j))]) for j in pData.Ji[i]) for i in pData.II) +
-                    sum(sum(γSet[findfirst(IPPair,(i,par)),ωi]*(y[i,par] - yhat[findfirst(IPPair,(i,par))]) for par in 1:length(divSet[i])) for i in pData.II));
+                @lazyconstraint(cb, θ[ω] >= vSet[ωi] + sum(πSet[findfirst(pData.II,i),ωi]*(t[i] - tdict[i]) for i in pData.II) +
+                    sum(sum(λSet[findfirst(IJPair,(i,j)),ωi]*(x[i,j] - xdict[i,j]) for j in pData.Ji[i]) for i in pData.II) +
+                    sum(sum(γSet[findfirst(IPPair,(i,par)),ωi]*(y[i,par] - ydict[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
             end
             newCuts = [cutScen,πSet,λSet,γSet,vSet,that,xhat,yhat];
             #push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
@@ -316,7 +321,7 @@ function solveMP_para_Share(data)
     if tcoreInd != -1
         yfeas = Dict();
         tfeas = tcoreList[tcoreInd];
-        xfeas = xcoreList[xcoreInd];
+        xfeas = xcoreList[tcoreInd];
         for i in pData.II
             setvalue(t[i], tfeas[i]);
             for j in pData.Ji[i]
@@ -392,7 +397,6 @@ function solveMP_para_Share(data)
         # branch
         GCurrent = GList[length(GList)];
         GFrac = Dict();
-        lbCost = mpSolveInfo[2];
         for i in pData.II
             GFraciList = [disData[ω].H for ω in Ω if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)];
             if GFraciList != []
@@ -476,7 +480,7 @@ function solveMP_para_Share(data)
     return returnNo,cutSetNew,returnSet,tbest,xbest,minimum(ubCostList);
 end
 
-function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo)
+function runPara_Share(treeList,cutList,tcoreShare,xcoreShare,ubcoreShare,ubCost,tbest,xbest,batchNo)
     npList = [ib for ib in 2:batchNo+1];
     wpList = [ib for ib in workers() if !(ib in npList)];
     global keepIter = true;
@@ -490,11 +494,11 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                     # if all nodes are processed and no nodes are being processed, exit
                     boolFinished = true;
                     for l in 1:length(treeList)
-                        if treeList[l][5] != 1
+                        if treeList[l][3] != 1
                             boolFinished = false;
                         end
                     end
-                    println("-------------",boolFinished," ",keepIter," ",[treeList[l][5] for l in 1:length(treeList)],[treeList[l][3] for l in 1:length(treeList)],"-------------");
+                    println("-------------",boolFinished," ",keepIter," ",[treeList[l][3] for l in 1:length(treeList)],[treeList[l][1] for l in 1:length(treeList)],"-------------");
                     if (boolFinished) || (!(keepIter))
                         println("break");
                         break
@@ -506,11 +510,11 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                         treeList[selectNode][3] = 0;
                         cutData = cutList[treeList[selectNode][2]];
                         divData = [treeList[id][4] for id in treeList[selectNode][2]];
-                        mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,wpList]);
+                        mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreShare,xcoreShare,ubcoreShare,ubCost,tbest,xbest,noTh,wpList]);
                         # update the cutList with the added cuts and two new nodes
                         # update the cutSet
                         # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
-                        lbOverAll = minimum([treeList[l][3] for l in 1:length(treeList) if treeList[l][5] != 1]);
+                        lbOverAll = minimum([treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1]);
                         if mpSolveInfo[1] > -Inf
                             if mpSolveInfo[6] < ubCost
                                 ubCost = mpSolveInfo[6];
@@ -526,7 +530,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                                 # update the current node cut
                                 cutList[selectNode] = mpSolveInfo[2];
                                 # push the branched nodes
-                                if (mpSolveInfo[1] < ubCost)&(mpSolveInfo[1] == :Optimal)
+                                if (mpSolveInfo[1] < ubCost)
                                     ancestorTemp = deepcopy(treeList[selectNode][2]);
                                     push!(ancestorTemp,selectNode);
                                     for newN in 1:length(mpSolveInfo[3])

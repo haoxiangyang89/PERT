@@ -19,3 +19,4 @@ include("partitionSolve.jl");
 include("convexify.jl");
 include("cutSelection.jl");
 include("instanceMaker.jl");
+include("partSolve_BB_shared.jl");
