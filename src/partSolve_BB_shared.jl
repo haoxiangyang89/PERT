@@ -175,12 +175,16 @@ end
 
 function solveMP_para_Share(data)
     # input: [cutData,cutCurrent,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,wpList]
-    divSet,divDet = recoverDiv(data[3]);
+    #divSet,divDet = recoverDiv(data[3]);
+    divSet,divDet = data[3];
     divData = data[2];
     cutSet = data[1];           # historical cuts
     IJPair = [(i,j) for i in pData.II for j in pData.Ji[i]];
     IPPair = [(i,par) for i in pData.II for par in 1:length(divSet[i])];
-    tcoreList,xcoreList,ubcoreList = recoverCoreList(pData.II,IJPair,data[4],data[5],data[6]);
+    #tcoreList,xcoreList,ubcoreList = recoverCoreList(pData.II,IJPair,data[4],data[5],data[6]);
+    tcoreList = data[4];
+    xcoreList = data[5];
+    ubcoreList = data[6];
     ubCost = data[7];
     tbest = data[8];
     xbest = data[9];
@@ -199,46 +203,48 @@ function solveMP_para_Share(data)
         println("lazy,$(currentLB)");
         if currentLB <= minimum(ubCostList)
             # the callback function
-            that = SharedArray{Float64,1}((length(pData.II)));
-            tdict = Dict();
-            xhat = SharedArray{Float64,1}((length(IJPair)));
-            xdict = Dict();
-            θhat = SharedArray{Float64,1}((length(Ω)));
-            yhat = SharedArray{Float64,1}((length(IPPair)));
-            ydict = Dict();
+            #that = SharedArray{Float64,1}((length(pData.II)));
+            that = Dict();
+            #xhat = SharedArray{Float64,1}((length(IJPair)));
+            xhat = Dict();
+            #θhat = SharedArray{Float64,1}((length(Ω)));
+            #yhat = SharedArray{Float64,1}((length(IPPair)));
+            yhat = Dict();
+            θhat = Dict();
             # obtain the solution at the current node
             for i in pData.II
-                that[findfirst(pData.II,i)] = getvalue(t[i]);
-                tdict[i] = getvalue(t[i]);
+                #that[findfirst(pData.II,i)] = getvalue(t[i]);
+                that[i] = getvalue(t[i]);
                 for j in pData.Ji[i]
-                    xhat[findfirst(IJPair,(i,j))] = getvalue(x[i,j]);
-                    xdict[i,j] = getvalue(x[i,j]);
+                    #xhat[findfirst(IJPair,(i,j))] = getvalue(x[i,j]);
+                    xhat[i,j] = getvalue(x[i,j]);
                 end
                 for par in 1:length(divSet[i])
-                    yhat[findfirst(IPPair,(i,par))] = round(getvalue(y[i,par]));
-                    ydict[i,par] = round(getvalue(y[i,par]));
+                    #yhat[findfirst(IPPair,(i,par))] = round(getvalue(y[i,par]));
+                    yhat[i,par] = round(getvalue(y[i,par]));
                 end
             end
             for ω in 1:length(Ω)
                 θhat[ω] = getvalue(θ[Ω[ω]]);
             end
-            push!(tcoreList,tdict);
-            push!(xcoreList,xdict);
+            push!(tcoreList,that);
+            push!(xcoreList,xhat);
+            push!(ycoreList,yhat);
             push!(tcoreNew,that);
             push!(xcoreNew,xhat);
 
             # generate cuts
             θInt = Dict();
             ubCost = minimum(ubCostList);
-            ubTemp,θInt = ubCalP(pData,disData,Ω,xdict,tdict,Tmax1,1,wp);
+            ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1,wp);
             push!(ubcoreList,ubTemp);
             push!(ubcoreNew,ubTemp);
 
             if ubCost > ubTemp
                 for i in pData.II
-                    tbest[i] = that[findfirst(pData.II,i)];
+                    tbest[i] = that[i];
                     for j in pData.Ji[i]
-                        xbest[i,j] = xhat[findfirst(IJPair,(i,j))];
+                        xbest[i,j] = xhat[i,j];
                     end
                 end
             end
@@ -248,12 +254,16 @@ function solveMP_para_Share(data)
             # obtain the cores
             tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
             # here is the issue, pack it in a function prevent separating it
-            dataList = subPara(pData,disData,Ω,tdict,xdict,ydict,divSet,H,lDict,tcore,xcore,ycore,wp);
+            dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp);
             cutScen = [ω for ω in Ω if dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)]];
-            πSet = SharedArray{Float64,2}((length(pData.II),length(cutScen)));
-            λSet = SharedArray{Float64,2}((length(IJPair),length(cutScen)));
-            γSet = SharedArray{Float64,2}((length(IPPair),length(cutScen)));
-            vSet = SharedArray{Float64,1}((length(cutScen)));
+            # πSet = SharedArray{Float64,2}((length(pData.II),length(cutScen)));
+            # λSet = SharedArray{Float64,2}((length(IJPair),length(cutScen)));
+            # γSet = SharedArray{Float64,2}((length(IPPair),length(cutScen)));
+            # vSet = SharedArray{Float64,1}((length(cutScen)));
+            πSet = zeros(length(pData.II),length(cutScen));
+            λSet = zeros(length(IJPair),length(cutScen));
+            γSet = zeros(length(IPPair),length(cutScen));
+            vSet = zeros(length(cutScen));
             for ωi in 1:length(cutScen)
                 ω = cutScen[ωi];
                 vSet[ωi] = dataList[ω][4];
@@ -266,9 +276,9 @@ function solveMP_para_Share(data)
                         γSet[findfirst(IPPair,(i,par)),ωi] = dataList[ω][3][i,par];
                     end
                 end
-                @lazyconstraint(cb, θ[ω] >= vSet[ωi] + sum(πSet[findfirst(pData.II,i),ωi]*(t[i] - tdict[i]) for i in pData.II) +
-                    sum(sum(λSet[findfirst(IJPair,(i,j)),ωi]*(x[i,j] - xdict[i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                    sum(sum(γSet[findfirst(IPPair,(i,par)),ωi]*(y[i,par] - ydict[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
+                @lazyconstraint(cb, θ[ω] >= vSet[ωi] + sum(πSet[findfirst(pData.II,i),ωi]*(t[i] - that[i]) for i in pData.II) +
+                    sum(sum(λSet[findfirst(IJPair,(i,j)),ωi]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
+                    sum(sum(γSet[findfirst(IPPair,(i,par)),ωi]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
             end
             newCuts = [cutScen,πSet,λSet,γSet,vSet,that,xhat,yhat];
             #push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
@@ -282,18 +292,19 @@ function solveMP_para_Share(data)
 
     # correct all ycoreList
     ubCostList = [ubCost];
-    ycoreList = Dict();
+    ycoreList = [];
     for ll in 1:length(tcoreList)
-        ycoreList[ll] = Dict();
+        yTemp = Dict();
         for i in pData.II
             for par in 1:length(divSet[i])
                 if (tcoreList[ll][i] >= H[divSet[i][par].startH])&(tcoreList[ll][i] < H[divSet[i][par].endH])
-                    ycoreList[ll][i,par] = 1;
+                    yTemp[i,par] = 1;
                 else
-                    ycoreList[ll][i,par] = 0;
+                    yTemp[i,par] = 0;
                 end
             end
         end
+        push!(ycoreList,yTemp);
     end
 
     # move the createMaster_Callback here
@@ -356,18 +367,19 @@ function solveMP_para_Share(data)
     # npoint is the solution index
     # cutSet[nc] = [npoint,[],πSet,λSet,γSet,vSet,thatSet,xhatSet,yhatSet,divInfoShare]
     for nc in 1:length(cutSet)
-        divSetPrev,divDetPrev = recoverDiv(divData[nc]);
+        #divSetPrev,divDetPrev = recoverDiv(divData[nc]);
+        divSetPrev,divDetPrev = divData[nc];
         IPPairPrev = [(i,par) for i in pData.II for par in 1:length(divSetPrev[i])];
         for npoint in 1:length(cutSet[nc])
-            for ωi in cutSet[nc][npoint][1]
+            for ωi in 1:length(cutSet[nc][npoint][1])
                 ω = cutSet[nc][npoint][1][ωi];
                 vk = cutSet[nc][npoint][5][ωi];
                 πk = cutSet[nc][npoint][2][:,ωi];
                 λk = cutSet[nc][npoint][3][:,ωi];
                 γk = cutSet[nc][npoint][4][:,ωi];
-                @constraint(mp, θ[ω] >= vk + sum(πk[findfirst(pData.II,i)]*(mp[:t][i] - cutSet[nc][npoint][6][findfirst(pData.II,i)]) +
-                    sum(λk[findfirst(IJPair,(i,j))]*(mp[:x][i,j] - cutSet[nc][npoint][7][findfirst(IJPair,(i,j))]) for j in pData.Ji[i]) +
-                    sum(γk[findfirst(IPPairPrev,(i,par))]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(divSetPrev[i],divSet[i][parNew]) == par) - cutSet[nc][npoint][8][findfirst(IPPairPrev,(i,par))])
+                @constraint(mp, θ[ω] >= vk + sum(πk[findfirst(pData.II,i)]*(mp[:t][i] - cutSet[nc][npoint][6][i]) +
+                    sum(λk[findfirst(IJPair,(i,j))]*(mp[:x][i,j] - cutSet[nc][npoint][7][i,j]) for j in pData.Ji[i]) +
+                    sum(γk[findfirst(IPPairPrev,(i,par))]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(divSetPrev[i],divSet[i][parNew]) == par) - cutSet[nc][npoint][8][i,par])
                     for par in 1:length(divSetPrev[i])) for i in pData.II));
             end
         end
@@ -446,7 +458,7 @@ function solveMP_para_Share(data)
         end
         newPartition1 = [(lGFracInd1,fracBotLG,fracTopLG)];
         divSet1,divDet1 = splitPar3(divSet1,divDet1,newPartition1);
-        divShare1 = convertDiv(divSet1,divDet1);
+        #divShare1 = convertDiv(divSet1,divDet1);
 
         lGFracInd2 = -1;
         largest2 = -Inf;
@@ -468,19 +480,19 @@ function solveMP_para_Share(data)
         end
         newPartition2 = [(lGFracInd2,fracBotLG,fracTopLG)];
         divSet2,divDet2 = splitPar3(divSet2,divDet2,newPartition2);
-        divShare2 = convertDiv(divSet2,divDet2);
+        #divShare2 = convertDiv(divSet2,divDet2);
 
-        returnSet = [divShare1,divShare2];
+        returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
     else
         returnNo = -Inf;
         returnSet = [];
     end
 
 # mpStatus,mpObj,GList,tbest,xbest,minimum(ubCostList),cutSet,tcoreNew,xcoreNew,ycoreNew,ubcoreNew;
-    return returnNo,cutSetNew,returnSet,tbest,xbest,minimum(ubCostList);
+    return returnNo,cutSetNew,returnSet,tbest,xbest,minimum(ubCostList),tcoreNew,xcoreNew,ubcoreNew;
 end
 
-function runPara_Share(treeList,cutList,tcoreShare,xcoreShare,ubcoreShare,ubCost,tbest,xbest,batchNo)
+function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo)
     npList = workers()[1:batchNo];
     wpList = [ib for ib in workers() if !(ib in npList)];
     global keepIter = true;
@@ -510,7 +522,7 @@ function runPara_Share(treeList,cutList,tcoreShare,xcoreShare,ubcoreShare,ubCost
                         treeList[selectNode][3] = 0;
                         cutData = cutList[treeList[selectNode][2]];
                         divData = [treeList[id][4] for id in treeList[selectNode][2]];
-                        mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreShare,xcoreShare,ubcoreShare,ubCost,tbest,xbest,noTh,wpList]);
+                        mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,wpList]);
                         # update the cutList with the added cuts and two new nodes
                         # update the cutSet
                         # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
@@ -636,27 +648,30 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     lbCostList = [];
     global ubCost = ubInc;
 
-    IJPair = [(i,j) for i in pData.II for j in pData.Ji[i]];
-    textShare = SharedArray{Float64,2}((length(pData.II),length(textList)));
-    for i in 1:length(pData.II)
-        for it in 1:length(textList)
-            textShare[i,it] = textList[it][pData.II[i]];
-        end
-    end
-    xextShare = SharedArray{Float64,2}((length(IJPair),length(xextList)));
-    counter = 1;
-    for i in pData.II
-        for j in pData.Ji[i]
-            for itj in 1:length(xextList)
-                xextShare[counter,itj] = xextList[itj][i,j];
-            end
-            counter += 1;
-        end
-    end
-    ubextShare = SharedArray{Float64,1}(length(ubextList));
-    for itu in 1:length(ubextList)
-        ubextShare[itu] = ubextList[itu];
-    end
+    # IJPair = [(i,j) for i in pData.II for j in pData.Ji[i]];
+    # textShare = SharedArray{Float64,2}((length(pData.II),length(textList)));
+    # for i in 1:length(pData.II)
+    #     for it in 1:length(textList)
+    #         textShare[i,it] = textList[it][pData.II[i]];
+    #     end
+    # end
+    # xextShare = SharedArray{Float64,2}((length(IJPair),length(xextList)));
+    # counter = 1;
+    # for i in pData.II
+    #     for j in pData.Ji[i]
+    #         for itj in 1:length(xextList)
+    #             xextShare[counter,itj] = xextList[itj][i,j];
+    #         end
+    #         counter += 1;
+    #     end
+    # end
+    # ubextShare = SharedArray{Float64,1}(length(ubextList));
+    # for itu in 1:length(ubextList)
+    #     ubextShare[itu] = ubextList[itu];
+    # end
+    tcoreList = deepcopy(textList);
+    xcoreList = deepcopy(xextList);
+    ubcoreList = deepcopy(ubextList);
 
     brInfo = precludeRelNew(pData,H,ubCost);
 
@@ -697,19 +712,18 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     # pre-separate the partition
     #divSet,divDet = splitPar_CI(divSet,divDet,tHList);
 
-    divInfoShare = convertDiv(divSet,divDet);
+    #divInfoShare = convertDiv(divSet,divDet);
 
     # set up a tree list
     global treeList = [];
     global cutList = [];
-    push!(treeList,[lbCost,[],-1,divInfoShare]); # the empty set is the list of predecessors of the current node
-    npoint = 0;
+    push!(treeList,[lbCost,[],-1,[divSet,divDet]]); # the empty set is the list of predecessors of the current node
     push!(cutList,[]);
 
     global batchNo = 5;
     global lbOverAll = -Inf;
     # transfer the data back to everywhere
-    tbest,xbest,ubCost,lbOverAll = runPara_Share(treeList,cutList,textShare,xextShare,ubextShare,ubCost,tbest,xbest,batchNo);
+    tbest,xbest,ubCost,lbOverAll = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo);
 
     # need a cut selection process within the callback
     return tbest,xbest,ubCost,lbOverAll;
