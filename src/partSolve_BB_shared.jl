@@ -523,6 +523,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                         cutData = cutList[treeList[selectNode][2]];
                         divData = [treeList[id][4] for id in treeList[selectNode][2]];
                         mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,wpList]);
+                        treeList[selectNode][3] = 1;
                         # update the cutList with the added cuts and two new nodes
                         # update the cutSet
                         # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
