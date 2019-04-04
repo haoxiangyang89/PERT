@@ -560,7 +560,7 @@ function solveMP_para_Share(data)
         end
         # newPartition2 = [(lGFracInd2,fracBotLG,fracTopLG)];
         divSet2,divDet2 = splitPar3(divSet2,divDet2,newPartition2);
-        divSet2,divDet2 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
+        divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
         #divShare2 = convertDiv(divSet2,divDet2);
 
         returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
