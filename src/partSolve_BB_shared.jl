@@ -603,6 +603,9 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                                 ubCost = mpSolveInfo[6];
                                 tbest = mpSolveInfo[4];
                                 xbest = mpSolveInfo[5];
+                                append!(tcoreList,mpSolveInfo[7]);
+                                append!(xcoreList,mpSolveInfo[8]);
+                                append!(ubcoreList,mpSolveInfo[9]);
                             end
                             if mpSolveInfo[1] < lbOverAll
                                 lbOverAll = mpSolveInfo[1];
