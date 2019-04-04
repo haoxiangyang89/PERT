@@ -3,16 +3,16 @@
 @everywhere using Distributions,HDF5,JLD;
 @everywhere include("header.jl");
 
-pathList = ["/home/haoxiang/PERT_tests/current/11/",
-            "/home/haoxiang/PERT_tests/current/14/",
-            "/home/haoxiang/PERT_tests/current/19/",
-            "/home/haoxiang/PERT_tests/current/35/",
-            "/home/haoxiang/PERT_tests/current/55/",
-            "/home/haoxiang/PERT_tests/current/75/"];
+pathList = ["/home/haoxiang/scratch/PERT_tests/current/11/",
+            "/home/haoxiang/scratch/PERT_tests/current/14/",
+            "/home/haoxiang/scratch/PERT_tests/current/19/",
+            "/home/haoxiang/scratch/PERT_tests/current/35/",
+            "/home/haoxiang/scratch/PERT_tests/current/55/",
+            "/home/haoxiang/scratch/PERT_tests/current/75/"];
 
 # make the skewness test
 Dmag = 1000;
-μp = 1/2;
+μp = 1/4;
 HsList = 0.1:0.1:0.9;
 dataSize = 50;
 Ωsize = 100;
@@ -26,7 +26,7 @@ end
 
 # make the d test
 Dmag = 1000;
-μp = 1/2;
+μp = 1/4;
 Hskewness = 1/2;
 dataSize = 50;
 Ωsize = 100;

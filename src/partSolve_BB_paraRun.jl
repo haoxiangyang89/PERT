@@ -6,12 +6,12 @@ global noThreads = 30;
 @everywhere include("header.jl");
 @everywhere include("partSolve_BB_para.jl");
 
-# pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
-#             "/home/haoxiang/PERT_tests/14_Lognormal_Exponential/",
-#             "/home/haoxiang/PERT_tests/19_Lognormal_Exponential/"];
-pathList = ["/Users/haoxiangyang/Desktop/PERT_tests/current/11_Lognormal_Exponential",
-            "/Users/haoxiangyang/Desktop/PERT_tests/current/14_Lognormal_Exponential",
-            "/Users/haoxiangyang/Desktop/PERT_tests/current/19_Lognormal_Exponential"]
+pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
+            "/home/haoxiang/PERT_tests/14_Lognormal_Exponential/",
+            "/home/haoxiang/PERT_tests/19_Lognormal_Exponential/"];
+# pathList = ["/Users/haoxiangyang/Desktop/PERT_tests/current/11_Lognormal_Exponential",
+#             "/Users/haoxiangyang/Desktop/PERT_tests/current/14_Lognormal_Exponential",
+#             "/Users/haoxiangyang/Desktop/PERT_tests/current/19_Lognormal_Exponential"]
 fileInd = 2;
 filePath = pathList[fileInd];
 Ωsize = 500;

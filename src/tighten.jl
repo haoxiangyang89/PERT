@@ -459,16 +459,23 @@ function obtainBds(pData,disData,Ω,mpTemp,ub)
     return ubInfo,lbInfo;
 end
 
-function longestPath(pData)
+function longestPath(pData,pInfo = Dict(),outLink = false)
     lDict = Dict();
     finishedList = [];
     activeList = [];
+    linkDict = Dict();
     for i in pData.II
         if pData.Pre[i] == []
             lDict[i] = 0;
         else
             lDict[i] = -Inf;
         end
+        linkDict[i] = -1;
+    end
+    if pInfo == Dict()
+        pd = pData.D;
+    else
+        pd = pInfo;
     end
     # Dijkstra with negative edge weight
     while length(finishedList) < length(pData.II)
@@ -496,14 +503,19 @@ function longestPath(pData)
         end
         # update the activities connected to maxInd
         for j in pData.Succ[maxInd]
-            if lDict[j] < lDict[maxInd] + pData.D[maxInd]
-                lDict[j] = lDict[maxInd] + pData.D[maxInd];
+            if lDict[j] < lDict[maxInd] + pd[maxInd]
+                lDict[j] = lDict[maxInd] + pd[maxInd];
+                linkDict[j] = maxInd;
             end
         end
         push!(finishedList,maxInd);
         deleteat!(activeList,findfirst(activeList,maxInd));
     end
-    return lDict;
+    if outLink
+        return lDict,linkDict;
+    else
+        return lDict;
+    end
 end
 
 function obtainDet(pData,disData,Ω,mpTemp,ub,divSet,divDet)
@@ -590,4 +602,15 @@ function avgCoreShare(pData,H,divSet,tcoreP,xcoreP,tcoreN,xcoreN,weightP)
         end
     end
     return tcoreO,xcoreO,ycoreO;
+end
+
+function genCritical(pData,lInfo)
+    lGGDict,linkGDict = longestPath(pData,lInfo,true);
+    currentA = 0;
+    criticalList = [];
+    while currentA != -1
+        push!(criticalList,currentA);
+        currentA = linkGDict[currentA];
+    end
+    return criticalList;
 end
