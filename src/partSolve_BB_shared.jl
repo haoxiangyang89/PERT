@@ -599,13 +599,13 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                         lbOverAll = minimum([treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1]);
                         treeList[selectNode][3] = 1;
                         if mpSolveInfo[1] > -Inf
+                            append!(tcoreList,mpSolveInfo[7]);
+                            append!(xcoreList,mpSolveInfo[8]);
+                            append!(ubcoreList,mpSolveInfo[9]);
                             if mpSolveInfo[6] < ubCost
                                 ubCost = mpSolveInfo[6];
                                 tbest = mpSolveInfo[4];
                                 xbest = mpSolveInfo[5];
-                                append!(tcoreList,mpSolveInfo[7]);
-                                append!(xcoreList,mpSolveInfo[8]);
-                                append!(ubcoreList,mpSolveInfo[9]);
                             end
                             if mpSolveInfo[1] < lbOverAll
                                 lbOverAll = mpSolveInfo[1];
