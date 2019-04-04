@@ -197,6 +197,9 @@ function solveMP_para_Share(data)
     xcoreNew = [];
     ubcoreNew = [];
     cutSetNew = [];
+    tError = Dict();
+    xError = Dict();
+    yError = Dict();
 
     function partBenders(cb)
         currentLB = MathProgBase.cbgetbestbound(cb);
@@ -255,6 +258,12 @@ function solveMP_para_Share(data)
             tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
             # here is the issue, pack it in a function prevent separating it
             dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp);
+            if length(dataList) == 3
+                tError = dataList[1];
+                xError = dataList[2];
+                yError = dataList[3];
+                return JuMP.StopTheSolver;
+            end
             cutScen = [ω for ω in Ω if dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)]];
             # πSet = SharedArray{Float64,2}((length(pData.II),length(cutScen)));
             # λSet = SharedArray{Float64,2}((length(IJPair),length(cutScen)));
@@ -519,6 +528,7 @@ function solveMP_para_Share(data)
         end
         #newPartition1 = [(lGFracInd1,fracBotLG,fracTopLG)];
         divSet1,divDet1 = splitPar3(divSet1,divDet1,newPartition1);
+        divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
         #divShare1 = convertDiv(divSet1,divDet1);
 
         lGFracInd2 = -1;
@@ -550,6 +560,7 @@ function solveMP_para_Share(data)
         end
         # newPartition2 = [(lGFracInd2,fracBotLG,fracTopLG)];
         divSet2,divDet2 = splitPar3(divSet2,divDet2,newPartition2);
+        divSet2,divDet2 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
         #divShare2 = convertDiv(divSet2,divDet2);
 
         returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
@@ -588,7 +599,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                     openNodes = [(treeList[l][1],l) for l in 1:length(treeList) if treeList[l][3] == -1];
                     if openNodes != []
                         selectNode = sort(openNodes, by = x -> x[1])[1][2];
-                        println("On core: ",p," processing node: ",selectNode);
+                        println("On core: ",p," processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]);
                         treeList[selectNode][3] = 0;
                         cutData = cutList[treeList[selectNode][2]];
                         divData = [treeList[id][4] for id in treeList[selectNode][2]];
