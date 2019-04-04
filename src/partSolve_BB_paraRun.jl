@@ -4,7 +4,7 @@ global noThreads = 30;
 @everywhere using Distributions,HDF5,JLD;
 # test sbb
 @everywhere include("header.jl");
-@everywhere include("partSolve_BB_para.jl");
+@everywhere include("partSolve_BB_shared.jl");
 
 pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
             "/home/haoxiang/PERT_tests/14_Lognormal_Exponential/",
