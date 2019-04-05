@@ -444,126 +444,131 @@ function solveMP_para_Share(data)
                 end
             end
         end
-        locBreak = Int64(floor((GFrac[lGFracInd][1]*2/3 + GFrac[lGFracInd][2]*1/3)));
-        divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreak,distanceDict);
-        lGDict1 = Dict();
-        for i in pData.II
-            if GFrac[i] != []
-                GBig = GFrac[i][2];
-                GSmall = GFrac[i][1];
-                for par in length(divSet1[i]):-1:1
-                    if (GBig < divSet1[i][par].endH)&(GBig >= divSet1[i][par].startH)
-                        if divDet1[i][par] == -1
-                            GBig = divSet1[i][par].startH - 1;
-                        end
-                    end
-                end
-                for par in 1:length(divSet1[i])
-                    if (GSmall < divSet1[i][par].endH)&(GSmall >= divSet1[i][par].startH)
-                        if divDet1[i][par] == 1
-                            GSmall = divSet1[i][par].endH;
-                        end
-                    end
-                end
-                lGDict1[i] = GBig - GSmall;
-            else
-                lGDict1[i] = 0;
-            end
-        end
-        criticalPath1 = genCritical(pData,lGDict1);
-
-        lGDict2 = Dict();
-        for i in pData.II
-            if GFrac[i] != []
-                GBig = GFrac[i][2];
-                GSmall = GFrac[i][1];
-                for par in length(divSet2[i]):-1:1
-                    if (GBig < divSet2[i][par].endH)&(GBig >= divSet2[i][par].startH)
-                        if divDet2[i][par] == -1
-                            GBig = divSet2[i][par].startH;
-                        end
-                    end
-                end
-                for par in 1:length(divSet2[i])
-                    if (GSmall < divSet2[i][par].endH)&(GSmall >= divSet2[i][par].startH)
-                        if divDet2[i][par] == 1
-                            GSmall = divSet2[i][par].endH;
-                        end
-                    end
-                end
-                lGDict2[i] = GBig - GSmall;
-            else
-                lGDict2[i] = 0;
-            end
-        end
-        criticalPath2 = genCritical(pData,lGDict2);
-
-        lGFracInd1 = -1;
-        largest1 = -Inf;
-        fracTopLG = -1;
-        fracBotLG = -1;
-        newPartition1 = [];
-        #for i in pData.II
-        for i in criticalPath1
-            # if (!(i in allSucc[lGFracInd]))&(!(lGFracInd in allSucc[i]))&(i != lGFracInd)
-            #     if GFrac[i] != []
-            #         fracTop = min(GFrac[i][2],maximum([divSet1[i][par].endH for par in 1:length(divSet1[i]) if divDet1[i][par] == 0]));
-            #         fracBot = max(GFrac[i][1],minimum([divSet1[i][par].startH for par in 1:length(divSet1[i]) if divDet1[i][par] == 0]));
-            #         #println(i," ",fracTop," ",fracBot);
-            #         if fracTop - fracBot > largest1
-            #             largest1 = fracTop - fracBot;
-            #             lGFracInd1 = i;
-            #             fracTopLG = fracTop;
-            #             fracBotLG = fracBot;
-            #         end
-            #     end
-            # end
-            if (i != lGFracInd)
+        if lGFracInd != -1
+            locBreak = Int64(floor((GFrac[lGFracInd][1]*2/3 + GFrac[lGFracInd][2]*1/3)));
+            divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreak,distanceDict);
+            lGDict1 = Dict();
+            for i in pData.II
                 if GFrac[i] != []
-                    fracTop = min(GFrac[i][2],maximum([divSet1[i][par].endH for par in 1:length(divSet1[i]) if divDet1[i][par] == 0]));
-                    fracBot = max(GFrac[i][1],minimum([divSet1[i][par].startH for par in 1:length(divSet1[i]) if divDet1[i][par] == 0]));
-                    push!(newPartition1,(i,fracBot,fracTop));
+                    GBig = GFrac[i][2];
+                    GSmall = GFrac[i][1];
+                    for par in length(divSet1[i]):-1:1
+                        if (GBig < divSet1[i][par].endH)&(GBig >= divSet1[i][par].startH)
+                            if divDet1[i][par] == -1
+                                GBig = divSet1[i][par].startH - 1;
+                            end
+                        end
+                    end
+                    for par in 1:length(divSet1[i])
+                        if (GSmall < divSet1[i][par].endH)&(GSmall >= divSet1[i][par].startH)
+                            if divDet1[i][par] == 1
+                                GSmall = divSet1[i][par].endH;
+                            end
+                        end
+                    end
+                    lGDict1[i] = GBig - GSmall;
+                else
+                    lGDict1[i] = 0;
                 end
             end
-        end
-        #newPartition1 = [(lGFracInd1,fracBotLG,fracTopLG)];
-        divSet1,divDet1 = splitPar3(divSet1,divDet1,newPartition1);
-        divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
-        #divShare1 = convertDiv(divSet1,divDet1);
+            criticalPath1 = genCritical(pData,lGDict1);
 
-        lGFracInd2 = -1;
-        largest2 = -Inf;
-        fracTopLG = -1;
-        fracBotLG = -1;
-        newPartition2 = [];
-        #for i in pData.II
-        for i in criticalPath2
-            # if (!(i in allSucc[lGFracInd]))&(!(lGFracInd in allSucc[i]))&(i != lGFracInd)
-            #     if GFrac[i] != []
-            #         fracTop = min(GFrac[i][2],maximum([divSet2[i][par].endH for par in 1:length(divSet2[i]) if divDet2[i][par] == 0]));
-            #         fracBot = max(GFrac[i][1],minimum([divSet2[i][par].startH for par in 1:length(divSet2[i]) if divDet2[i][par] == 0]));
-            #         if fracTop - fracBot > largest2
-            #             largest2 = fracTop - fracBot;
-            #             lGFracInd2 = i;
-            #             fracTopLG = fracTop;
-            #             fracBotLG = fracBot;
-            #         end
-            #     end
-            # end
-            if (i != lGFracInd)
+            lGDict2 = Dict();
+            for i in pData.II
                 if GFrac[i] != []
-                    fracTop = min(GFrac[i][2],maximum([divSet2[i][par].endH for par in 1:length(divSet2[i]) if divDet2[i][par] == 0]));
-                    fracBot = max(GFrac[i][1],minimum([divSet2[i][par].startH for par in 1:length(divSet2[i]) if divDet2[i][par] == 0]));
-                    push!(newPartition2,(i,fracBot,fracTop));
+                    GBig = GFrac[i][2];
+                    GSmall = GFrac[i][1];
+                    for par in length(divSet2[i]):-1:1
+                        if (GBig < divSet2[i][par].endH)&(GBig >= divSet2[i][par].startH)
+                            if divDet2[i][par] == -1
+                                GBig = divSet2[i][par].startH;
+                            end
+                        end
+                    end
+                    for par in 1:length(divSet2[i])
+                        if (GSmall < divSet2[i][par].endH)&(GSmall >= divSet2[i][par].startH)
+                            if divDet2[i][par] == 1
+                                GSmall = divSet2[i][par].endH;
+                            end
+                        end
+                    end
+                    lGDict2[i] = GBig - GSmall;
+                else
+                    lGDict2[i] = 0;
                 end
             end
-        end
-        # newPartition2 = [(lGFracInd2,fracBotLG,fracTopLG)];
-        divSet2,divDet2 = splitPar3(divSet2,divDet2,newPartition2);
-        divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
-        #divShare2 = convertDiv(divSet2,divDet2);
+            criticalPath2 = genCritical(pData,lGDict2);
 
-        returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
+            lGFracInd1 = -1;
+            largest1 = -Inf;
+            fracTopLG = -1;
+            fracBotLG = -1;
+            newPartition1 = [];
+            #for i in pData.II
+            for i in criticalPath1
+                # if (!(i in allSucc[lGFracInd]))&(!(lGFracInd in allSucc[i]))&(i != lGFracInd)
+                #     if GFrac[i] != []
+                #         fracTop = min(GFrac[i][2],maximum([divSet1[i][par].endH for par in 1:length(divSet1[i]) if divDet1[i][par] == 0]));
+                #         fracBot = max(GFrac[i][1],minimum([divSet1[i][par].startH for par in 1:length(divSet1[i]) if divDet1[i][par] == 0]));
+                #         #println(i," ",fracTop," ",fracBot);
+                #         if fracTop - fracBot > largest1
+                #             largest1 = fracTop - fracBot;
+                #             lGFracInd1 = i;
+                #             fracTopLG = fracTop;
+                #             fracBotLG = fracBot;
+                #         end
+                #     end
+                # end
+                if (i != lGFracInd)
+                    if GFrac[i] != []
+                        fracTop = min(GFrac[i][2],maximum([divSet1[i][par].endH for par in 1:length(divSet1[i]) if divDet1[i][par] == 0]));
+                        fracBot = max(GFrac[i][1],minimum([divSet1[i][par].startH for par in 1:length(divSet1[i]) if divDet1[i][par] == 0]));
+                        push!(newPartition1,(i,fracBot,fracTop));
+                    end
+                end
+            end
+            #newPartition1 = [(lGFracInd1,fracBotLG,fracTopLG)];
+            divSet1,divDet1 = splitPar3(divSet1,divDet1,newPartition1);
+            divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
+            #divShare1 = convertDiv(divSet1,divDet1);
+
+            lGFracInd2 = -1;
+            largest2 = -Inf;
+            fracTopLG = -1;
+            fracBotLG = -1;
+            newPartition2 = [];
+            #for i in pData.II
+            for i in criticalPath2
+                # if (!(i in allSucc[lGFracInd]))&(!(lGFracInd in allSucc[i]))&(i != lGFracInd)
+                #     if GFrac[i] != []
+                #         fracTop = min(GFrac[i][2],maximum([divSet2[i][par].endH for par in 1:length(divSet2[i]) if divDet2[i][par] == 0]));
+                #         fracBot = max(GFrac[i][1],minimum([divSet2[i][par].startH for par in 1:length(divSet2[i]) if divDet2[i][par] == 0]));
+                #         if fracTop - fracBot > largest2
+                #             largest2 = fracTop - fracBot;
+                #             lGFracInd2 = i;
+                #             fracTopLG = fracTop;
+                #             fracBotLG = fracBot;
+                #         end
+                #     end
+                # end
+                if (i != lGFracInd)
+                    if GFrac[i] != []
+                        fracTop = min(GFrac[i][2],maximum([divSet2[i][par].endH for par in 1:length(divSet2[i]) if divDet2[i][par] == 0]));
+                        fracBot = max(GFrac[i][1],minimum([divSet2[i][par].startH for par in 1:length(divSet2[i]) if divDet2[i][par] == 0]));
+                        push!(newPartition2,(i,fracBot,fracTop));
+                    end
+                end
+            end
+            # newPartition2 = [(lGFracInd2,fracBotLG,fracTopLG)];
+            divSet2,divDet2 = splitPar3(divSet2,divDet2,newPartition2);
+            divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
+            #divShare2 = convertDiv(divSet2,divDet2);
+
+            returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
+        else
+            # if all i's having binary G's, we reach optimum for this node, ub = lb
+            returnSet = [];
+        end
     else
         returnNo = -Inf;
         returnSet = [];
