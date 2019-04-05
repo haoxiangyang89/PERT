@@ -91,9 +91,6 @@ end
 
 # pre-separate the partition
 #divSet,divDet = splitPar_CI(divSet,divDet,tHList);
-tcoreList = [];
-xcoreList = [];
-ycoreList = [];
 for l in 1:length(textList)
     push!(tcoreList,textList[l]);
     push!(xcoreList,xextList[l]);
@@ -287,26 +284,31 @@ while keepIter
     #         end
     #     end
     # end
-    ybest = Dict();
-    for i in pData.II
-        setvalue(t[i], tbest[i]);
-        for j in pData.Ji[i]
-            setvalue(x[i,j],xbest[i,j]);
-        end
-        for par in 1:length(divSet[i])
-            if (tbest[i] >= H[divSet[i][par].startH])&(tbest[i] < H[divSet[i][par].endH])
-                ybest[i,par] = 1;
-            elseif (abs(tbest[i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
-                ybest[i,par] = 1;
-            else
-                ybest[i,par] = 0;
+    tcoreInd = testFeas(pData,H,divSet,divDet,tcoreList,ubcoreList);
+    if tcoreInd != -1
+        yfeas = Dict();
+        tfeas = tcoreList[tcoreInd];
+        xfeas = xcoreList[tcoreInd];
+        for i in pData.II
+            setvalue(t[i], tfeas[i]);
+            for j in pData.Ji[i]
+                setvalue(x[i,j],xfeas[i,j]);
             end
-            setvalue(y[i,par],ybest[i,par]);
+            for par in 1:length(divSet[i])
+                if (tfeas[i] >= H[divSet[i][par].startH])&(tfeas[i] < H[divSet[i][par].endH])
+                    yfeas[i,par] = 1;
+                elseif (abs(tfeas[i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
+                    yfeas[i,par] = 1;
+                else
+                    yfeas[i,par] = 0;
+                end
+                setvalue(y[i,par],yfeas[i,par]);
+            end
         end
-    end
-    θbest = pmap(ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict),Ω);
-    for ω in Ω
-        setvalue(θ[ω],θbest[ω]);
+        θfeas = subPara1(pData,disData,Ω,tfeas,xfeas,yfeas,divSet,H,lDict,wp);
+        for ω in Ω
+            setvalue(θ[ω],θfeas[ω]);
+        end
     end
 
     addlazycallback(mp, partBenders);
