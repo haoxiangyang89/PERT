@@ -86,7 +86,7 @@ for fileInd in 1:length(pathList)
     #@time tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
     #@time tFull,xFull,fFull,gFull,mFull = extForm_cheat_reg(pData,disData,Ω,1e-6,1e-4,999999,noThreads);
     tic();
-    include("partSolve_Callback_tightened.jl");
+    include("partSolve_Callback_tightened_sol.jl");
     timeFull = toc();
     gapFull = (ubCost - lbCost)/ubCost;
     ubFull = ubCost;
