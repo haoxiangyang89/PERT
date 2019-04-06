@@ -333,10 +333,13 @@ function divExploit(pData,disData,H,PartSet,PartDet,distanceDict)
                 push!(divSetNew[i],deepcopy(PartSet[i][l]));
                 push!(divDetNew[i],1);
             elseif (earlyT[i] > PartSet[i][l].startH)&(earlyT[i] < PartSet[i][l].endH)&(PartDet[i][l] == 0)
+                push!(divSetNew[i],deepcopy(PartSet[i][l]));
                 divSetNew[i][length(divSetNew[i])].endH = earlyT[i];
+                push!(divDetNew[i],1);
                 push!(divSetNew[i],deepcopy(PartSet[i][l]));
                 divSetNew[i][length(divSetNew[i])].startH = earlyT[i];
                 push!(divDetNew[i],0);
+
             else
                 push!(divSetNew[i],deepcopy(PartSet[i][l]));
                 push!(divDetNew[i],0);
@@ -347,17 +350,10 @@ function divExploit(pData,disData,H,PartSet,PartDet,distanceDict)
             if lateT[i] <= divSetNew[i][l].startH
                 divDetNew[i][l] = -1;
             elseif (lateT[i] >= divSetNew[i][l].startH)&(lateT[i] < divSetNew[i][l].endH)&(divDetNew[i][l] == 0)
-                if l + 1 <= length(divSetNew[i])
-                    # if there is another partition after this
-                    divSetNew[i][l+1].startH = lateT[i];
-                    divSetNew[i][l].endH = lateT[i];
-                else
-                    # if this is the last partition
-                    push!(divSetNew[i],deepcopy(PartSet[i][l]));
-                    divSetNew[i][l].endH = lateT[i];
-                    divSetNew[i][l+1].startH = lateT[i];
-                    push!(divDetNew[i],-1);
-                end
+                insert!(divSetNew[i],l+1,deepcopy(divSetNew[i][l]));
+                divSetNew[i][l+1].startH = lateT[i];
+                insert!(divDetNew[i],l+1,-1);
+                divSetNew[i][l].endH = lateT[i];
             end
         end
     end
