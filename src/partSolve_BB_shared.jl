@@ -191,6 +191,7 @@ function solveMP_para_Share(data)
     noTh = data[10];
     wp = CachingPool(data[11]);
     noSel = data[12];
+    fracBreak = data[13];
 
     Tmax1 =lDict[0];
     GList = [];
@@ -446,7 +447,7 @@ function solveMP_para_Share(data)
             end
         end
         if lGFracInd != -1
-            locBreak = Int64(floor((GFrac[lGFracInd][1]*2/3 + GFrac[lGFracInd][2]*1/3)));
+            locBreak = Int64(floor((GFrac[lGFracInd][1]*fracBreak + GFrac[lGFracInd][2]*(1 - fracBreak))));
             divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreak,distanceDict);
 
             lGDict1 = Dict();
@@ -637,7 +638,7 @@ function solveMP_para_Share(data)
     return returnNo,cutSetNew,returnSet,tbest,xbest,minimum(ubCostList),tcoreNew,xcoreNew,ubcoreNew;
 end
 
-function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noSel = 1)
+function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noSel = 1,fracBreak = 2/3)
     npList = workers()[1:batchNo];
     wpList = [ib for ib in workers() if !(ib in npList)];
     global keepIter = true;
@@ -664,11 +665,11 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                     if openNodes != []
                         selectNode = sort(openNodes, by = x -> x[1])[1][2];
                         if treeList[selectNode][1] < ubCost
-                            println("On core: ",p," processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]);
+                            println("On core: ",p," processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]," upper bound is: ",minimum(ubcoreList));
                             treeList[selectNode][3] = 0;
                             cutData = cutList[treeList[selectNode][2]];
                             divData = [treeList[id][4] for id in treeList[selectNode][2]];
-                            mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,wpList,noSel]);
+                            mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,wpList,noSel,fracBreak]);
                             # update the cutList with the added cuts and two new nodes
                             # update the cutSet
                             # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
@@ -861,7 +862,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     end
 
     # pre-separate the partition
-    #divSet,divDet = splitPar_CI(divSet,divDet,tHList);
+    divSet,divDet = splitPar_CI(divSet,divDet,tHList);
 
     #divInfoShare = convertDiv(divSet,divDet);
 
