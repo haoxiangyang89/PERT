@@ -199,14 +199,20 @@ function solveMP_para_Share(data)
     xcoreNew = [];
     ubcoreNew = [];
     cutSetNew = [];
-    tError = Dict();
-    xError = Dict();
-    yError = Dict();
-    errorωList = [];
+    tError = [];
+    xError = [];
+    yError = [];
+    ErrorωList = [];
+    tcoreError = [];
+    xcoreError = [];
+    ycoreError = [];
     tUnbounded = [];
     xUnbounded = [];
     yUnbounded = [];
     UnboundedωList = [];
+    tcoreUnbounded = [];
+    xcoreUnbounded = [];
+    ycoreUnbounded = [];
 
     function partBenders(cb)
         currentLB = MathProgBase.cbgetbestbound(cb);
@@ -268,16 +274,22 @@ function solveMP_para_Share(data)
             for ω in Ω
                 infeasBool = false;
                 if length(dataList[ω]) == 3
-                    tError = dataList[ω][1];
-                    xError = dataList[ω][2];
-                    yError = dataList[ω][3];
+                    push!(tError,that);
+                    push!(xError,xhat);
+                    push!(yError,yhat);
+                    push!(ErrorωList,ω);
+                    push!(tcoreError,tcore);
+                    push!(xcoreError,xcore);
+                    push!(ycoreError,ycore);
                     infeasBool = true;
-                    push!(errorωList,ω);
                 elseif length(dataList[ω]) == 6
                     push!(tUnbounded,that);
                     push!(xUnbounded,xhat);
                     push!(yUnbounded,yhat);
                     push!(UnboundedωList,ω);
+                    push!(tcoreUnbounded,tcore);
+                    push!(xcoreUnbounded,xcore);
+                    push!(ycoreUnbounded,ycore);
                 end
                 if infeasBool
                     return JuMP.StopTheSolver;
