@@ -971,7 +971,8 @@ function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,
         end
 
         # solve the subproblem by dual formulation
-        sp = Model(solver = GurobiSolver(OutputFlag = 0, NumericFocus = 3));
+        #sp = Model(solver = GurobiSolver(OutputFlag = 0, NumericFocus = 3));
+        sp = Model(solver = CplexSolver());
         @variable(sp, λFG1[i in pData.II, par in 1:length(divSet[i])] <= 0);
         @variable(sp, λFG2[i in pData.II, par in 1:length(divSet[i])] <= 0);
         @variable(sp, λFG3[i in pData.II, par in 1:length(divSet[i])] >= 0);
