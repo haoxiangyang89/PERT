@@ -202,6 +202,7 @@ function solveMP_para_Share(data)
     tError = Dict();
     xError = Dict();
     yError = Dict();
+    errorωList = [];
 
     function partBenders(cb)
         currentLB = MathProgBase.cbgetbestbound(cb);
@@ -260,11 +261,18 @@ function solveMP_para_Share(data)
             tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
             # here is the issue, pack it in a function prevent separating it
             dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp);
-            if length(dataList) == 3
-                tError = dataList[1];
-                xError = dataList[2];
-                yError = dataList[3];
-                return JuMP.StopTheSolver;
+            for ω in Ω
+                infeasBool = false;
+                if length(dataList[ω]) == 3
+                    tError = dataList[ω][1];
+                    xError = dataList[ω][2];
+                    yError = dataList[ω][3];
+                    infeasBool = true;
+                    push!(errorωList,ω);
+                end
+                if infeasBool
+                    return JuMP.StopTheSolver;
+                end
             end
             cutScen = [ω for ω in Ω if dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)]];
             # πSet = SharedArray{Float64,2}((length(pData.II),length(cutScen)));
