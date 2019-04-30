@@ -1091,7 +1091,11 @@ function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,
         end
 
         if returnOpt == 0
-            return πdict,λdict,γdict,vhat,Ghat;
+            if spStatus == :Optimal
+                return πdict,λdict,γdict,vhat,Ghat;
+            else
+                return πdict,λdict,γdict,vhat,Ghat,false;
+            end
         else
             return πdict,λdict,γdict,vhat,sp;
         end
