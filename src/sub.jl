@@ -1034,6 +1034,9 @@ function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,
         # objective function of the binary feasible solution should be the same
         @constraint(sp, binaryTight, corePoint >= (1- 1e-5)*vhat);
 
+        @objective(sp,Max,corePoint);
+        solve(sp);
+
         # optimize the fractional solution's objective
         @objective(sp, Max, sum(sum(ycore[i,par]*λFG2[i,par] + (ycore[i,par] - 1)*λFG3[i,par] for par in 1:length(divSet[i])) for i in pData.II) +
             sum(λHG1[i]*(dDω.H - tcore[i]) + λHG2[i]*(-tcore[i] + sum(ycore[i,par]*H[divSet[i][par].startH] for par in 1:length(divSet[i]))) for i in pData.II) +
