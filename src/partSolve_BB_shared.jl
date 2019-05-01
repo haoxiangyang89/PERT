@@ -348,7 +348,7 @@ function solveMP_para_Share(data)
     end
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noTh));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noTh, NumericFocus = 3));
     # mp = Model(solver = GurobiSolver(Threads = noThreads));
     @variables(mp, begin
       θ[Ω] >= 0
