@@ -7,10 +7,10 @@ global noThreads = 30;
 
 pathList = ["/home/haoxiang/PERT_tests/current/11/",
             "/home/haoxiang/PERT_tests/current/14/",
-            "/home/haoxiang/PERT_tests/current/19/"];
-#            ,"/home/haoxiang/PERT_tests/current/35/",
-#            "/home/haoxiang/PERT_tests/current/55/",
-#            "/home/haoxiang/PERT_tests/current/75/"];
+            "/home/haoxiang/PERT_tests/current/19/",
+            "/home/haoxiang/PERT_tests/current/35/",
+            "/home/haoxiang/PERT_tests/current/55/",
+            "/home/haoxiang/PERT_tests/current/75/"];
 HsList = 0.1:0.1:0.9;
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];

@@ -6,9 +6,13 @@ global noThreads = 30;
 @everywhere include("header.jl");
 
 #filePath = "/Users/haoxiangyang/Desktop/PERT_tests/75_Lognormal_Exponential/"
-pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
-            "/home/haoxiang/PERT_tests/14_Lognormal_Exponential/",
-            "/home/haoxiang/PERT_tests/19_Lognormal_Exponential/"];
+pathList = ["/home/haoxiang/PERT_tests/current/11/",
+            "/home/haoxiang/PERT_tests/current/14/",
+            "/home/haoxiang/PERT_tests/current/19/",
+            "/home/haoxiang/PERT_tests/current/35/",
+            "/home/haoxiang/PERT_tests/current/55/",
+            "/home/haoxiang/PERT_tests/current/75/"];
+            
 Ωsize = [100,200,300,400,500,750,1000];
 sNList = [20,20,20,20,20,30,40];
 MMList = [5,10,15,20,25,25,25];
@@ -53,7 +57,7 @@ for fileInd in 1:length(pathList)
 
         # extensive formulation
         tic();
-        text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-2,999999);
+        text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-4,999999);
         timeext = toc();
         ubmp = mext.objVal;
         lbmp = mext.objBound;

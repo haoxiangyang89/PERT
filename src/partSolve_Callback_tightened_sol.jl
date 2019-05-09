@@ -44,13 +44,13 @@ ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disD
 lbCost = -Inf;
 lbCostList = [];
 global ubCost = ubInc;
-ubCostList = [ubCost];
 
 tcoreList = deepcopy(textList);
 xcoreList = deepcopy(xextList);
 ubcoreList = deepcopy(ubextList);
 ycoreList = [];
 errorList = [];
+GList = [];
 
 brInfo = precludeRelNew(pData,H,ubCost);
 
@@ -91,8 +91,6 @@ end
 # pre-separate the partition
 #divSet,divDet = splitPar_CI(divSet,divDet,tHList);
 for l in 1:length(textList)
-    push!(tcoreList,textList[l]);
-    push!(xcoreList,xextList[l]);
     ycoreItem = Dict();
     for i in pData.II
         for par in 1:length(divSet[i])
@@ -110,8 +108,9 @@ end
 
 function partBenders(cb)
     currentLB = MathProgBase.cbgetbestbound(cb);
-    println("lazy,$(currentLB)");
-    if currentLB <= minimum(ubCostList)
+    currentUB = minimum(ubcoreList);
+    println("lazy, $(currentLB), $(currentUB)");
+    if currentLB <= currentUB
         # the callback function
         that = Dict();
         xhat = Dict();
@@ -140,7 +139,7 @@ function partBenders(cb)
         γdict = Dict();
         vk = Dict();
         θInt = Dict();
-        ubCost = minimum(ubCostList);
+        ubCost = minimum(ubcoreList);
         ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1);
         if ubCost > ubTemp
             for i in pData.II
@@ -150,29 +149,35 @@ function partBenders(cb)
                 end
             end
         end
-        push!(ubCostList,ubTemp);
+        push!(ubcoreList,ubTemp);
 
         #dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
         # obtain the cores
         tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
-        dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
-        for ω in Ω
-            πdict[ω] = dataList[ω][1];
-            λdict[ω] = dataList[ω][2];
-            γdict[ω] = dataList[ω][3];
-            vk[ω] = dataList[ω][4];
-        end
+        dataList = pmap(ω -> sub_divTT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
+        #dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
+        errorInd = [];
         cutDual = [];
         for ω in Ω
-            if vk[ω] - θhat[ω] > 1e-4*θhat[ω]
-                push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
-                @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*(t[i] - that[i]) for i in pData.II) +
-                    sum(sum(λdict[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                    sum(sum(γdict[ω][i,par]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
+            if length(dataList[ω]) == 5
+                πdict[ω] = dataList[ω][1];
+                λdict[ω] = dataList[ω][2];
+                γdict[ω] = dataList[ω][3];
+                vk[ω] = dataList[ω][4];
+                if (vk[ω] - θhat[ω] > 1e-4*θhat[ω])
+                    push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
+                    @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*(t[i] - that[i]) for i in pData.II) +
+                        sum(sum(λdict[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
+                        sum(sum(γdict[ω][i,par]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
+                end
+            else
+                push!(errorList,(ω,dataList[ω]));
+                push!(errorInd,ω);
             end
         end
+
         push!(cutSet,[[deepcopy(that),deepcopy(xhat),deepcopy(yhat),deepcopy(divSet)],cutDual]);
-        GCurrent = [dataList[ω][5] for ω in Ω];
+        GCurrent = [dataList[ω][5] for ω in Ω if !(ω in errorInd)];
         push!(GList,GCurrent);
     else
         return JuMP.StopTheSolver;
@@ -194,7 +199,6 @@ mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threa
   t[i in pData.II] >= 0
   y[i in pData.II, par in 1:length(divSet[i])], Bin
 end);
-
 
 while keepIter
     # correct all ycoreList
@@ -304,7 +308,7 @@ while keepIter
                 setvalue(y[i,par],yfeas[i,par]);
             end
         end
-        θfeas = subPara1(pData,disData,Ω,tfeas,xfeas,yfeas,divSet,H,lDict,wp);
+        θfeas = pmap(ω -> sub_divTT(pData,disData[ω],ω,tfeas,xfeas,yfeas,divSet,H,lDict,1),Ω);
         for ω in Ω
             setvalue(θ[ω],θfeas[ω]);
         end
@@ -339,9 +343,9 @@ while keepIter
     # check θInt vs. θhat: why the lower bound and the upper bound do not converge quickly --->
     # use the sub problem solution G to learn the b&b
     # also need to think up a way to tightening the cuts for each partition
-    ubCost = minimum(ubCostList);
+    ubCost = minimum(ubcoreList);
     push!(ubHist,ubCost);
-    push!(intSolHist,length(ubCostList));
+    push!(intSolHist,length(ubcoreList));
     if (ubCost - lbCost)/ubCost < ϵ
         keepIter = false;
     else

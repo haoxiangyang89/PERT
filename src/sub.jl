@@ -1431,42 +1431,49 @@ function sub_divTT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
 
     @objective(smp, Min, t[0]);
     smpStatus = solve(smp);
-    vk = getobjectivevalue(smp);
-    if returnOpt == 0
-        return vk;
-    else
-        # the cut generated is θ >= v - λ(x - xhat) - π(t - that)
-        λdict = Dict();             # dual for x
-        πdict = Dict();             # dual for t
-        γdict = Dict();             # dual for y
-        for i in pData.II
-            πdict[i] = -getdual(smp[:GCons1][i]) - getdual(smp[:GCons2][i]) +
-                (getdual(smp[:tFnAnt1][i]) + getdual(smp[:tFnAnt2][i]) +
-                sum(getdual(smp[:xGlin4][i,j])*(getvalue(smp[:x][i,j]) - 1) +
-                getdual(smp[:xGlin5][i,j])*getvalue(smp[:x][i,j]) +
-                getdual(smp[:xGlin6][i,j])*getvalue(smp[:x][i,j]) +
-                getdual(smp[:xGlin7][i,j])*getvalue(smp[:x][i,j]) for j in pData.Ji[i]));
-            for j in pData.Ji[i]
-                λdict[i,j] = (getdual(smp[:xFnAnt1][i,j]) + getdual(smp[:xFnAnt2][i,j]));
-            end
-            for par in 1:length(divSet[i])
-                γdict[i,par] = H[divSet[i][par].startH]*getdual(smp[:GCons2][i]) +
-                    getdual(smp[:GyRelax2][i,par]) + getdual(smp[:GyRelax3][i,par]) -
-                    sum(getdual(smp[:xGlin4][i,j])*H[divSet[i][par].endH]*getvalue(smp[:s][i,j]) +
-                    getdual(smp[:xGlin5][i,j])*H[divSet[i][par].startH]*(getvalue(smp[:x][i,j]) - getvalue(smp[:s][i,j]))
-                    getdual(smp[:xGlin6][i,j])*H[divSet[i][par].startH]*(getvalue(smp[:s][i,j]) - getvalue(smp[:x][i,j]) + 1) -
-                    getdual(smp[:xGlin7][i,j])*H[divSet[i][par].endH]*getvalue(smp[:s][i,j]) for j in pData.Ji[i]);
-                if dDω.H <= H[divSet[i][par].startH]
-                    γdict[i,par] += getdual(smp[:GFixed0][i]);
-                elseif dDω.H >= H[divSet[i][par].endH]
-                    γdict[i,par] -= getdual(smp[:GFixed1][i]);
+    if smpStatus == :Optimal
+        vk = getobjectivevalue(smp);
+        if returnOpt == 0
+            # the cut generated is θ >= v - λ(x - xhat) - π(t - that)
+            λdict = Dict();             # dual for x
+            πdict = Dict();             # dual for t
+            γdict = Dict();             # dual for y
+            for i in pData.II
+                πdict[i] = -getdual(smp[:GCons1][i]) - getdual(smp[:GCons2][i]) +
+                    (getdual(smp[:tFnAnt1][i]) + getdual(smp[:tFnAnt2][i]));
+                for j in pData.Ji[i]
+                    πdict[i] += getdual(smp[:xGlin4][i,j])*(getvalue(smp[:x][i,j]) - 1) +
+                    getdual(smp[:xGlin5][i,j])*getvalue(smp[:x][i,j]) +
+                    getdual(smp[:xGlin6][i,j])*getvalue(smp[:x][i,j]) +
+                    getdual(smp[:xGlin7][i,j])*getvalue(smp[:x][i,j]);
+                    λdict[i,j] = (getdual(smp[:xFnAnt1][i,j]) + getdual(smp[:xFnAnt2][i,j]));
+                end
+                for par in 1:length(divSet[i])
+                    γdict[i,par] = H[divSet[i][par].startH]*getdual(smp[:GCons2][i]) +
+                        getdual(smp[:GyRelax2][i,par]) + getdual(smp[:GyRelax3][i,par]);
+                    for j in pData.Ji[i]
+                        γdict[i,par] += getdual(smp[:xGlin4][i,j])*H[divSet[i][par].endH]*getvalue(smp[:s][i,j]) +
+                        getdual(smp[:xGlin5][i,j])*H[divSet[i][par].startH]*(getvalue(smp[:x][i,j]) - getvalue(smp[:s][i,j])) +
+                        getdual(smp[:xGlin6][i,j])*H[divSet[i][par].startH]*(getvalue(smp[:s][i,j]) - getvalue(smp[:x][i,j]) + 1) -
+                        getdual(smp[:xGlin7][i,j])*H[divSet[i][par].endH]*getvalue(smp[:s][i,j]);
+                    end
+                    if dDω.H <= H[divSet[i][par].startH]
+                        γdict[i,par] += getdual(smp[:GFixed0][i]);
+                    elseif dDω.H >= H[divSet[i][par].endH]
+                        γdict[i,par] -= getdual(smp[:GFixed1][i]);
+                    end
                 end
             end
+            Ghat = Dict();
+            for i in pData.II
+                Ghat[i] = getvalue(smp[:G][i]);
+            end
+            return πdict,λdict,γdict,vk,Ghat;
+        else
+            return vk;
         end
-        Ghat = Dict();
-        for i in pData.II
-            Ghat[i] = getvalue(smp[:G][i]);
-        end
-        return πdict,λdict,γdict,vk,Ghat;
+    else
+        # the sub is infeasible, report the error data
+        return that,xhat,yhat;
     end
 end
