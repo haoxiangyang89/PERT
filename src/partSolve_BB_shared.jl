@@ -891,7 +891,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     end
 
     # pre-separate the partition
-    divSet,divDet = splitPar_CI(divSet,divDet,tHList);
+    #divSet,divDet = splitPar_CI(divSet,divDet,tHList);
 
     #divInfoShare = convertDiv(divSet,divDet);
 

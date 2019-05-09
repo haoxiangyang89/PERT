@@ -40,16 +40,15 @@ for hIter in keys(H)
 end
 
 # start with an upper bound based on the smaller stochastic solution
-ubList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1);
+ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
 lbCost = -Inf;
 lbCostList = [];
-ubCost = ubInc;
+global ubCost = ubInc;
 ubCostList = [ubCost];
 
-GList = [];
-cutSel = Dict();
-tcoreList = [];
-xcoreList = [];
+tcoreList = deepcopy(textList);
+xcoreList = deepcopy(xextList);
+ubcoreList = deepcopy(ubextList);
 ycoreList = [];
 errorList = [];
 

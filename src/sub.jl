@@ -649,7 +649,7 @@ function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
         for i in pData.II
             Ghat[i] = getvalue(sp[:G][i]);
         end
-        return πdict,λdict,γdict,vk,sp;
+        return πdict,λdict,γdict,vk,Ghat;
     end
 end
 
@@ -989,7 +989,8 @@ function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,
         @variable(sp, λsG2[i in pData.II, j in pData.Ji[i]] <= 0);
         @variable(sp, λsG3[i in pData.II, j in pData.Ji[i]] >= 0);
         @variable(sp, λbudget <= 0);
-        @variable(sp, λxub[i in pData.II] <= 0);
+        @variable(sp, λxSum[i in pData.II] <= 0);
+        @variable(sp, λxub[i in pData.II, j in pData.Ji[i]] <= 0);
         @variable(sp, λGub[i in pData.II] <= 0);
         @variable(sp, λsub[i in pData.II, j in pData.Ji[i]] <= 0);
         @variable(sp, λFub[i in pData.II, par in 1:length(divSet[i])] <= 0);
@@ -1004,12 +1005,41 @@ function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,
             end
         end
 
+        # set up the initial solution for sp
+        # setvalue(λbudget,getdual(smp[:budgetConstr]));
+        # for i in pData.II
+        #     setvalue(λHG1[i],getdual(smp[:GCons1][i]));
+        #     setvalue(λHG1[i],getdual(smp[:GCons2][i]));
+        #     setvalue(λGy1[i],getdual(smp[:GFixed0][i]));
+        #     setvalue(λGy2[i],getdual(smp[:GFixed1][i]));
+        #     setvalue(λtG1[i],getdual(smp[:tGbound][i]));
+        #     setvalue(λtG2[i],getdual(smp[:tFnAnt1][i]));
+        #     setvalue(λtG3[i],getdual(smp[:tFnAnt2][i]));
+        #     setvalue(λxub[i],getdual(smp[:xConstr][i]));
+        #     for j in pData.Ji[i]
+        #         setvalue(λxG1[i,j],getdual(smp[:xFnAnt1][i,j]));
+        #         setvalue(λxG2[i,j],getdual(smp[:xFnAnt2][i,j]));
+        #         setvalue(λsG1[i,j],getdual(smp[:xGlin1][i,j]));
+        #         setvalue(λsG2[i,j],getdual(smp[:xGlin2][i,j]));
+        #         setvalue(λsG3[i,j],getdual(smp[:xGlin3][i,j]));
+        #     end
+        #     for par in 1:length(divSet[i])
+        #         setvalue(λFG1[i,par],getdual(smp[:GyRelax1][i,par]));
+        #         setvalue(λFG2[i,par],getdual(smp[:GyRelax2][i,par]));
+        #         setvalue(λFG3[i,par],getdual(smp[:GyRelax3][i,par]));
+        #     end
+        # end
+        # for k in pData.K
+        #     setvalue(λGG[k],getdual(smp[:GSuccessors][k[1],k[2]]));
+        #     setvalue(λdur[k],getdual(smp[:durationConstr][k]));
+        # end
+
         # t constraint
         @constraint(sp, tConstr[i in pData.II], tBool[i] - λtG1[i] - λtG2[i] - λtG3[i] +
             sum(λdur[k] for k in pData.K if k[1] == i) - sum(λdur[k] for k in pData.K if k[2] == i) >= 0);
         # x constraint
         @constraint(sp, xConstr[i in pData.II, j in pData.Ji[i]], -λxG1[i,j] - λxG2[i,j] +
-            λsG2[i,j] + λsG3[i,j] - pData.b[i][j]*λbudget - λxub[i] - sum(pData.D[i]*pData.eff[i][j]*λdur[k] for k in pData.K if k[1] == i) >= 0);
+            λsG2[i,j] + λsG3[i,j] - pData.b[i][j]*λbudget - λxSum[i] - λxub[i,j] - sum(pData.D[i]*pData.eff[i][j]*λdur[k] for k in pData.K if k[1] == i) >= 0);
         # G constraint
         @constraint(sp, gConstr[i in pData.II], sum(λFG1[i,par] + λFG3[i,par] for par in 1:length(divSet[i])) - dDω.H*(λHG1[i] - λHG2[i]) -
             λGy1[i] - λGy2[i] + sum(λGG[k] for k in pData.K if k[2] == i) - sum(λGG[k] for k in pData.K if k[1] == i) + λtG1[i]*dDω.H -
@@ -1027,25 +1057,23 @@ function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,
             sum(λGy1[i]*(sum(yhat[i,par] for par in 1:length(divSet[i]) if dDω.H <= H[divSet[i][par].startH])) +
                 λGy2[i]*(1 - sum(yhat[i,par] for par in 1:length(divSet[i]) if dDω.H >= H[divSet[i][par].endH])) for i in pData.II) +
             sum(that[i]*(λtG2[i] + λtG3[i]) + sum(xhat[i,j]*(λxG1[i,j] + λxG2[i,j]) for j in pData.Ji[i]) for i in pData.II) -
-            sum(sum(λsG3[i,j] for j in pData.Ji[i]) for i in pData.II) + pData.B*λbudget + sum(λxub[i] for i in pData.II) +
+            sum(sum(λsG3[i,j] for j in pData.Ji[i]) for i in pData.II) + pData.B*λbudget + sum(λxSum[i] for i in pData.II) +
             sum(pData.D[k[1]]*λdur[k] for k in pData.K) + sum(λGub[i] for i in pData.II) + sum(λFub[i,par] for i in pData.II for par in 1:length(divSet[i])) +
-            + sum(λsub[i,j] for i in pData.II for j in pData.Ji[i]));
+            + sum(λsub[i,j] + λxub[i,j] for i in pData.II for j in pData.Ji[i]));
 
         # objective function of the binary feasible solution should be the same
         @constraint(sp, binaryTight, corePoint >= (1- 1e-5)*vhat);
 
-        @objective(sp,Max,corePoint);
-        solve(sp);
-
         # optimize the fractional solution's objective
-        @objective(sp, Max, sum(sum(ycore[i,par]*λFG2[i,par] + (ycore[i,par] - 1)*λFG3[i,par] for par in 1:length(divSet[i])) for i in pData.II) +
+        @expression(sp, actualCore, sum(sum(ycore[i,par]*λFG2[i,par] + (ycore[i,par] - 1)*λFG3[i,par] for par in 1:length(divSet[i])) for i in pData.II) +
             sum(λHG1[i]*(dDω.H - tcore[i]) + λHG2[i]*(-tcore[i] + sum(ycore[i,par]*H[divSet[i][par].startH] for par in 1:length(divSet[i]))) for i in pData.II) +
             sum(λGy1[i]*(sum(ycore[i,par] for par in 1:length(divSet[i]) if dDω.H <= H[divSet[i][par].startH])) +
                 λGy2[i]*(1 - sum(ycore[i,par] for par in 1:length(divSet[i]) if dDω.H >= H[divSet[i][par].endH])) for i in pData.II) +
             sum(tcore[i]*(λtG2[i] + λtG3[i]) + sum(xcore[i,j]*(λxG1[i,j] + λxG2[i,j]) for j in pData.Ji[i]) for i in pData.II) -
-            sum(sum(λsG3[i,j] for j in pData.Ji[i]) for i in pData.II) + pData.B*λbudget + sum(λxub[i] for i in pData.II) +
+            sum(sum(λsG3[i,j] for j in pData.Ji[i]) for i in pData.II) + pData.B*λbudget + sum(λxSum[i] for i in pData.II) +
             sum(pData.D[k[1]]*λdur[k] for k in pData.K) + sum(λGub[i] for i in pData.II) + sum(λFub[i,par] for i in pData.II for par in 1:length(divSet[i])) +
-            + sum(λsub[i,j] for i in pData.II for j in pData.Ji[i]));
+            + sum(λsub[i,j] + λxub[i,j] for i in pData.II for j in pData.Ji[i]));
+        @objective(sp, Max, actualCore);
 
         spStatus = solve(sp);
 
@@ -1350,4 +1378,95 @@ function sub_divTn(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
 end
 
 function sub_divTDualTn(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,ycore,returnOpt = 0)
+end
+
+function sub_divTT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
+    # Magnanti-Wong with a small perturbation
+    # smp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
+    smp = Model(solver = GurobiSolver(OutputFlag = 0));
+    @variable(smp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
+    @variable(smp, t[i in pData.II] >= 0);
+    # relax the logic binary variables
+    @variable(smp, 0 <= G[i in pData.II] <= 1);
+    @variable(smp, 0 <= Gy[i in pData.II,par in 1:length(divSet[i])] <= 1);
+    @variable(smp, 0 <= s[i in pData.II,j in pData.Ji[i]] <= 1);
+
+    # add the basic sub problem constraints
+    @constraint(smp, GyRelax1[i in pData.II,par in 1:length(divSet[i])], Gy[i,par] <= G[i]);
+    @constraint(smp, GyRelax2[i in pData.II,par in 1:length(divSet[i])], Gy[i,par] <= yhat[i,par]);
+    @constraint(smp, GyRelax3[i in pData.II,par in 1:length(divSet[i])], Gy[i,par] >= G[i] + yhat[i,par] - 1);
+
+    @constraint(smp, GCons1[i in pData.II],dDω.H*G[i] - sum(H[divSet[i][par].endH]*Gy[i,par] for par in 1:length(divSet[i])) <= dDω.H - that[i]);
+    @constraint(smp, GCons2[i in pData.II],sum(H[divSet[i][par].startH]*Gy[i,par] for par in 1:length(divSet[i])) - dDω.H*G[i] >= -that[i] + sum(yhat[i,par]*H[divSet[i][par].startH] for par in 1:length(divSet[i])));
+    @constraint(smp, GFixed0[i in pData.II],G[i] >= sum(yhat[i,par] for par in 1:length(divSet[i]) if dDω.H <= H[divSet[i][par].startH]));
+    @constraint(smp, GFixed1[i in pData.II],G[i] <= 1 - sum(yhat[i,par] for par in 1:length(divSet[i]) if dDω.H >= H[divSet[i][par].endH]));
+
+    # add the predecessors and the successors logic constraints
+    @constraint(smp, GSuccessors[i in pData.II, k in pData.Succ[i]], G[i] <= G[k]);
+
+    # add the basic sub problem constraints
+    @constraint(smp, tGbound[i in pData.II],t[i] >= dDω.H*G[i]);
+    @constraint(smp, tFnAnt1[i in pData.II],t[i] + G[i]*M[i] >= that[i]);
+    @constraint(smp, tFnAnt2[i in pData.II],t[i] - G[i]*M[i] <= that[i]);
+    @constraint(smp, xFnAnt1[i in pData.II, j in pData.Ji[i]],x[i,j] + G[i] >= xhat[i,j]);
+    @constraint(smp, xFnAnt2[i in pData.II, j in pData.Ji[i]],x[i,j] - G[i] <= xhat[i,j]);
+
+    # linearize the bilinear term of x[i,j]*G[i]
+    @constraint(smp, xGlin1[i in pData.II, j in pData.Ji[i]], s[i,j] <= G[i]);
+    @constraint(smp, xGlin2[i in pData.II, j in pData.Ji[i]], s[i,j] <= x[i,j]);
+    @constraint(smp, xGlin3[i in pData.II, j in pData.Ji[i]], s[i,j] >= x[i,j] - 1 + G[i]);
+    @constraint(smp, xGlin4[i in pData.II, j in pData.Ji[i]], dDω.H*(x[i,j] + G[i]) - (sum(H[divSet[i][par].endH]*Gy[i,par] for par in 1:length(divSet[i])) + dDω.H*s[i,j])
+        <= that[i]*(x[i,j] - 1) + dDω.H - sum(H[divSet[i][par].endH]*yhat[i,par]*s[i,j] for par in 1:length(divSet[i])));
+    @constraint(smp, xGlin5[i in pData.II, j in pData.Ji[i]], dDω.H*s[i,j] <= that[i]*x[i,j] - sum(H[divSet[i][par].startH]*yhat[i,par]*x[i,j] for par in 1:length(divSet[i])) +
+        sum(H[divSet[i][par].startH]*yhat[i,par]*s[i,j] for par in 1:length(divSet[i])));
+    @constraint(smp, xGlin6[i in pData.II, j in pData.Ji[i]], dDω.H*(s[i,j] - G[i]) >= that[i]*(x[i,j] - 1) +
+        sum(H[divSet[i][par].startH]*(yhat[i,par]*(s[i,j] - x[i,j] + 1) - Gy[i,par]) for par in 1:length(divSet[i])));
+    @constraint(smp, xGlin7[i in pData.II, j in pData.Ji[i]], dDω.H*(x[i,j] - s[i,j]) >=
+        that[i]*x[i,j] - sum(H[divSet[i][par].endH]*yhat[i,par]*s[i,j] for par in 1:length(divSet[i])));
+
+    @constraint(smp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(smp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+    @constraint(smp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]] + dDω.d[k[1]]*G[k[1]]
+        - sum(pData.D[k[1]]*pData.eff[k[1]][j]*x[k[1],j] + dDω.d[k[1]]*pData.eff[k[1]][j]*s[k[1],j] for j in pData.Ji[k[1]]));
+
+    @objective(smp, Min, t[0]);
+    smpStatus = solve(smp);
+    vk = getobjectivevalue(smp);
+    if returnOpt == 0
+        return vk;
+    else
+        # the cut generated is θ >= v - λ(x - xhat) - π(t - that)
+        λdict = Dict();             # dual for x
+        πdict = Dict();             # dual for t
+        γdict = Dict();             # dual for y
+        for i in pData.II
+            πdict[i] = -getdual(smp[:GCons1][i]) - getdual(smp[:GCons2][i]) +
+                (getdual(smp[:tFnAnt1][i]) + getdual(smp[:tFnAnt2][i]) +
+                sum(getdual(smp[:xGlin4][i,j])*(getvalue(smp[:x][i,j]) - 1) +
+                getdual(smp[:xGlin5][i,j])*getvalue(smp[:x][i,j]) +
+                getdual(smp[:xGlin6][i,j])*getvalue(smp[:x][i,j]) +
+                getdual(smp[:xGlin7][i,j])*getvalue(smp[:x][i,j]) for j in pData.Ji[i]));
+            for j in pData.Ji[i]
+                λdict[i,j] = (getdual(smp[:xFnAnt1][i,j]) + getdual(smp[:xFnAnt2][i,j]));
+            end
+            for par in 1:length(divSet[i])
+                γdict[i,par] = H[divSet[i][par].startH]*getdual(smp[:GCons2][i]) +
+                    getdual(smp[:GyRelax2][i,par]) + getdual(smp[:GyRelax3][i,par]) -
+                    sum(getdual(smp[:xGlin4][i,j])*H[divSet[i][par].endH]*getvalue(smp[:s][i,j]) +
+                    getdual(smp[:xGlin5][i,j])*H[divSet[i][par].startH]*(getvalue(smp[:x][i,j]) - getvalue(smp[:s][i,j]))
+                    getdual(smp[:xGlin6][i,j])*H[divSet[i][par].startH]*(getvalue(smp[:s][i,j]) - getvalue(smp[:x][i,j]) + 1) -
+                    getdual(smp[:xGlin7][i,j])*H[divSet[i][par].endH]*getvalue(smp[:s][i,j]) for j in pData.Ji[i]);
+                if dDω.H <= H[divSet[i][par].startH]
+                    γdict[i,par] += getdual(smp[:GFixed0][i]);
+                elseif dDω.H >= H[divSet[i][par].endH]
+                    γdict[i,par] -= getdual(smp[:GFixed1][i]);
+                end
+            end
+        end
+        Ghat = Dict();
+        for i in pData.II
+            Ghat[i] = getvalue(smp[:G][i]);
+        end
+        return πdict,λdict,γdict,vk,Ghat;
+    end
 end

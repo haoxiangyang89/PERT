@@ -161,7 +161,7 @@ function revisePar(pData,disData,PartSet,PartDet,ubInfo,lbInfo)
     return newPartSet,newPartDet;
 end
 
-function splitPar_CI(PartSet,PartDet,splitInfo)
+function splitPar_CI(PartSet,PartDet,splitInfo,forceZero = false)
     # i generic
     newPartSet = copy(PartSet);
     newPartDet = copy(PartDet);
@@ -178,16 +178,27 @@ function splitPar_CI(PartSet,PartDet,splitInfo)
                     push!(partSetiTemp,part1);
                     push!(partSetiTemp,part2);
                     push!(partSetiTemp,part3);
-                    push!(partDetiTemp,0);
-                    push!(partDetiTemp,0);
-                    push!(partDetiTemp,0);
+                    if forceZero
+                        push!(partDetiTemp,1);
+                        push!(partDetiTemp,0);
+                        push!(partDetiTemp,-1);
+                    else
+                        push!(partDetiTemp,0);
+                        push!(partDetiTemp,0);
+                        push!(partDetiTemp,0);
+                    end
                 else
                     part1 = partType(PartSet[i][par].startH,splitStart);
                     part2 = partType(splitStart,PartSet[i][par].endH);
                     push!(partSetiTemp,part1);
                     push!(partSetiTemp,part2);
-                    push!(partDetiTemp,0);
-                    push!(partDetiTemp,0);
+                    if forceZero
+                        push!(partDetiTemp,1);
+                        push!(partDetiTemp,0);
+                    else
+                        push!(partDetiTemp,0);
+                        push!(partDetiTemp,0);
+                    end
                 end
             else
                 if (splitEnd < PartSet[i][par].endH)&(splitEnd > PartSet[i][par].startH)
@@ -195,8 +206,13 @@ function splitPar_CI(PartSet,PartDet,splitInfo)
                     part2 = partType(splitEnd,PartSet[i][par].endH);
                     push!(partSetiTemp,part1);
                     push!(partSetiTemp,part2);
-                    push!(partDetiTemp,0);
-                    push!(partDetiTemp,0);
+                    if forceZero
+                        push!(partDetiTemp,0);
+                        push!(partDetiTemp,-1);
+                    else
+                        push!(partDetiTemp,0);
+                        push!(partDetiTemp,0);
+                    end
                 else
                     push!(partSetiTemp,PartSet[i][par]);
                     push!(partDetiTemp,PartDet[i][par]);
