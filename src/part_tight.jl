@@ -340,49 +340,133 @@ function iniPart(pData,disData,Ω,sN,MM,returnOpt = 0,noThreads = 30)
     end
 end
 
-function splitAny(PartSet,PartDet,splitInfo)
-    newPartSet = copy(PartSet);
-    newPartDet = copy(PartDet);
-    for (i,splitStart,splitEnd) in splitInfo
+function splitAny(PartSet,PartDet,Ω,breakPoints)
+    # breakPoints is a dictionary with keys from pData.II
+    newPartSet = deepcopy(PartSet);
+    newPartDet = deepcopy(PartDet);
+    for i in keys(breakPoints)
         partSetiTemp = [];
         partDetiTemp = [];
         for par in 1:length(PartSet[i])
             # split the current partition, essentially split twice using the start and the end
-            if (splitStart < PartSet[i][par].endH)&(splitStart > PartSet[i][par].startH)&(PartDet[i][par] == 0)
-                if (splitEnd < PartSet[i][par].endH)&(splitEnd > PartSet[i][par].startH)
-                    part1 = partType(PartSet[i][par].startH,splitStart);
-                    part2 = partType(splitStart,splitEnd);
-                    part3 = partType(splitEnd,PartSet[i][par].endH);
-                    push!(partSetiTemp,part1);
-                    push!(partSetiTemp,part2);
-                    push!(partSetiTemp,part3);
+            bps = sort([j for j in breakPoints[i] if (j < PartSet[i][par].endH)&(j > PartSet[i][par].startH)]);
+            if bps != []
+                currentStart = PartSet[i][par].startH;
+                for j in bps
+                    partCurrent = partType(currentStart,j);
+                    push!(partSetiTemp,partCurrent);
                     push!(partDetiTemp,0);
-                    push!(partDetiTemp,0);
-                    push!(partDetiTemp,0);
-                else
-                    part1 = partType(PartSet[i][par].startH,splitStart);
-                    part2 = partType(splitStart,PartSet[i][par].endH);
-                    push!(partSetiTemp,part1);
-                    push!(partSetiTemp,part2);
-                    push!(partDetiTemp,0);
-                    push!(partDetiTemp,0);
+                    currentStart = j;
                 end
+                currentEnd = PartSet[i][par].endH;
+                partCurrent = partType(currentStart,currentEnd);
+                push!(partSetiTemp,partCurrent);
+                push!(partDetiTemp,0);
             else
-                if (splitEnd < PartSet[i][par].endH)&(splitEnd > PartSet[i][par].startH)
-                    part1 = partType(PartSet[i][par].startH,splitEnd);
-                    part2 = partType(splitEnd,PartSet[i][par].endH);
-                    push!(partSetiTemp,part1);
-                    push!(partSetiTemp,part2);
-                    push!(partDetiTemp,0);
-                    push!(partDetiTemp,0);
-                else
-                    push!(partSetiTemp,PartSet[i][par]);
-                    push!(partDetiTemp,PartDet[i][par]);
-                end
+                push!(partSetiTemp,PartSet[i][par]);
+                push!(partDetiTemp,PartDet[i][par]);
             end
         end
         newPartSet[i] = partSetiTemp;
         newPartDet[i] = partDetiTemp;
     end
     return newPartSet,newPartDet;
+end
+
+function splitPrep3(pData,disData,Ω,H,HRev,GList,divSet,divDet)
+    GCurrent = GList[length(GList)];
+    GFrac = Dict();
+    for i in pData.II
+        GFraciList = [disData[ω].H for ω in Ω if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)];
+        if GFraciList != []
+            GFrac[i] = [HRev[minimum(GFraciList)],HRev[maximum(GFraciList)]];
+        else
+            GFrac[i] = [];
+        end
+    end
+    newPartition = [];
+    for i in pData.II
+        if GFrac[i] != []
+            newItem = (i,GFrac[i][1],GFrac[i][2]);
+            push!(newPartition,newItem);
+        end
+    end
+    divSetNew,divDetNew = splitPar3(divSet,divDet,newPartition);
+    return divSetNew,divDetNew;
+end
+
+function splitPrepld(pData,disData,Ω,H,HRev,GList,divSet,divDet,θlp,θInt,nSplit)
+    # split the partition according to the largest deviation between the lp relaxation and the ip sub
+    GCurrent = GList[length(GList)];
+    θDiff = [θInt[ω] - θlp[ω] for ω in Ω];
+    θDiffPerm = sortperm(θDiff,rev = true);
+    # initialize the breakPoints dictionary
+    divDict = Dict();
+    for i in pData.II
+        divDict[i] = [];
+    end
+    for n in 1:nSplit
+        ωn = Ω[θDiffPerm[n]];
+        for i in pData.II
+            # G[i] is fractional
+            if (GCurrent[ωn][i] < 1 - 1e-6)&(GCurrent[ωn][i] > 1e-6)
+                push!(divDict[i],ωn);
+            end
+        end
+    end
+    divSetNew,divDetNew = splitAny(divSet,divDet,Ω,divDict);
+    return divSetNew,divDetNew;
+end
+
+function splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θlp,θInt,nSplit)
+    # split the partition according to the largest fraction impact (= G deviation * disData.d)
+    GCurrent = GList[length(GList)];
+    divDict = Dict();
+    for i in pData.II
+        divDict[i] = [];
+    end
+    for i in pData.II
+        θDiv = [];
+        for ω in Ω
+            if i != 0
+                if tCurrent[i] > H[ω] + 1e-6
+                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
+                        push!(θDiv,((1 - GCurrent[ω][i])*disData[ω].d[i],ω));
+                    end
+                elseif tCurrent[i] < H[ω] - 1e-6
+                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
+                        push!(θDiv,(GCurrent[ω][i]*disData[ω].d[i],ω));
+                    end
+                else
+                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
+                        push!(θDiv,(min(1 - GCurrent[ω][i],GCurrent[ω][i])*disData[ω].d[i],ω));
+                    end
+                end
+            else
+                if tCurrent[i] > H[ω] + 1e-6
+                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
+                        push!(θDiv,(1 - GCurrent[ω][i],ω));
+                    end
+                elseif tCurrent[i] < H[ω] - 1e-6
+                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
+                        push!(θDiv,(GCurrent[ω][i],ω));
+                    end
+                else
+                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
+                        push!(θDiv,(min(1 - GCurrent[ω][i],GCurrent[ω][i]),ω));
+                    end
+                end
+            end
+        end
+        θDivperm = sortperm(θDiv,rev = true);
+        if θDiv != []
+            # if there are fractional solutions
+            for n in 1:(min(nSplit,length(θDiv)))
+                ωn = θDiv[θDivperm[n]][2];
+                push!(divDict[i],ωn);
+            end
+        end
+    end
+    divSetNew,divDetNew = splitAny(divSet,divDet,Ω,divDict);
+    return divSetNew,divDetNew;
 end

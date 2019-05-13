@@ -1,0 +1,116 @@
+\documentclass[11pt]{article}
+%\usepackage[small,compact]{titlesec}
+\usepackage[small]{titlesec}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{subfig,enumerate,url,color}
+\setlength{\textheight}{9.1in}
+\setlength{\topmargin}{-0.66in}
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\textwidth}{6.5in}
+\def\qed{\hfill{\(\vcenter{\hrule height1pt \hbox{\vrule width1pt height5pt
+     \kern5pt \vrule width1pt} \hrule height1pt}\)} \medskip}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\renewcommand{\textfraction}{0.0}
+\newcommand{\dst}{\displaystyle}
+\newcommand{\minx}{\mbox{\( \dst \min_{x \in X} \)}}
+\newcommand{\Efx}{\mbox{\( \dst E f (x, \xi) \)}}
+\newcommand{\Efxhat}{\mbox{\( \dst E f (\hat{x}, \xi) \)}}
+\newcommand{\hxx}{\mbox{\( \hat{x} \)}}
+\newcommand{\bpi}{\bar{\pi}}
+\newcommand{\xx}{\mbox{\( x \)}}
+\newcommand{\txxi}{\mbox{\(\xi\)}}
+\newcommand{\var}{\mbox{var}}
+\newcommand{\cF}{{\cal F}}
+\newcommand{\cG}{{\cal G}}
+\newcommand{\txi}{{\xi}}
+\newcommand{\PP}{\mbox{\(SP\)}}
+\newcommand{\PPn}{\mbox{\(SP_n\)}}
+\newcommand{\PPnx}{\mbox{\(SP_{n_x}\)}}
+\newcommand{\noi}{\noindent}
+\renewcommand{\ss}{\smallskip}
+\newcommand{\ms}{\medskip}
+\newcommand{\bs}{\bigskip}
+\newcommand{\st}{\mbox{s.t.}}
+\newcommand{\wpo}{\mbox{wp1}}
+\newcommand{\iid}{\mbox{i.i.d.\ }}
+\newcommand{\vsmo}{\vspace*{-0.1in}}
+\newcommand{\vsmt}{\vspace*{-0.2in}}
+\newcommand{\vso}{\vspace*{0.1in}}
+\newcommand{\vst}{\vspace*{0.2in}}
+\newcommand{\mc}{\multicolumn}
+\newcommand{\cP}{{\cal P}}
+\newcommand{\cU}{{\cal U}}
+\renewcommand{\P}{{\mathbb P}}
+\newcommand{\underv}{\mbox{$\underbar{$v$}$}}
+\allowdisplaybreaks 
+
+\bibliographystyle{plain}
+
+\begin{document}
+%0.27
+\baselineskip0.20in
+
+\begin{center}
+\begin{large}
+
+{\bf PERT Example} \bs
+
+Haoxiang Yang and David Morton \ms
+
+January 2019 \bs
+
+\end{large}
+\end{center}
+
+\section*{Examples} 
+
+\noindent Haoxiang: I started generalizing (slightly) your example to understand what is possible\ldots
+
+\begin{example}
+Consider a network with three activities in series, as shown in Figure~\ref{fig:pert_example}. In this example, $I=\{S,1,2,3,T\}$ with nominal durations $D_1, D_2$, and $D_3$. We assume only one crashing option for each activity, and so we omit  index $j$. We let $e_1=0$, $e_2=e_3=\frac{1}{2}$, assume $b_i=1$ for all $i \in I$, and we let $B=1$. Set $\Omega=\{1\}$ so that either we have no disruption, $p^0=\frac{1}{2}$, or we have a disruption that occurs at time $H^1=D_1+\varepsilon$ with probability $p^1=\frac{1}{2}$. If a disruption occurs, the nominal activity durations are lengthened by $d_1=0$, $d_2$, and $d_3$. 
+%We assume $D_2 > D_3$ so that if we knew there would be no disruption, it would be best to crash activity~2, and we assume $D_3+d_3 > D_2+d_3$ so that if we knew there would be a disruption, it would be best to crash activity~3. 
+Clearly, we can take $x_1=x_1^1=0$. If we start each activity without delay, then $x_2=x_2^1$ and thus $x_3=x_3^1$ in an optimal solution. As a result, if $D_2 + \frac{1}{2} d_2 > D_3 + \frac{1}{2} d_3$ then $x_2=x_2^1=1$ and $x_3=x_3^1=0$, and the expected project duration is:
+\begin{equation}\label{nodelay}
+D_1 + \frac{1}{2} D_2 + D_3 + \frac{1}{4}d_2 + \frac{1}{2} d_3.
+\end{equation} 
+On the other hand, if we delay the start of activity 2 until $t_2=D_1+\varepsilon$ then $x_2$ and $x_2^1$ need not be equal. If $D_2 > D_3$ and $D_3+d_3 > D_2 + d_2$ then in an optimal solution $x_2=1$ and $x_3^1=1$, and the expected duration is:
+\begin{equation}\label{delay}
+\varepsilon + D_1 + \frac{3}{4} D_2 + \frac{3}{4} D_3 + \frac{1}{2} d_2 + \frac{1}{4} d_3.
+\end{equation}
+The three requisite inequalities on $D_2, D_3, d_2, d_3$ are equivalent to:
+\[ D_2 - D_3 > (D_3+d_3) - (D_2+d_2) > 0.\]
+For $k > 1$ let $D_2=k D$ (with $D_3=D$) and let $d_3=k d_2$ (with $d_2=d$). Then the above conditions amount to:
+\[ 2 D > d > D . \]
+\end{example}
+Notes to Haoxiang:
+\begin{enumerate}
+\item We are interested in the ratio of equation~\eqref{delay} to~\eqref{nodelay}, and bounds on this ratio. Can delaying improve the objective function by an arbitrarily large constant? I just did this quickly, but I think in the limit with $\varepsilon$ and $D_1$ small and $k$ large we obtain a ratio of $\frac{5}{6}$. I'm not confident that this is correct, but the main question is: Is this the best ratio possible? 
+\item Can you modify the example so that the above ratio is arbitrarily small or is $\frac{5}{6}$ the best possible? You could change the $e_i$ values from $\frac{1}{2}$ and that would improve the $\frac{5}{6}$ value, but I don't know that it would make the ratio shrink to zero in the limit. Maybe to $\frac{3}{4}$ or $\frac{1}{2}$? 
+\item The main issue is: Can you modify the example to include more activities, or in some other way, so that in the limit as $k$ (or however it's parameterized) grows large the ratio shrinks to zero? 
+\end{enumerate}
+
+\newpage
+
+\begin{example}\label{example2} 
+Consider a network with two activities in series [we don't need a figure]. Let $D_1$ and $D_2$ denote the two durations with $D_2 > D_1$. Assume $d_1=0$, $d_2 > 0$, $e_1=e_2=\frac{1}{2}$, and $B=1$. Let $\P(H=\frac{1}{2}D_1)=\frac{1}{2}$. Here, the optimal solution is to crash the shorter activity, i.e., $x_1=1$, which yields an expected project span of $\frac{1}{2}D_1 + D_2$ with start times $t_1=0$ and $t_2=\frac{1}{2}D_1$. In contrast, if $0 \le x_1 < 1$ then the expected duration is $D_1 (1-\frac{1}{2} x_1) + (D_2 + d_2)(1-\frac{1}{2} x_2)$, so that the ratio of the objective functions grows arbitrarily large as $d_2$ grows. The intuition behind crashing the shorter activity is that it allows us to initiate activity 2 in time to avoid having to incur delay $d_2$.
+\end{example}
+Haoxiang: I think the message with these examples is: (i) make the example as simple as possible to illustrate the effect you're trying to show, e.g., don't make $d_2$ random unless it's necessary and (ii) create the example to show how large the effect might be. \medskip
+
+\section*{Complexity} 
+
+In terms of a complexity result, Example~\ref{example2} suggests that you can take two activities in series, and you can construct the disruption time distribution so that it makes sense to have $x_i \in \{0,1\}$. If $x_i=1$ you can avoid the discrete delay on the second activity in series $i$. Now consider the set-covering construct that is used in this paper:
+
+\textcolor{blue}{\url{https://faculty.nps.edu/joroyset/docs/BrownCarlyleRoysetWood2005.pdf}}
+
+We use $i \in N_1$ to index $|N_1|$ parallel pairs, each with crashing decision $x_i, i \in N_1$. The sets $N_i \subset N_2$ are defined by the set covering problem. We're interested in the longest path from $S$ to $T$ ($a$ to $b$ in their paper). It's true that they have interdiction and crashing and we just have crashing, and they're trying to choose $i$'s in $N_1$ to make the longest path long, but let's see if you can use this idea to prove a complexity result. If you need to, let's start by assuming completely separate budgets for crashing activities in $N_1$ and $N_2$. 
+
+\end{document}

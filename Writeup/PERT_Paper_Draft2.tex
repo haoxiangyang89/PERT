@@ -474,7 +474,7 @@ Optimal Crashing of an Activity Network with Disruptions \ms
 				G_i \geq (\hat{t}_i - H^\omega)/\left(H^\omega - \underbar{H}^{\hat{q}} \right) + 1. \label{cons:case2eqn2}
 				\end{align}
 			\end{subequations}
-			Notice that the inequality~\eqref{cons:case2eqn2} is always weaker than~\eqref{cons:case2eqn1} because the right-hand side of~\eqref{cons:case2eqn2} is smaller than 0 while the right-hand side of~\eqref{cons:case2eqn1} is positive. Similar to Case 1, the lower bound increases compared to using a large \(M\) and the upper bound is \(1\), and we achieve a tightened relaxation.
+			Notice that the inequality~\eqref{cons:case2eqn2} is strictly weaker than~\eqref{cons:case2eqn1} because the right-hand side of~\eqref{cons:case2eqn2} is smaller than 0 while the right-hand side of~\eqref{cons:case2eqn1} is positive. Similar to Case 1, the lower bound increases compared to using a large \(M\) and the upper bound is \(1\), and we achieve a tightened relaxation.
 		\item 
 			%\(H^\omega > H^{\bar{\omega}^{\hat{q}}}\): 
 			\(H^\omega > \bar{H}^{\hat{q}}\): 
@@ -564,7 +564,7 @@ Optimal Crashing of an Activity Network with Disruptions \ms
 		\end{equation}
 		where \[\tilde{y}_i^{q} =  \sum_{\tilde{q} \in \Delta_i(\ell,q)} y_i^{\tilde{q}} \qquad  \forall i \in I, q \in \mathcal{Q}^\ell_i. \]
 		Suppose for an \(\omega \in \Omega\) and a \((t,x,y)\), we solve the problem \(S_{\mathcal{P}}^\omega\) and obtain the optimal solution \((t^{\omega,*},x^{\omega,*},G^{\omega,*},F^{\omega,*})\). It is easy to see that by transforming \(F^{\omega,*}\) to \(\tilde{F}^{\omega,*}\) with \[\tilde{F}^{\omega,*,q}_i = \sum_{\tilde{q} \in \Delta_i(\ell,q) }F_i^{\omega,*,\tilde{q}} \qquad  \forall i \in I, q \in \mathcal{Q}^\ell_i;\]
-		thus, we obtain a feasible solution \((t^{\omega,*},x^{\omega,*},G^{\omega,*},\tilde{F}^{\omega,*})\) to the recourse problem corresponding to the partition \(\mathcal{P}^\ell\). Therefore, inequality~\eqref{cons:gglb} holds. Furthermore, the cut generated at partition \(\mathcal{P}^\ell\) is
+		we obtain a feasible solution \((t^{\omega,*},x^{\omega,*},G^{\omega,*},\tilde{F}^{\omega,*})\) to the recourse problem corresponding to the partition \(\mathcal{P}^\ell\). Therefore, inequality~\eqref{cons:gglb} holds. Furthermore, the cut generated at partition \(\mathcal{P}^\ell\) is
 		\[\theta^\omega \geq v^{\omega,\ell} + \sum_{i \in I} \pi_i^{\omega,\ell} (t_i - \hat{t}_i^{\ell}) + \sum_{i \in I} \sum_{j \in J_i} \lambda_{ij}^{\omega,\ell} (x_{ij} - \hat{x}_{ij}^{\ell}) + \sum_{i \in I} \sum_{q \in \mathcal{Q}^{\ell}_i} \gamma_{i}^{\omega,\ell,q} \left( y_i^{q} - \hat{y}_i^{q,\ell} \right),\]
 		 which means that for any feasible \((t,x,\tilde{y})\), we have 
 		 \begin{equation} \label{cons:validglb}

@@ -62,3 +62,47 @@ function cutValue(pData,disData,text,xext,gext,θext,cutSet)
     end
     return θs;
 end
+
+function cutValueY(pData,disData,text,xext,yext,θext,cutSet,divSet)
+    H = Dict();
+    H[0] = 0;
+    H[length(Ω)+1] = Tmax;
+    for ω in Ω
+        H[ω] = disData[ω].H;
+    end
+
+    θs = Dict();
+    # for each batch of cut
+    for nc in 1:length(cutSet)
+        # for each scenario
+        for l in 1:length(cutSet[nc][2])
+            ω = cutSet[nc][2][l][1];
+            vk = cutSet[nc][2][l][2];
+            πk = cutSet[nc][2][l][3];
+            λk = cutSet[nc][2][l][4];
+            γk = cutSet[nc][2][l][5];
+            θs[ω,nc] = vk + sum(πk[i]*(text[i] - cutSet[nc][1][1][i]) for i in pData.II);
+            for i in pData.II
+                for j in pData.Ji[i]
+                    θs[ω,nc] += λk[i,j]*(xext[i,j] - cutSet[nc][1][2][i,j]);
+                end
+                for par in 1:length(cutSet[nc][1][4][i])
+                    ysum = 0;
+                    for parNew in 1:length(divSet[i])
+                        if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par
+                            ysum += yext[i,parNew];
+                        end
+                    end
+                    θs[ω,nc] += γk[i,par]*(ysum - cutSet[nc][1][3][i,par]);
+                end
+            end
+        end
+    end
+
+    for (ω,nc) in keys(θs)
+        if θs[ω,nc] > θext[ω]
+            println((ω,nc)," ",θs[ω,nc]," ",θext[ω]);
+        end
+    end
+    return θs;
+end

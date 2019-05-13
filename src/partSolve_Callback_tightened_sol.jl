@@ -1,4 +1,5 @@
 # calculate the largest possible starting time for each activity in any disrupted scenario
+global nSplit = 5;
 Tmax = disData[length(Ω)].H + longestPath(pData)[0];
 pdData = deepcopy(pData);
 for i in pData.II
@@ -154,8 +155,8 @@ function partBenders(cb)
         #dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
         # obtain the cores
         tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
-        dataList = pmap(ω -> sub_divTT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
-        #dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
+        #dataList = pmap(ω -> sub_divTT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
+        dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
         errorInd = [];
         cutDual = [];
         for ω in Ω
@@ -231,9 +232,7 @@ while keepIter
     @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
     @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
 
-    #@objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
-    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) + r*sum(t[i] for i in pData.II));
-
+    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
     tCurrent = Dict();
     xCurrent = Dict();
     θCurrent = Dict();
@@ -273,20 +272,6 @@ while keepIter
     end
 
     # find the current best upper bound from coreList
-    # lbmin = ubInc;
-    # coreMinind = -1;
-    # θbestR = Dict();
-    # for l in 1:length(tcoreList)
-    #     θcore = pmap(ω -> sub_divT(pData,disData[ω],ω,tcoreList[l],xcoreList[l],ycoreList[l],divSet,H,lDict),Ω);
-    #     lbcore = pData.p0*(tcoreList[l][0]) + sum(θcore[ω]*disData[ω].prDis for ω in Ω);
-    #     if lbcore < lbmin
-    #         lbmin = lbcore;
-    #         coreMinind = l;
-    #         for ω in 1:length(Ω)
-    #             θbestR[Ω[ω]] = θcore[ω];
-    #         end
-    #     end
-    # end
     tcoreInd = testFeas(pData,H,divSet,divDet,tcoreList,ubcoreList);
     if tcoreInd != -1
         yfeas = Dict();
@@ -315,8 +300,6 @@ while keepIter
     end
 
     addlazycallback(mp, partBenders);
-    #global setSolBool = true;
-    #addheuristiccallback(mp, setSolcb);
     tic();
     solve(mp);
     tIter = toc();
@@ -338,6 +321,7 @@ while keepIter
     for ω in Ω
         θCurrent[ω] = getvalue(mp[:θ][ω]);
     end
+    ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1);
 
     # need to come up with a rule to partition: gradient descent like binary search
     # check θInt vs. θhat: why the lower bound and the upper bound do not converge quickly --->
@@ -349,27 +333,9 @@ while keepIter
     if (ubCost - lbCost)/ubCost < ϵ
         keepIter = false;
     else
-        # cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
-        # cutSetNew = selectCuts2(cutSet,cutSel);
-        GCurrent = GList[length(GList)];
-        GFrac = Dict();
-        for i in pData.II
-            GFraciList = [disData[ω].H for ω in Ω if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)];
-            if GFraciList != []
-                GFrac[i] = [HRev[minimum(GFraciList)],HRev[maximum(GFraciList)]];
-            else
-                GFrac[i] = [];
-            end
-        end
-        newPartition = [];
-        for i in pData.II
-            if GFrac[i] != []
-                newItem = (i,GFrac[i][1],GFrac[i][2]);
-                push!(newPartition,newItem);
-            end
-        end
-        #divSet,divDet = splitPar(divSet,divDet,newPartition);
-        divSet,divDet = splitPar3(divSet,divDet,newPartition);
+        #divSet,divDet = splitPrep3(pData,disData,Ω,H,HRev,GList,divSet,divDet);
+        #divSet,divDet = splitPrepld(pData,disData,Ω,H,HRev,GList,divSet,divDet,θCurrent,θIntCurrent,nSplit);
+        divSet,divDet = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θCurrent,θIntCurrent,nSplit);
         push!(cutHist,sum(length(cutSet[l][2]) for l in 1:length(cutSet)));
         # cutSet = deepcopy(cutSetNew);
     end
