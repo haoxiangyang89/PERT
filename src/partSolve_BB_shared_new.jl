@@ -495,7 +495,6 @@ function solveMP_para_Share(data)
             divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
             divDict = Dict();
             for i in pData.II
-                println(i);
                 divDict[i] = [];
                 θDiv = [];
                 for ω in Ω
@@ -624,7 +623,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
     global noTh = div(noThreads,batchNo) - noPa;
     wpDict = Dict();
     for npi in 1:length(npList)
-        wpDict[npList[npi]] = workers()[(batchNo + (npi - 1)*noPa + 1):(batchNo + noPa)];
+        wpDict[npList[npi]] = workers()[(batchNo + (npi - 1)*noPa + 1):(batchNo + npi*noPa)];
     end
     global keepIter = true;
 
@@ -858,10 +857,9 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
 
     global batchNo = 5;
     global lbOverAll = -Inf;
-    global noSel = Int(round(0.25*length(pData.II)));
     # transfer the data back to everywhere
     tic();
-    tbest,xbest,ubCost,lbOverAll = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noSel);
+    tbest,xbest,ubCost,lbOverAll = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo);
     decompTime = toc();
 
     # need a cut selection process within the callback
