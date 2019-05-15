@@ -620,7 +620,8 @@ end
 function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noPa = 1,nSplit = 5)
     # separate the workers to main processors and workers
     npList = workers()[1:batchNo];
-    global noTh = div(noThreads,batchNo) - noPa;
+    global noTh = div(noThreads,batchNo);
+    global noPa = noTh - 1;
     wpDict = Dict();
     for npi in 1:length(npList)
         wpDict[npList[npi]] = workers()[(batchNo + (npi - 1)*noPa + 1):(batchNo + npi*noPa)];
