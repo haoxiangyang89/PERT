@@ -918,7 +918,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     # transfer the data back to everywhere
     tic();
     #tbest,xbest,ubCost,lbOverAll = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,3);
-    tbest,xbest,ubCost,lbOverAll = runPara_Share_Series(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,30);
+    tbest,xbest,ubCost,lbOverAll = runPara_Share_Series(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,noThreads);
     decompTime = toc();
 
     # need a cut selection process within the callback
