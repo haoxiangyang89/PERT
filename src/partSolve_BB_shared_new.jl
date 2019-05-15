@@ -347,7 +347,7 @@ function solveMP_para_Share(data)
     end
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, NumericFocus = 3, Threads = noTh, Cutoff = ubCost));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Method = 1, NumericFocus = 3, Threads = noTh, Cutoff = ubCost));
     # mp = Model(solver = GurobiSolver(Threads = noThreads));
     @variables(mp, begin
       θ[Ω] >= 0
@@ -707,7 +707,7 @@ function runPara_Share_Series(treeList,cutList,tcoreList,xcoreList,ubcoreList,ub
     boolFinished = true;
     while boolFinished
         # if all nodes are processed and no nodes are being processed, exit
-        println("-------------",boolFinished," ",keepIter," ",[treeList[l][3] for l in 1:length(treeList)],[treeList[l][1] for l in 1:length(treeList)],"-------------");
+        println("-------------",boolFinished," ",[treeList[l][3] for l in 1:length(treeList)],[treeList[l][1] for l in 1:length(treeList)],"-------------");
         openNodes = [(treeList[l][1],l) for l in 1:length(treeList) if treeList[l][3] == -1];
         if openNodes != []
             selectNode = sort(openNodes, by = x -> x[1])[1][2];
@@ -917,7 +917,8 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     global lbOverAll = -Inf;
     # transfer the data back to everywhere
     tic();
-    tbest,xbest,ubCost,lbOverAll = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,3);
+    #tbest,xbest,ubCost,lbOverAll = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,3);
+    tbest,xbest,ubCost,lbOverAll = runPara_Share_Series(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,30);
     decompTime = toc();
 
     # need a cut selection process within the callback
