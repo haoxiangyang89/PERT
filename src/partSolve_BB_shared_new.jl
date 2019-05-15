@@ -347,7 +347,7 @@ function solveMP_para_Share(data)
     end
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noTh, Cutoff = ubCost));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, NumericFocus = 3, Threads = noTh, Cutoff = ubCost));
     # mp = Model(solver = GurobiSolver(Threads = noThreads));
     @variables(mp, begin
       θ[Ω] >= 0
@@ -701,6 +701,62 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
 
     return tbest,xbest,ubCost,lbOverAll;
 end
+
+function runPara_Share_Series(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,nSplit = 5)
+    # separate the workers to main processors and workers
+    boolFinished = true;
+    while boolFinished
+        # if all nodes are processed and no nodes are being processed, exit
+        println("-------------",boolFinished," ",keepIter," ",[treeList[l][3] for l in 1:length(treeList)],[treeList[l][1] for l in 1:length(treeList)],"-------------");
+        openNodes = [(treeList[l][1],l) for l in 1:length(treeList) if treeList[l][3] == -1];
+        if openNodes != []
+            selectNode = sort(openNodes, by = x -> x[1])[1][2];
+            if treeList[selectNode][1] < ubCost
+                println("Processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]," upper bound is: ",minimum(ubcoreList));
+                treeList[selectNode][3] = 0;
+                cutData = cutList[treeList[selectNode][2]];
+                divData = [treeList[id][4] for id in treeList[selectNode][2]];
+                mpSolveInfo = solveMP_para_Share([cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,workers(),nSplit]);
+                # update the cutList with the added cuts and two new nodes
+                # update the cutSet
+                # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
+                treeList[selectNode][3] = 1;
+                if mpSolveInfo[1] > -Inf
+                    append!(tcoreList,mpSolveInfo[7]);
+                    append!(xcoreList,mpSolveInfo[8]);
+                    append!(ubcoreList,mpSolveInfo[9]);
+                    if mpSolveInfo[6] < ubCost
+                        ubCost = mpSolveInfo[6];
+                        tbest = mpSolveInfo[4];
+                        xbest = mpSolveInfo[5];
+                    end
+                    # update the current node cut
+                    cutList[selectNode] = mpSolveInfo[2];
+                    # push the branched nodes
+                    if (mpSolveInfo[1] < ubCost)
+                        ancestorTemp = deepcopy(treeList[selectNode][2]);
+                        push!(ancestorTemp,selectNode);
+                        for newN in 1:length(mpSolveInfo[3])
+                            push!(treeList,[mpSolveInfo[1],ancestorTemp,-1,mpSolveInfo[3][newN]]);
+                            push!(cutList,[]);
+                        end
+                    end
+                end
+                if [treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1] != []
+                    lbOverAll = minimum([treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1]);
+                    if (ubCost - lbOverAll)/ubCost < ϵ
+                        boolFinished = false;
+                    end
+                end
+            end
+        else
+            boolFinished = false;
+        end
+    end
+
+    return tbest,xbest,ubCost,lbOverAll;
+end
+
 
 function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
