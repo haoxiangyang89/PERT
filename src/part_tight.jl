@@ -470,3 +470,81 @@ function splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θlp,
     divSetNew,divDetNew = splitAny(divSet,divDet,Ω,divDict);
     return divSetNew,divDetNew;
 end
+
+function splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θlp,θInt,nSplit)
+    # select the partition according to both sparsity and scenario improvement
+    GCurrent = GList[length(GList)];
+    divSetNew = deepcopy(divSet);
+    divDetNew = deepcopy(divDet);
+    divΩ = [];
+    n = 1;
+    contBool = true;
+    while (n <= nSplit)&(contBool)
+        divDict = Dict();
+        for i in pData.II
+            divDict[i] = [];
+        end
+        # select the split in a greedy manner
+        θDiv = [];
+        for ω in Ω
+            if (θInt[ω] - θlp[ω] > θInt[ω]*1e-3)*(!(ω in divΩ))
+                # if we select ω to branch on
+                θgain = θInt[ω] - θlp[ω];
+                θgainB = [];
+                for i in pData.II
+                    if i != 0
+                        # obtain the original partition diameter
+                        currentpar = -1;
+                        for par in 1:length(divSetNew[i])
+                            if (ω > divSetNew[i][par].startH) & (ω < divSetNew[i][par].endH)
+                                currentpar = par;
+                            end
+                        end
+                        if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)&(currentpar != -1)
+                            # if G is fractional
+                            oriD = H[divSetNew[i][currentpar].endH] - H[divSetNew[i][currentpar].startH];
+                            for ωn in (divSetNew[i][currentpar].startH+1):(ω-1)
+                                currentD = H[ω] - H[divSetNew[i][currentpar].startH];
+                                if tCurrent[i] > H[ωn] + 1e-6
+                                    push!(θgainB,(1 - GCurrent[ω][i])*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                                elseif tCurrent[i] < H[ω] - 1e-6
+                                    push!(θgainB,GCurrent[ω][i]*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                                else
+                                    push!(θgainB,min(1 - GCurrent[ω][i],GCurrent[ωn][i])*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                                end
+                            end
+                            for ωn in (ω+1):(divSetNew[i][currentpar].endH-1)
+                                currentD = H[divSetNew[i][currentpar].endH] - H[ω];
+                                if tCurrent[i] > H[ωn] + 1e-6
+                                    push!(θgainB,(1 - GCurrent[ωn][i])*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                                elseif tCurrent[i] < H[ω] - 1e-6
+                                    push!(θgainB,GCurrent[ωn][i]*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                                else
+                                    push!(θgainB,min(1 - GCurrent[ωn][i],GCurrent[ωn][i])*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                                end
+                            end
+                        end
+                    end
+                end
+                if θgainB != []
+                    θgain += maximum(θgainB);
+                end
+                push!(θDiv,(θgain,ω));
+            end
+        end
+        if θDiv != []
+            estθDiff,ωSelect = maximum(θDiv);
+            for i in pData.II
+                # G[i] is fractional
+                if (GCurrent[ωSelect][i] < 1 - 1e-6)&(GCurrent[ωSelect][i] > 1e-6)
+                    push!(divDict[i],ωSelect);
+                end
+            end
+            divSetNew,divDetNew = splitAny(divSetNew,divDetNew,Ω,divDict);
+            push!(divΩ,ωSelect);
+        else
+            contBool = false;
+        end
+    end
+    return divSetNew,divDetNew;
+end

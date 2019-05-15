@@ -1,5 +1,4 @@
 # calculate the largest possible starting time for each activity in any disrupted scenario
-global nSplit = 5;
 Tmax = disData[length(Ω)].H + longestPath(pData)[0];
 pdData = deepcopy(pData);
 for i in pData.II
@@ -293,7 +292,7 @@ while keepIter
                 setvalue(y[i,par],yfeas[i,par]);
             end
         end
-        θfeas = pmap(ω -> sub_divTT(pData,disData[ω],ω,tfeas,xfeas,yfeas,divSet,H,lDict,1),Ω);
+        θfeas = pmap(ω -> sub_divT(pData,disData[ω],ω,tfeas,xfeas,yfeas,divSet,H,lDict),Ω);
         for ω in Ω
             setvalue(θ[ω],θfeas[ω]);
         end
@@ -333,9 +332,15 @@ while keepIter
     if (ubCost - lbCost)/ubCost < ϵ
         keepIter = false;
     else
-        #divSet,divDet = splitPrep3(pData,disData,Ω,H,HRev,GList,divSet,divDet);
-        #divSet,divDet = splitPrepld(pData,disData,Ω,H,HRev,GList,divSet,divDet,θCurrent,θIntCurrent,nSplit);
-        divSet,divDet = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θCurrent,θIntCurrent,nSplit);
+        if bAlt == 1
+            divSet,divDet = splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θCurrent,θIntCurrent,nSplit);
+        elseif bAlt == 2
+            divSet,divDet = splitPrepld(pData,disData,Ω,H,HRev,GList,divSet,divDet,θCurrent,θIntCurrent,nSplit);
+        elseif bAlt == 3
+            divSet,divDet = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θCurrent,θIntCurrent,nSplit);
+        else
+            divSet,divDet = splitPrep3(pData,disData,Ω,H,HRev,GList,divSet,divDet);
+        end
         push!(cutHist,sum(length(cutSet[l][2]) for l in 1:length(cutSet)));
         # cutSet = deepcopy(cutSetNew);
     end

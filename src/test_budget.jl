@@ -5,37 +5,45 @@ global noThreads = 30;
 # test sbb
 @everywhere include("header.jl");
 
-pathList = ["/home/haoxiang/PERT_tests/current/11/",
-            "/home/haoxiang/PERT_tests/current/14/",
-            "/home/haoxiang/PERT_tests/current/19/",
-            "/home/haoxiang/PERT_tests/current/35/",
-            "/home/haoxiang/PERT_tests/current/55/",
-            "/home/haoxiang/PERT_tests/current/75/"];
+# pathList = ["/scratch/haoxiang/current/11/",
+#             "/scratch/haoxiang/current/14/",
+#             "/scratch/haoxiang/current/19/",
+#             "/scratch/haoxiang/current/35/",
+#             "/scratch/haoxiang/current/55/",
+#             "/scratch/haoxiang/current/75/"];
+pathList = ["/home/haoxiang/scratch/PERT_tests/current/11/",
+            "/home/haoxiang/scratch/PERT_tests/current/14/",
+            "/home/haoxiang/scratch/PERT_tests/current/19/",
+            "/home/haoxiang/scratch/PERT_tests/current/35/",
+            "/home/haoxiang/scratch/PERT_tests/current/55/",
+            "/home/haoxiang/scratch/PERT_tests/current/75/"];
+
 
 # filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_Lognormal_Exponential/"
 dDict = Dict();
-Ωsize = [10,20,50,75,100,200,300,400,500];
-sNList = [0,0,0,0,20,20,20,20,20];
-MMList = [0,0,0,0,5,10,15,20,25];
-data5000Raw = load("data5000.jld");
-data1 = data5000Raw["dataUB"];
+Ωsize = [10,20,50,100,200,300,400,500,750,1000,1500,2000];
+sNList = [0,0,0,0,20,20,20,20,25,20,30,40];
+MMList = [0,0,0,0,10,15,20,25,30,50,50,50];
 for fileInd in 1:length(pathList)
+    simuPath = pathList[fileInd]*"simuData.jld";
+    data5000Raw = load(simuPath);
+
     dDict[fileInd] = Dict();
-    filePath = pathList[fileInd];
-    disData1 = data1[fileInd];
+    disData1 = data5000Raw["data"][1];
     Ω1 = 1:length(disData1);
+    pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,1);
+    global pData = pData;
     for Ωl in 1:length(Ωsize)
         global Ω = 1:Ωsize[Ωl];
+        disDataRaw = load(pathList[fileInd]*"solData_$Ωl.jld");
+        disDataSet = disDataRaw["data"];
         global ϵ = 1e-2;
         dDict[fileInd][Ωsize[Ωl]] = [];
         ubbudget = [];
         n = 1;
         while n <= 20
             # try
-            global pData;
-            global disDataSet;
-            pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl]);
-            global disData = disDataSet[1];
+            global disData = disDataSet[n];
 
             global allSucc = findSuccAll(pData);
             global distanceDict = Dict();
@@ -45,16 +53,18 @@ for fileInd in 1:length(pathList)
                 end
             end
             # our decomposition method
-            if Ωl < 5
+            if Ωl < 4
                 tic();
-                include("partSolve_Callback_tightened.jl");
+                tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
                 timedecomp = toc();
-                gapdecomp = (ubCost - lbCost)/ubCost;
-                xFull = deepcopy(xbest);
-                tFull = deepcopy(tbest);
+                gapdecomp = 0;
+                lbCost = fFull;
+                ubCost = fFull;
             else
                 global sN = sNList[Ωl];
                 global MM = MMList[Ωl];
+                global nSplit = 5;
+                global bAlt = 1;
                 tic();
                 include("partSolve_Callback_tightened_sol.jl");
                 timedecomp = toc();

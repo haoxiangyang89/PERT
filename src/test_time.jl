@@ -5,17 +5,22 @@ global noThreads = 30;
 # test sbb
 @everywhere include("header.jl");
 
-#filePath = "/Users/haoxiangyang/Desktop/PERT_tests/75_Lognormal_Exponential/"
-pathList = ["/home/haoxiang/PERT_tests/current/11/",
-            "/home/haoxiang/PERT_tests/current/14/",
-            "/home/haoxiang/PERT_tests/current/19/",
-            "/home/haoxiang/PERT_tests/current/35/",
-            "/home/haoxiang/PERT_tests/current/55/",
-            "/home/haoxiang/PERT_tests/current/75/"];
-            
-Ωsize = [100,200,300,400,500,750,1000];
-sNList = [20,20,20,20,20,30,40];
-MMList = [5,10,15,20,25,25,25];
+# pathList = ["/scratch/haoxiang/current/11/",
+#             "/scratch/haoxiang/current/14/",
+#             "/scratch/haoxiang/current/19/",
+#             "/scratch/haoxiang/current/35/",
+#             "/scratch/haoxiang/current/55/",
+#             "/scratch/haoxiang/current/75/"];
+pathList = ["/home/haoxiang/scratch/PERT_tests/current/11/",
+            "/home/haoxiang/scratch/PERT_tests/current/14/",
+            "/home/haoxiang/scratch/PERT_tests/current/19/",
+            "/home/haoxiang/scratch/PERT_tests/current/35/",
+            "/home/haoxiang/scratch/PERT_tests/current/55/",
+            "/home/haoxiang/scratch/PERT_tests/current/75/"];
+
+Ωsize = [10,20,50,100,200,300,400,500,750,1000,1500,2000];
+sNList = [0,0,0,0,20,20,20,20,25,20,30,40];
+MMList = [0,0,0,0,10,15,20,25,30,50,50,50];
 dDict = Dict();
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
@@ -25,7 +30,8 @@ for fileInd in 1:length(pathList)
         global ϵ = 1e-2;
         global pData;
         pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl]);
-        global disData = disDataSet[1];
+        dataRaw = load(filePath*"solData_$Ωl.jld");
+        global disData = dataRaw["data"][1];
 
         global allSucc = findSuccAll(pData);
         global distanceDict = Dict();
@@ -46,23 +52,14 @@ for fileInd in 1:length(pathList)
         xFull = deepcopy(xbest);
         tFull = deepcopy(tbest);
 
-        tic();
-        include("partSolve_Callback_tightened.jl");
-        timedecomp1 = toc();
-        gapdecomp1 = (ubCost - lbCost)/ubCost;
-        ubFull1 = ubCost;
-        lbFull1 = lbCost;
-        xFull1 = deepcopy(xbest);
-        tFull1 = deepcopy(tbest);
-
         # extensive formulation
         tic();
-        text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-4,999999);
+        text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-4,9999999);
         timeext = toc();
         ubmp = mext.objVal;
         lbmp = mext.objBound;
         gapext = (mext.objVal - mext.objBound)/mext.objVal;
-        ubext = ubCal(pData,disData,Ω,xext,text,999999);
+        ubext = ubCal(pData,disData,Ω,xext,text,9999999);
         dDict[fileInd][Ωsize[Ωl]] = [tFull,xFull,lbFull,ubFull,gapdecomp,timedecomp,
                             tFull1,xFull1,lbFull1,ubFull1,gapdecomp1,timedecomp1,
                             text,xext,lbmp,ubmp,ubext,gapext,timeext];
