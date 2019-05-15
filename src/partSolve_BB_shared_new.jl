@@ -627,6 +627,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
         wpDict[npList[npi]] = workers()[(batchNo + (npi - 1)*noPa + 1):(batchNo + npi*noPa)];
     end
     global keepIter = true;
+    lbOverAll = 0;
 
     @sync begin
         for ip in 1:length(npList)
