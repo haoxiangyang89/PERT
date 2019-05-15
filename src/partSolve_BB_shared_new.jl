@@ -213,6 +213,122 @@ function solveMP_para_Share(data)
     xcoreUnbounded = [];
     ycoreUnbounded = [];
 
+    # function partBenders(cb)
+    #     currentLB = MathProgBase.cbgetbestbound(cb);
+    #     println("lazy,$(currentLB)");
+    #     if currentLB <= minimum(ubCostList)
+    #         # the callback function
+    #         #that = SharedArray{Float64,1}((length(pData.II)));
+    #         that = Dict();
+    #         #xhat = SharedArray{Float64,1}((length(IJPair)));
+    #         xhat = Dict();
+    #         #θhat = SharedArray{Float64,1}((length(Ω)));
+    #         #yhat = SharedArray{Float64,1}((length(IPPair)));
+    #         yhat = Dict();
+    #         θhat = Dict();
+    #         # obtain the solution at the current node
+    #         for i in pData.II
+    #             #that[findfirst(pData.II,i)] = getvalue(t[i]);
+    #             that[i] = getvalue(t[i]);
+    #             for j in pData.Ji[i]
+    #                 #xhat[findfirst(IJPair,(i,j))] = getvalue(x[i,j]);
+    #                 xhat[i,j] = getvalue(x[i,j]);
+    #             end
+    #             for par in 1:length(divSet[i])
+    #                 #yhat[findfirst(IPPair,(i,par))] = round(getvalue(y[i,par]));
+    #                 yhat[i,par] = round(getvalue(y[i,par]));
+    #             end
+    #         end
+    #         for ω in 1:length(Ω)
+    #             θhat[ω] = getvalue(θ[Ω[ω]]);
+    #         end
+    #         push!(tcoreList,that);
+    #         push!(xcoreList,xhat);
+    #         push!(ycoreList,yhat);
+    #         push!(tcoreNew,that);
+    #         push!(xcoreNew,xhat);
+    #
+    #         # generate cuts
+    #         θInt = Dict();
+    #         ubCost = minimum(ubCostList);
+    #         ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1,wp);
+    #         push!(ubcoreList,ubTemp);
+    #         push!(ubcoreNew,ubTemp);
+    #
+    #         if ubCost > ubTemp
+    #             for i in pData.II
+    #                 tbest[i] = that[i];
+    #                 for j in pData.Ji[i]
+    #                     xbest[i,j] = xhat[i,j];
+    #                 end
+    #             end
+    #         end
+    #         push!(ubCostList,ubTemp);
+    #
+    #         #dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
+    #         # obtain the cores
+    #         tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
+    #         # here is the issue, pack it in a function prevent separating it
+    #         dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp);
+    #         for ω in Ω
+    #             infeasBool = false;
+    #             if length(dataList[ω]) == 3
+    #                 push!(tError,that);
+    #                 push!(xError,xhat);
+    #                 push!(yError,yhat);
+    #                 push!(ErrorωList,ω);
+    #                 push!(tcoreError,tcore);
+    #                 push!(xcoreError,xcore);
+    #                 push!(ycoreError,ycore);
+    #                 infeasBool = true;
+    #             elseif length(dataList[ω]) == 6
+    #                 push!(tUnbounded,that);
+    #                 push!(xUnbounded,xhat);
+    #                 push!(yUnbounded,yhat);
+    #                 push!(UnboundedωList,ω);
+    #                 push!(tcoreUnbounded,tcore);
+    #                 push!(xcoreUnbounded,xcore);
+    #                 push!(ycoreUnbounded,ycore);
+    #             end
+    #             if infeasBool
+    #                 return JuMP.StopTheSolver;
+    #             end
+    #         end
+    #         cutScen = [ω for ω in Ω if dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)]];
+    #         # πSet = SharedArray{Float64,2}((length(pData.II),length(cutScen)));
+    #         # λSet = SharedArray{Float64,2}((length(IJPair),length(cutScen)));
+    #         # γSet = SharedArray{Float64,2}((length(IPPair),length(cutScen)));
+    #         # vSet = SharedArray{Float64,1}((length(cutScen)));
+    #         πSet = zeros(length(pData.II),length(cutScen));
+    #         λSet = zeros(length(IJPair),length(cutScen));
+    #         γSet = zeros(length(IPPair),length(cutScen));
+    #         vSet = zeros(length(cutScen));
+    #         for ωi in 1:length(cutScen)
+    #             ω = cutScen[ωi];
+    #             vSet[ωi] = dataList[ω][4];
+    #             for i in pData.II
+    #                 πSet[findfirst(pData.II,i),ωi] = dataList[ω][1][i];
+    #                 for j in pData.Ji[i]
+    #                     λSet[findfirst(IJPair,(i,j)),ωi] = dataList[ω][2][i,j];
+    #                 end
+    #                 for par in 1:length(divSet[i])
+    #                     γSet[findfirst(IPPair,(i,par)),ωi] = dataList[ω][3][i,par];
+    #                 end
+    #             end
+    #             @lazyconstraint(cb, θ[ω] >= vSet[ωi] + sum(πSet[findfirst(pData.II,i),ωi]*(t[i] - that[i]) for i in pData.II) +
+    #                 sum(sum(λSet[findfirst(IJPair,(i,j)),ωi]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
+    #                 sum(sum(γSet[findfirst(IPPair,(i,par)),ωi]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
+    #         end
+    #         newCuts = [cutScen,πSet,λSet,γSet,vSet,that,xhat,yhat];
+    #         #push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
+    #         push!(cutSetNew,newCuts);
+    #         GCurrent = [dataList[ω][5] for ω in Ω];
+    #         push!(GList,GCurrent);
+    #     else
+    #         return JuMP.StopTheSolver;
+    #     end
+    # end
+
     function partBenders(cb)
         currentLB = MathProgBase.cbgetbestbound(cb);
         println("lazy,$(currentLB)");
@@ -302,24 +418,51 @@ function solveMP_para_Share(data)
             πSet = zeros(length(pData.II),length(cutScen));
             λSet = zeros(length(IJPair),length(cutScen));
             γSet = zeros(length(IPPair),length(cutScen));
+            πSet1 = zeros(length(pData.II),length(cutScen));
+            λSet1 = zeros(length(IJPair),length(cutScen));
+            γSet1 = zeros(length(IPPair),length(cutScen));
             vSet = zeros(length(cutScen));
             for ωi in 1:length(cutScen)
                 ω = cutScen[ωi];
                 vSet[ωi] = dataList[ω][4];
                 for i in pData.II
-                    πSet[findfirst(pData.II,i),ωi] = dataList[ω][1][i];
+                    vSet[ωi] -= dataList[ω][1][i]*that[i];
+                    if abs(dataList[ω][1][i]) >= 1e-7
+                        πSet[findfirst(pData.II,i),ωi] = dataList[ω][1][i];
+                    else
+                        πSet[findfirst(pData.II,i),ωi] = 0;
+                        if dataList[ω][1][i] < 0
+                            vSet[ωi] += dataList[ω][1][i];
+                        end
+                    end
                     for j in pData.Ji[i]
-                        λSet[findfirst(IJPair,(i,j)),ωi] = dataList[ω][2][i,j];
+                        vSet[ωi] -= dataList[ω][2][i,j]*xhat[i,j];
+                        if abs(dataList[ω][2][i,j]) >= 1e-5
+                            λSet[findfirst(IJPair,(i,j)),ωi] = dataList[ω][2][i,j];
+                        else
+                            λSet[findfirst(IJPair,(i,j)),ωi] = 0;
+                            if dataList[ω][2][i,j] < 0
+                                vSet[ωi] += dataList[ω][2][i,j];
+                            end
+                        end
                     end
                     for par in 1:length(divSet[i])
-                        γSet[findfirst(IPPair,(i,par)),ωi] = dataList[ω][3][i,par];
+                        vSet[ωi] -= dataList[ω][3][i,par]*yhat[i,par];
+                        if abs(dataList[ω][3][i,par]) >= 1e-5
+                            γSet[findfirst(IPPair,(i,par)),ωi] = dataList[ω][3][i,par];
+                        else
+                            γSet[findfirst(IPPair,(i,par)),ωi] = 0;
+                            if dataList[ω][3][i,par] < 0
+                                vSet[ωi] += dataList[ω][3][i,par];
+                            end
+                        end
                     end
                 end
-                @lazyconstraint(cb, θ[ω] >= vSet[ωi] + sum(πSet[findfirst(pData.II,i),ωi]*(t[i] - that[i]) for i in pData.II) +
-                    sum(sum(λSet[findfirst(IJPair,(i,j)),ωi]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                    sum(sum(γSet[findfirst(IPPair,(i,par)),ωi]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
+                @lazyconstraint(cb, θ[ω] >= vSet[ωi] + sum(πSet[findfirst(pData.II,i),ωi]*t[i] for i in pData.II) +
+                    sum(sum(λSet[findfirst(IJPair,(i,j)),ωi]*x[i,j] for j in pData.Ji[i]) for i in pData.II) +
+                    sum(sum(γSet[findfirst(IPPair,(i,par)),ωi]*y[i,par] for par in 1:length(divSet[i])) for i in pData.II));
             end
-            newCuts = [cutScen,πSet,λSet,γSet,vSet,that,xhat,yhat];
+            newCuts = [cutScen,πSet,λSet,γSet,vSet];
             #push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
             push!(cutSetNew,newCuts);
             GCurrent = [dataList[ω][5] for ω in Ω];
@@ -347,7 +490,8 @@ function solveMP_para_Share(data)
     end
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Method = 1, NumericFocus = 3, Threads = noTh, Cutoff = ubCost));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Method = 1, Threads = noTh, Cutoff = ubCost));
+    #mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Method = 1, NumericFocus = 3, Threads = noTh, Cutoff = ubCost));
     # mp = Model(solver = GurobiSolver(Threads = noThreads));
     @variables(mp, begin
       θ[Ω] >= 0
@@ -416,9 +560,9 @@ function solveMP_para_Share(data)
                 πk = cutSet[nc][npoint][2][:,ωi];
                 λk = cutSet[nc][npoint][3][:,ωi];
                 γk = cutSet[nc][npoint][4][:,ωi];
-                @constraint(mp, θ[ω] >= vk + sum(πk[findfirst(pData.II,i)]*(mp[:t][i] - cutSet[nc][npoint][6][i]) +
-                    sum(λk[findfirst(IJPair,(i,j))]*(mp[:x][i,j] - cutSet[nc][npoint][7][i,j]) for j in pData.Ji[i]) +
-                    sum(γk[findfirst(IPPairPrev,(i,par))]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(divSetPrev[i],divSet[i][parNew]) == par) - cutSet[nc][npoint][8][i,par])
+                @constraint(mp, θ[ω] >= vk + sum(πk[findfirst(pData.II,i)]*mp[:t][i] +
+                    sum(λk[findfirst(IJPair,(i,j))]*mp[:x][i,j] for j in pData.Ji[i]) +
+                    sum(γk[findfirst(IPPairPrev,(i,par))]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(divSetPrev[i],divSet[i][parNew]) == par))
                     for par in 1:length(divSetPrev[i])) for i in pData.II));
             end
         end
@@ -620,9 +764,8 @@ end
 function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noPa = 1,nSplit = 5)
     # separate the workers to main processors and workers
     npList = workers()[1:batchNo];
-    #global noTh = div(noThreads,batchNo) - noPa;
-    global noTh = 1;
-    noPa = div(noThreads,batchNo) - 1;
+    global noTh = div(noThreads,batchNo);
+    noPa = noTh - 1;
     wpDict = Dict();
     for npi in 1:length(npList)
         wpDict[npList[npi]] = workers()[(batchNo + (npi - 1)*noPa + 1):(batchNo + npi*noPa)];
