@@ -185,7 +185,7 @@ function solveMP_para_Share(data)
     tcoreList = data[4];
     xcoreList = data[5];
     ubcoreList = data[6];
-    ubCost = data[7];
+    #ubCost = data[7];
     tbest = data[8];
     xbest = data[9];
     noTh = data[10];
