@@ -617,11 +617,12 @@ function solveMP_para_Share(data)
     return returnNo,cutSetNew,returnSet,tbest,xbest,minimum(ubCostList),tcoreNew,xcoreNew,ubcoreNew;
 end
 
-function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,nSplit = 5)
+function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noPa = 1,nSplit = 5)
     # separate the workers to main processors and workers
     npList = workers()[1:batchNo];
-    global noTh = div(noThreads,batchNo);
-    noPa = noTh - 1;
+    #global noTh = div(noThreads,batchNo) - noPa;
+    global noTh = 1;
+    noPa = div(noThreads,batchNo) - 1;
     wpDict = Dict();
     for npi in 1:length(npList)
         wpDict[npList[npi]] = workers()[(batchNo + (npi - 1)*noPa + 1):(batchNo + npi*noPa)];
@@ -684,7 +685,9 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                                     end
                                 end
                             end
-                            lbOverAll = minimum([treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1]);
+                            if [treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1] != []
+                                lbOverAll = minimum([treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1]);
+                            end
                         end
                         treeList[selectNode][3] = 1;
                     else
@@ -858,7 +861,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     global lbOverAll = -Inf;
     # transfer the data back to everywhere
     tic();
-    tbest,xbest,ubCost,lbOverAll = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo);
+    tbest,xbest,ubCost,lbOverAll = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,3);
     decompTime = toc();
 
     # need a cut selection process within the callback
