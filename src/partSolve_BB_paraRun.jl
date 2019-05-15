@@ -4,7 +4,6 @@ global noThreads = 30;
 @everywhere using Distributions,HDF5,JLD;
 # test sbb
 @everywhere include("header.jl");
-@everywhere include("partSolve_BB_shared.jl");
 
 pathList = ["/scratch/haoxiang/current/11/",
             "/scratch/haoxiang/current/14/",

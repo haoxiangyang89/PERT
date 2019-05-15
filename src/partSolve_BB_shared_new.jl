@@ -667,9 +667,6 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                                     tbest = mpSolveInfo[4];
                                     xbest = mpSolveInfo[5];
                                 end
-                                if mpSolveInfo[1] < lbOverAll
-                                    lbOverAll = mpSolveInfo[1];
-                                end
                                 if (ubCost - lbOverAll)/ubCost < ϵ
                                     keepIter = false;
                                 else
