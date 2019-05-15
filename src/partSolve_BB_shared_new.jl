@@ -185,7 +185,7 @@ function solveMP_para_Share(data)
     tcoreList = data[4];
     xcoreList = data[5];
     ubcoreList = data[6];
-    #ubCost = data[7];
+    ubCost = data[7];
     tbest = data[8];
     xbest = data[9];
     noTh = data[10];
@@ -771,7 +771,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
         wpDict[npList[npi]] = workers()[(batchNo + (npi - 1)*noPa + 1):(batchNo + npi*noPa)];
     end
     global keepIter = true;
-    lbOverAll = 0;
+    lbOverAll = -Inf;
 
     @sync begin
         for ip in 1:length(npList)
@@ -1060,8 +1060,8 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     global lbOverAll = -Inf;
     # transfer the data back to everywhere
     tic();
-    #tbest,xbest,ubCost,lbOverAll = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,3);
-    tbest,xbest,ubCost,lbOverAll = runPara_Share_Series(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,noThreads);
+    tbest,xbest,ubCost,lbOverAll = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo);
+    #tbest,xbest,ubCost,lbOverAll = runPara_Share_Series(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,noThreads);
     decompTime = toc();
 
     # need a cut selection process within the callback
