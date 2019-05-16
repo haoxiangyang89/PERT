@@ -159,16 +159,51 @@ function partBenders(cb)
         errorInd = [];
         cutDual = [];
         for ω in Ω
+            πdict[ω] = Dict();
+            λdict[ω] = Dict();
+            γdict[ω] = Dict();
             if length(dataList[ω]) == 5
-                πdict[ω] = dataList[ω][1];
-                λdict[ω] = dataList[ω][2];
-                γdict[ω] = dataList[ω][3];
-                vk[ω] = dataList[ω][4];
+                vkTemp = dataList[ω][4];
+                for i in pData.II
+                    vkTemp -= dataList[ω][1][i]*that[i];
+                    if abs(dataList[ω][1][i]) >= 1e-7
+                        πdict[ω][i] = dataList[ω][1][i];
+                    else
+                        πdict[ω] = 0;
+                        if dataList[ω][1][i] < 0
+                            vkTemp += dataList[ω][1][i];
+                        end
+                    end
+                    for j in pData.Ji[i]
+                        vkTemp -= λdict[ω][i,j]*xhat[i,j];
+                        if abs(dataList[ω][2][i,j]) >= 1e-5
+                            λdict[ω][i,j] = dataList[ω][2][i,j];
+                        else
+                            λdict[ω][i,j] = 0;
+                            if dataList[ω][2][i,j] < 0
+                                vkTemp -= dataList[ω][2][i,j];
+                            end
+                        end
+                    end
+                    for par in 1:length(divSet[i])
+                        vkTemp -= dataList[ω][3][i,par]*yhat[i,par];
+                        if abs(dataList[ω][3][i,par]) >= 1e-5
+                            γdict[ω][i,par] = dataList[ω][3][i,par];
+                        else
+                            γdict[ω][i,par] = 0;
+                            if dataList[ω][3][i,par] < 0
+                                vkTemp -= dataList[ω][3][i,par];
+                            end
+                        end
+                    end
+                end
+
+                vk[ω] = vkTemp;
                 if (vk[ω] - θhat[ω] > 1e-4*θhat[ω])
                     push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
-                    @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*(t[i] - that[i]) for i in pData.II) +
-                        sum(sum(λdict[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II) +
-                        sum(sum(γdict[ω][i,par]*(y[i,par] - yhat[i,par]) for par in 1:length(divSet[i])) for i in pData.II));
+                    @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*t[i] +
+                        sum(λdict[ω][i,j]*x[i,j] for j in pData.Ji[i]) +
+                        sum(γdict[ω][i,par]*y[i,par] for par in 1:length(divSet[i])) for i in pData.II));
                 end
             else
                 push!(errorList,(ω,dataList[ω]));
@@ -176,7 +211,7 @@ function partBenders(cb)
             end
         end
 
-        push!(cutSet,[[deepcopy(that),deepcopy(xhat),deepcopy(yhat),deepcopy(divSet)],cutDual]);
+        push!(cutSet,[deepcopy(divSet),cutDual]);
         GCurrent = [dataList[ω][5] for ω in Ω if !(ω in errorInd)];
         push!(GList,GCurrent);
     else
@@ -247,9 +282,9 @@ while keepIter
             πk = cutSet[nc][2][l][3];
             λk = cutSet[nc][2][l][4];
             γk = cutSet[nc][2][l][5];
-            @constraint(mp, mp[:θ][ω] >= vk + sum(πk[i]*(mp[:t][i] - cutSet[nc][1][1][i]) +
-                sum(λk[i,j]*(mp[:x][i,j] - cutSet[nc][1][2][i,j]) for j in pData.Ji[i]) +
-                sum(γk[i,par]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par])
+            @constraint(mp, mp[:θ][ω] >= vk + sum(πk[i]*mp[:t][i] +
+                sum(λk[i,j]*mp[:x][i,j] for j in pData.Ji[i]) +
+                sum(γk[i,par]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par))
                 for par in 1:length(cutSet[nc][1][4][i])) for i in pData.II));
         end
     end
