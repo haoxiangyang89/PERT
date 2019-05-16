@@ -191,6 +191,8 @@ function solveMP_para_Share(data)
     noTh = data[10];
     wp = CachingPool(data[11]);
     nSplit = data[12];
+    pData = data[13];
+    disData = data[14];
 
     Tmax1 =lDict[0];
     GList = [];
@@ -761,7 +763,7 @@ function solveMP_para_Share(data)
     return returnNo,cutSetNew,returnSet,tbest,xbest,minimum(ubCostList),tcoreNew,xcoreNew,ubcoreNew;
 end
 
-function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noPa = 1,nSplit = 5)
+function runPara_Share(pData,disData,treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noPa = 1,nSplit = 5)
     # separate the workers to main processors and workers
     npList = workers()[1:batchNo];
     global noTh = div(noThreads,batchNo);
@@ -798,7 +800,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                             treeList[selectNode][3] = 0;
                             cutData = cutList[treeList[selectNode][2]];
                             divData = [treeList[id][4] for id in treeList[selectNode][2]];
-                            mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,wpDict[p],nSplit]);
+                            mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,wpDict[p],nSplit,pData,disData]);
                             # update the cutList with the added cuts and two new nodes
                             # update the cutSet
                             # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
