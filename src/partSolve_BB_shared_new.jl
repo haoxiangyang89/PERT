@@ -776,7 +776,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
     @sync begin
         for ip in 1:length(npList)
             p = npList[ip];
-            @async begin
+            testPrint = @async begin
                 while true
                     # if all nodes are processed and no nodes are being processed, exit
                     boolFinished = true;
@@ -839,6 +839,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                     end
                 end
             end
+            wait(testPrint);
         end
     end
 
@@ -979,7 +980,9 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     end
 
     # start with an upper bound based on the smaller stochastic solution
-    ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
+    data141 = load("14_test1_ubData.jld");
+    ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = data141["data"];
+    #ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
     lbCost = -Inf;
     lbCostList = [];
     global ubCost = ubInc;

@@ -40,7 +40,9 @@ for hIter in keys(H)
 end
 
 # start with an upper bound based on the smaller stochastic solution
-ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
+#ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
+data141 = load("14_test1_ubData.jld");
+ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = data141["data"];
 lbCost = -Inf;
 lbCostList = [];
 global ubCost = ubInc;
