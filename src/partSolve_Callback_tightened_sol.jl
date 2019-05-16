@@ -169,7 +169,7 @@ function partBenders(cb)
                     if abs(dataList[ω][1][i]) >= 1e-7
                         πdict[ω][i] = dataList[ω][1][i];
                     else
-                        πdict[ω] = 0;
+                        πdict[ω][i] = 0;
                         if dataList[ω][1][i] < 0
                             vkTemp += dataList[ω][1][i];
                         end
@@ -284,8 +284,8 @@ while keepIter
             γk = cutSet[nc][2][l][5];
             @constraint(mp, mp[:θ][ω] >= vk + sum(πk[i]*mp[:t][i] +
                 sum(λk[i,j]*mp[:x][i,j] for j in pData.Ji[i]) +
-                sum(γk[i,par]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par))
-                for par in 1:length(cutSet[nc][1][4][i])) for i in pData.II));
+                sum(γk[i,par]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][i],divSet[i][parNew]) == par))
+                for par in 1:length(cutSet[nc][1][i])) for i in pData.II));
         end
     end
 
