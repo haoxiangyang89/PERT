@@ -175,13 +175,13 @@ function partBenders(cb)
                         end
                     end
                     for j in pData.Ji[i]
-                        vkTemp -= λdict[ω][i,j]*xhat[i,j];
+                        vkTemp -= dataList[ω][2][i,j]*xhat[i,j];
                         if abs(dataList[ω][2][i,j]) >= 1e-5
                             λdict[ω][i,j] = dataList[ω][2][i,j];
                         else
                             λdict[ω][i,j] = 0;
                             if dataList[ω][2][i,j] < 0
-                                vkTemp -= dataList[ω][2][i,j];
+                                vkTemp += dataList[ω][2][i,j];
                             end
                         end
                     end
@@ -192,14 +192,14 @@ function partBenders(cb)
                         else
                             γdict[ω][i,par] = 0;
                             if dataList[ω][3][i,par] < 0
-                                vkTemp -= dataList[ω][3][i,par];
+                                vkTemp += dataList[ω][3][i,par];
                             end
                         end
                     end
                 end
 
                 vk[ω] = vkTemp;
-                if (vk[ω] - θhat[ω] > 1e-4*θhat[ω])
+                if (dataList[ω][4] - θhat[ω] > 1e-4*θhat[ω])
                     push!(cutDual,[ω,vk[ω],πdict[ω],λdict[ω],γdict[ω]]);
                     @lazyconstraint(cb, θ[ω] >= vk[ω] + sum(πdict[ω][i]*t[i] +
                         sum(λdict[ω][i,j]*x[i,j] for j in pData.Ji[i]) +
@@ -250,7 +250,7 @@ while keepIter
     end
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noThreads));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noThreads, Cutoff = ubCost));
     # mp = Model(solver = GurobiSolver(Threads = noThreads));
     @variables(mp, begin
       θ[Ω] >= 0
@@ -277,6 +277,7 @@ while keepIter
     # second dimension record the dual solution for every scenario
     for nc in 1:length(cutSet)
         for l in 1:length(cutSet[nc][2])
+            println(nc," ",l);
             ω = cutSet[nc][2][l][1];
             vk = cutSet[nc][2][l][2];
             πk = cutSet[nc][2][l][3];

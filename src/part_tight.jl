@@ -545,6 +545,7 @@ function splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θl
         else
             contBool = false;
         end
+        n += 1;
     end
     return divSetNew,divDetNew;
 end
