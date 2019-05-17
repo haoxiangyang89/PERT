@@ -427,33 +427,37 @@ function splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θlp,
     end
     for i in pData.II
         θDiv = [];
-        for ω in Ω
-            if i != 0
-                if tCurrent[i] > H[ω] + 1e-6
-                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                        push!(θDiv,((1 - GCurrent[ω][i])*disData[ω].d[i],ω));
-                    end
-                elseif tCurrent[i] < H[ω] - 1e-6
-                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                        push!(θDiv,(GCurrent[ω][i]*disData[ω].d[i],ω));
-                    end
-                else
-                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                        push!(θDiv,(min(1 - GCurrent[ω][i],GCurrent[ω][i])*disData[ω].d[i],ω));
-                    end
-                end
-            else
-                if tCurrent[i] > H[ω] + 1e-6
-                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                        push!(θDiv,(1 - GCurrent[ω][i],ω));
-                    end
-                elseif tCurrent[i] < H[ω] - 1e-6
-                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                        push!(θDiv,(GCurrent[ω][i],ω));
-                    end
-                else
-                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                        push!(θDiv,(min(1 - GCurrent[ω][i],GCurrent[ω][i]),ω));
+        for par in 1:length(divSet[i])
+            if divDet[i][par] == 0
+                for ω in (divSet[i][par].startH + 1):(divSet[i][par].endH - 1)
+                    if i != 0
+                        if tCurrent[i] > H[ω] + 1e-6
+                            if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
+                                push!(θDiv,((1 - GCurrent[ω][i])*disData[ω].d[i],ω));
+                            end
+                        elseif tCurrent[i] < H[ω] - 1e-6
+                            if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
+                                push!(θDiv,(GCurrent[ω][i]*disData[ω].d[i],ω));
+                            end
+                        else
+                            if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
+                                push!(θDiv,(min(1 - GCurrent[ω][i],GCurrent[ω][i])*disData[ω].d[i],ω));
+                            end
+                        end
+                    else
+                        if tCurrent[i] > H[ω] + 1e-6
+                            if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
+                                push!(θDiv,(1 - GCurrent[ω][i],ω));
+                            end
+                        elseif tCurrent[i] < H[ω] - 1e-6
+                            if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
+                                push!(θDiv,(GCurrent[ω][i],ω));
+                            end
+                        else
+                            if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
+                                push!(θDiv,(min(1 - GCurrent[ω][i],GCurrent[ω][i]),ω));
+                            end
+                        end
                     end
                 end
             end
@@ -501,26 +505,28 @@ function splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θl
                             end
                         end
                         if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)&(currentpar != -1)
-                            # if G is fractional
-                            oriD = H[divSetNew[i][currentpar].endH] - H[divSetNew[i][currentpar].startH];
-                            for ωn in (divSetNew[i][currentpar].startH+1):(ω-1)
-                                currentD = H[ω] - H[divSetNew[i][currentpar].startH];
-                                if tCurrent[i] > H[ωn] + 1e-6
-                                    push!(θgainB,(1 - GCurrent[ω][i])*disData[ωn].d[i]*(1/currentD - 1/oriD));
-                                elseif tCurrent[i] < H[ω] - 1e-6
-                                    push!(θgainB,GCurrent[ω][i]*disData[ωn].d[i]*(1/currentD - 1/oriD));
-                                else
-                                    push!(θgainB,min(1 - GCurrent[ω][i],GCurrent[ωn][i])*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                            if divDetNew[i][currentpar] == 0
+                                # if G is fractional
+                                oriD = H[divSetNew[i][currentpar].endH] - H[divSetNew[i][currentpar].startH];
+                                for ωn in (divSetNew[i][currentpar].startH+1):(ω-1)
+                                    currentD = H[ω] - H[divSetNew[i][currentpar].startH];
+                                    if tCurrent[i] > H[ωn] + 1e-6
+                                        push!(θgainB,(1 - GCurrent[ω][i])*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                                    elseif tCurrent[i] < H[ω] - 1e-6
+                                        push!(θgainB,GCurrent[ω][i]*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                                    else
+                                        push!(θgainB,min(1 - GCurrent[ω][i],GCurrent[ωn][i])*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                                    end
                                 end
-                            end
-                            for ωn in (ω+1):(divSetNew[i][currentpar].endH-1)
-                                currentD = H[divSetNew[i][currentpar].endH] - H[ω];
-                                if tCurrent[i] > H[ωn] + 1e-6
-                                    push!(θgainB,(1 - GCurrent[ωn][i])*disData[ωn].d[i]*(1/currentD - 1/oriD));
-                                elseif tCurrent[i] < H[ω] - 1e-6
-                                    push!(θgainB,GCurrent[ωn][i]*disData[ωn].d[i]*(1/currentD - 1/oriD));
-                                else
-                                    push!(θgainB,min(1 - GCurrent[ωn][i],GCurrent[ωn][i])*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                                for ωn in (ω+1):(divSetNew[i][currentpar].endH-1)
+                                    currentD = H[divSetNew[i][currentpar].endH] - H[ω];
+                                    if tCurrent[i] > H[ωn] + 1e-6
+                                        push!(θgainB,(1 - GCurrent[ωn][i])*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                                    elseif tCurrent[i] < H[ω] - 1e-6
+                                        push!(θgainB,GCurrent[ωn][i]*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                                    else
+                                        push!(θgainB,min(1 - GCurrent[ωn][i],GCurrent[ωn][i])*disData[ωn].d[i]*(1/currentD - 1/oriD));
+                                    end
                                 end
                             end
                         end

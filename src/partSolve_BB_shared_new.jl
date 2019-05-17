@@ -697,7 +697,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,batchNo = 5,ϵ = 1e-
                         treeList[selectNode][3] = 1;
                     else
                         println("**************Worker $(p) waiting for open nodes.**************");
-                        remotecall_fetch(sleep, p, 30);
+                        remotecall_fetch(sleep, p, 10);
                     end
                 end
             end

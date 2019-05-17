@@ -534,118 +534,12 @@ function solveMP_para_Share(data)
             #locBreak = Int64(floor((GFrac[lGFracInd][1]*fracBreak + GFrac[lGFracInd][2]*(1 - fracBreak))));
             divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreak,distanceDict);
             divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
-            divDict = Dict();
-            for i in pData.II
-                divDict[i] = [];
-                θDiv = [];
-                for ω in Ω
-                    currentpar = -1;
-                    for par in 1:length(divSet1[i])
-                        if (ω > divSet1[i][par].startH) & (ω < divSet1[i][par].endH)
-                            currentpar = par;
-                        end
-                    end
-                    if currentpar != -1
-                        if divDet1[i][currentpar] == 0
-                            if i != 0
-                                if tCurrent[i] > H[ω] + 1e-6
-                                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                                        push!(θDiv,((1 - GCurrent[ω][i])*disData[ω].d[i],ω));
-                                    end
-                                elseif tCurrent[i] < H[ω] - 1e-6
-                                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                                        push!(θDiv,(GCurrent[ω][i]*disData[ω].d[i],ω));
-                                    end
-                                else
-                                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                                        push!(θDiv,(min(1 - GCurrent[ω][i],GCurrent[ω][i])*disData[ω].d[i],ω));
-                                    end
-                                end
-                            else
-                                if tCurrent[i] > H[ω] + 1e-6
-                                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                                        push!(θDiv,(1 - GCurrent[ω][i],ω));
-                                    end
-                                elseif tCurrent[i] < H[ω] - 1e-6
-                                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                                        push!(θDiv,(GCurrent[ω][i],ω));
-                                    end
-                                else
-                                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                                        push!(θDiv,(min(1 - GCurrent[ω][i],GCurrent[ω][i]),ω));
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-                θDivperm = sortperm(θDiv,rev = true);
-                if θDiv != []
-                    # if there are fractional solutions
-                    for n in 1:(min(nSplit,length(θDiv)))
-                        ωn = θDiv[θDivperm[n]][2];
-                        push!(divDict[i],ωn);
-                    end
-                end
-            end
-            divSet1,divDet1 = splitAny(divSet1,divDet1,Ω,divDict);
+            divSet1,divDet1 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit);
+            # divSet1,divDet1 = splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit)
 
             divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
-            divDict = Dict();
-            for i in pData.II
-                divDict[i] = [];
-                θDiv = [];
-                for ω in Ω
-                    currentpar = -1;
-                    for par in 1:length(divSet2[i])
-                        if (ω > divSet2[i][par].startH) & (ω < divSet2[i][par].endH)
-                            currentpar = par;
-                        end
-                    end
-                    if currentpar != -1
-                        if divDet2[i][currentpar] == 0
-                            if i != 0
-                                if tCurrent[i] > H[ω] + 1e-6
-                                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                                        push!(θDiv,((1 - GCurrent[ω][i])*disData[ω].d[i],ω));
-                                    end
-                                elseif tCurrent[i] < H[ω] - 1e-6
-                                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                                        push!(θDiv,(GCurrent[ω][i]*disData[ω].d[i],ω));
-                                    end
-                                else
-                                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                                        push!(θDiv,(min(1 - GCurrent[ω][i],GCurrent[ω][i])*disData[ω].d[i],ω));
-                                    end
-                                end
-                            else
-                                if tCurrent[i] > H[ω] + 1e-6
-                                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                                        push!(θDiv,(1 - GCurrent[ω][i],ω));
-                                    end
-                                elseif tCurrent[i] < H[ω] - 1e-6
-                                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                                        push!(θDiv,(GCurrent[ω][i],ω));
-                                    end
-                                else
-                                    if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)
-                                        push!(θDiv,(min(1 - GCurrent[ω][i],GCurrent[ω][i]),ω));
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-                θDivperm = sortperm(θDiv,rev = true);
-                if θDiv != []
-                    # if there are fractional solutions
-                    for n in 1:(min(nSplit,length(θDiv)))
-                        ωn = θDiv[θDivperm[n]][2];
-                        push!(divDict[i],ωn);
-                    end
-                end
-            end
-            divSet2,divDet2 = splitAny(divSet2,divDet2,Ω,divDict);
+            divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
+            # divSet2,divDet2 = splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
             returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
         else
             # if all i's having binary G's, we reach optimum for this node, ub = lb
@@ -739,14 +633,14 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                         treeList[selectNode][3] = 1;
                     else
                         println("**************Worker $(p) waiting for open nodes.**************");
-                        remotecall_fetch(sleep, p, 30);
+                        remotecall_fetch(sleep, p, 10);
                     end
                 end
             end
         end
     end
 
-    return tbest,xbest,ubCost,lbOverAll,timeDict;
+    return tbest,xbest,ubCost,lbOverAll,timeDict,treeList;
 end
 
 function runPara_Series_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,nSplit = 5)
@@ -942,9 +836,9 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,�
     global lbOverAll = -Inf;
     # transfer the data back to everywhere
     tic();
-    tbest,xbest,ubCost,lbOverAll,timeIter = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,ϵ);
+    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,ϵ);
     decompTime = toc();
 
     # need a cut selection process within the callback
-    return tbest,xbest,ubCost,lbOverAll,timeIter;
+    return tbest,xbest,ubCost,lbOverAll,timeIter,treeList;
 end

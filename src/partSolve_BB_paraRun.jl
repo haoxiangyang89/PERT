@@ -44,6 +44,7 @@ end
 
 global sN = 25;
 global MM = 20;
+global ubCost = Inf;
 tic();
 datas = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,3,1,1e-2);
 timeLasts = toc();
