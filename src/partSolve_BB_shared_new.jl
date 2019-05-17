@@ -1,143 +1,3 @@
-function recoverpInfo(II,D,eff,b,K,p0,B)
-    IIList = [i for i in II];
-    Ddict = Dict();
-    for i in 1:length(IIList)
-        Ddict[IIList[i]] = D[i];
-    end
-    KList = [(K[k,1],K[k,2]) for k in 1:size(K)[1]];
-    Succ = Dict();
-    Pre = Dict();
-    for i in IIList
-        Succ[i] = [];
-        Pre[i] = [];
-    end
-    for k in 1:size(K)[1]
-        push!(Succ[K[k,1]],K[k,2]);
-        push!(Pre[K[k,2]],K[k,1]);
-    end
-    bdict = Dict();
-    effdict = Dict();
-    Ji = Dict();
-    Jmax = size(eff)[2];
-    for i in 1:length(IIList)
-        Ji[IIList[i]] = [j for j in 1:Jmax if eff[i,j] != 0];
-        bdict[IIList[i]] = [b[i,j] for j in 1:Jmax if b[i,j] != 0];
-        effdict[IIList[i]] = [eff[i,j] for j in 1:Jmax if eff[i,j] != 0];
-    end
-    pd = pInfo(IIList, Ji, Ddict, bdict, effdict, B, p0, KList, Pre, Succ)
-    return pd;
-end
-
-function recoverdInfo(II,HOriShare,disdShare,disPrShare,Tmax)
-    Ω = [];
-    disData = Dict();
-    for ω in 1:length(HOriShare)
-        push!(Ω,ω);
-        d = Dict();
-        for i in 1:length(II)
-            d[II[i]] = disdShare[i,ω];
-        end
-        disData[ω] = disInfo(HOriShare[ω],d,disPrShare[ω]);
-    end
-    H = Dict();
-    H[0] = 0;
-    # remove the duplicate ones
-    counter = 1;
-    for ω in Ω
-        if !(disData[ω].H in values(H))
-            H[counter] = disData[ω].H;
-            counter += 1;
-        end
-    end
-    H[counter] = Tmax;
-    HRev = Dict();
-    for hIter in keys(H)
-        HRev[H[hIter]] = hIter;
-    end
-    return disData,H,Ω,HRev;
-end
-
-function recoverdis(IIShare,distanceShare)
-    allSucc = Dict();
-    distanceDict = Dict();
-    for i in IIShare
-        allSucc[i] = [];
-    end
-    for i in 1:size(distanceShare)[1]
-        push!(allSucc[Int(distanceShare[i,1])],Int(distanceShare[i,2]));
-        distanceDict[Int(distanceShare[i,1]),Int(distanceShare[i,2])] = distanceShare[i,3];
-    end
-    return allSucc,distanceDict;
-end
-
-function recoverlDict(II,lDictShare)
-    lDict = Dict();
-    for i in 1:length(II)
-        lDict[II[i]] = lDictShare[i];
-    end
-    return lDict;
-end
-
-function convertDiv(divSet,divDet)
-    IPPair = [(i,par) for i in pData.II for par in 1:length(divSet[i])];
-    divInfoShare = SharedArray{Int,2}((length(IPPair),5));
-    for ip in 1:length(IPPair)
-        divInfoShare[ip,1] = IPPair[ip][1];
-        divInfoShare[ip,2] = IPPair[ip][2];
-        divInfoShare[ip,3] = divSet[divInfoShare[ip,1]][divInfoShare[ip,2]].startH;
-        divInfoShare[ip,4] = divSet[divInfoShare[ip,1]][divInfoShare[ip,2]].endH;
-        divInfoShare[ip,5] = divDet[divInfoShare[ip,1]][divInfoShare[ip,2]];
-    end
-    return divInfoShare;
-end
-
-function recoverDiv(divInfoShare)
-    divSet = Dict();
-    divDet = Dict();
-    for di in 1:size(divInfoShare)[1]
-        if !(divInfoShare[di,1] in keys(divSet))
-            divSet[divInfoShare[di,1]] = [partType(divInfoShare[di,3],divInfoShare[di,4])];
-            divDet[divInfoShare[di,1]] = [divInfoShare[di,5]];
-        else
-            push!(divSet[divInfoShare[di,1]],partType(divInfoShare[di,3],divInfoShare[di,4]));
-            push!(divDet[divInfoShare[di,1]],divInfoShare[di,5]);
-        end
-    end
-    return divSet,divDet;
-end
-
-function recoverCoreList(II,IJPair,textShare,xextShare,ubextShare)
-    textList = [];
-    xextList = [];
-    ubextList = [];
-    for it in 1:size(textShare)[2]
-        tDict = Dict();
-        for i in 1:length(II)
-            tDict[II[i]] = textShare[i,it];
-        end
-        push!(textList,tDict);
-    end
-    for ijt in 1:size(xextShare)[2]
-        xDict = Dict();
-        for ij in 1:length(IJPair)
-            xDict[IJPair[ij]] = xextShare[ij,ijt];
-        end
-        push!(xextList,xDict);
-    end
-    for iu in 1:length(ubextShare)
-        push!(ubextList,ubextShare[iu]);
-    end
-    return textList,xextList,ubextList;
-end
-
-function runRecover(IIShare,DShare,effShare,bShare,KShare,p0BShare,HOriShare,disdShare,disPrShare,distanceShare,lDictShare)
-    # recover the information and make them everywhere
-    global pData = recoverpInfo(IIShare,DShare,effShare,bShare,KShare,p0BShare[1],p0BShare[2]);
-    global (disData, H, Ω, HRev) = recoverdInfo(IIShare,HOriShare,disdShare,disPrShare,p0BShare[3]);
-    global (allSucc,distanceDict) = recoverdis(IIShare,distanceShare);
-    global lDict = recoverlDict(IIShare,lDictShare);
-end
-
 function subPara1(pData,disData,Ω,tbest,xbest,ybest,divSet,H,lDict,wp = CachingPool(workers()))
     θList = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict),Ω);
     return θList;
@@ -173,9 +33,8 @@ function testFeas(pData,H,divSet,divDet,tcoreList,ubcoreList)
     return tcoreInd;
 end
 
-function solveMP_para_Share(data)
+function solveMP_para(data)
     # input: [cutData,cutCurrent,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,wpList]
-    #divSet,divDet = recoverDiv(data[3]);
     pData = data[13];
     disData = data[14];
     divSet,divDet = data[3];
@@ -183,7 +42,6 @@ function solveMP_para_Share(data)
     cutSet = data[1];           # historical cuts
     IJPair = [(i,j) for i in pData.II for j in pData.Ji[i]];
     IPPair = [(i,par) for i in pData.II for par in 1:length(divSet[i])];
-    #tcoreList,xcoreList,ubcoreList = recoverCoreList(pData.II,IJPair,data[4],data[5],data[6]);
     tcoreList = data[4];
     xcoreList = data[5];
     ubcoreList = data[6];
@@ -557,7 +415,6 @@ function solveMP_para_Share(data)
     # npoint is the solution index
     # cutSet[nc] = [npoint,[],πSet,λSet,γSet,vSet,thatSet,xhatSet,yhatSet,divInfoShare]
     for nc in 1:length(cutSet)
-        #divSetPrev,divDetPrev = recoverDiv(divData[nc]);
         divSetPrev,divDetPrev = divData[nc];
         revDict = Dict();
         for i in pData.II
@@ -780,61 +637,6 @@ function solveMP_para_Share(data)
     return returnNo,cutSetNew,returnSet,tbest,xbest,minimum(ubCostList),tcoreNew,xcoreNew,ubcoreNew;
 end
 
-function runPara_Share_Series(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,nSplit = 5)
-    # separate the workers to main processors and workers
-    boolFinished = true;
-    while boolFinished
-        # if all nodes are processed and no nodes are being processed, exit
-        println("-------------",boolFinished," ",[treeList[l][3] for l in 1:length(treeList)],[treeList[l][1] for l in 1:length(treeList)],"-------------");
-        openNodes = [(treeList[l][1],l) for l in 1:length(treeList) if treeList[l][3] == -1];
-        if openNodes != []
-            selectNode = sort(openNodes, by = x -> x[1])[1][2];
-            if treeList[selectNode][1] < ubCost
-                println("Processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]," upper bound is: ",minimum(ubcoreList));
-                treeList[selectNode][3] = 0;
-                cutData = cutList[treeList[selectNode][2]];
-                divData = [treeList[id][4] for id in treeList[selectNode][2]];
-                mpSolveInfo = solveMP_para_Share([cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,workers(),nSplit]);
-                # update the cutList with the added cuts and two new nodes
-                # update the cutSet
-                # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
-                treeList[selectNode][3] = 1;
-                if mpSolveInfo[1] > -Inf
-                    append!(tcoreList,mpSolveInfo[7]);
-                    append!(xcoreList,mpSolveInfo[8]);
-                    append!(ubcoreList,mpSolveInfo[9]);
-                    if mpSolveInfo[6] < ubCost
-                        ubCost = mpSolveInfo[6];
-                        tbest = mpSolveInfo[4];
-                        xbest = mpSolveInfo[5];
-                    end
-                    # update the current node cut
-                    cutList[selectNode] = mpSolveInfo[2];
-                    # push the branched nodes
-                    if (mpSolveInfo[1] < ubCost)
-                        ancestorTemp = deepcopy(treeList[selectNode][2]);
-                        push!(ancestorTemp,selectNode);
-                        for newN in 1:length(mpSolveInfo[3])
-                            push!(treeList,[mpSolveInfo[1],ancestorTemp,-1,mpSolveInfo[3][newN]]);
-                            push!(cutList,[]);
-                        end
-                    end
-                end
-                if [treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1] != []
-                    lbOverAll = minimum([treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1]);
-                    if (ubCost - lbOverAll)/ubCost < ϵ
-                        boolFinished = false;
-                    end
-                end
-            end
-        else
-            boolFinished = false;
-        end
-    end
-
-    return tbest,xbest,ubCost,lbOverAll;
-end
-
 function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
@@ -976,8 +778,6 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
                             tic();
                             mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
                                 tbest,xbest,noTh,wpDict[p],nSplit,pData,disData,lDict,H,allSucc,distanceDict]);
-                            # mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
-                            #     tbest,xbest,noTh,wpDict[p],nSplit]);
                             timeDict[selectNode] = toc();
                             # update the cutList with the added cuts and two new nodes
                             # update the cutSet
