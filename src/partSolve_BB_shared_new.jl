@@ -173,9 +173,11 @@ function testFeas(pData,H,divSet,divDet,tcoreList,ubcoreList)
     return tcoreInd;
 end
 
-function solveMP_para_Share(data)
+@everywhere function solveMP_para_Share(data)
     # input: [cutData,cutCurrent,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,wpList]
     #divSet,divDet = recoverDiv(data[3]);
+    pData = data[13];
+    disData = data[14];
     divSet,divDet = data[3];
     divData = data[2];
     cutSet = data[1];           # historical cuts
@@ -191,8 +193,11 @@ function solveMP_para_Share(data)
     noTh = data[10];
     wp = CachingPool(data[11]);
     nSplit = data[12];
-    pData = data[13];
-    disData = data[14];
+    lDict = data[15];
+    H = data[16];
+    allSucc = data[17];
+    distanceDict = data[18];
+    Ω = 1:length(disData);
 
     Tmax1 =lDict[0];
     GList = [];
@@ -554,6 +559,18 @@ function solveMP_para_Share(data)
     for nc in 1:length(cutSet)
         #divSetPrev,divDetPrev = recoverDiv(divData[nc]);
         divSetPrev,divDetPrev = divData[nc];
+        revDict = Dict();
+        for i in pData.II
+            revDict[i] = Dict();
+            for par in 1:length(divSetPrev[i]))
+                revDict[i][par] = [];
+                for parNew in 1:length(divSet[i])
+                    if (divSet[i][parNew].startH >= divSetPrev[i][par].startH)&(divSet[i][parNew].endH <= divSetPrev[i][par].endH)
+                        push!(revDict[i][par],parNew);
+                    end
+                end
+            end
+        end
         IPPairPrev = [(i,par) for i in pData.II for par in 1:length(divSetPrev[i])];
         for npoint in 1:length(cutSet[nc])
             for ωi in 1:length(cutSet[nc][npoint][1])
@@ -564,7 +581,7 @@ function solveMP_para_Share(data)
                 γk = cutSet[nc][npoint][4][:,ωi];
                 @constraint(mp, θ[ω] >= vk + sum(πk[findfirst(pData.II,i)]*mp[:t][i] +
                     sum(λk[findfirst(IJPair,(i,j))]*mp[:x][i,j] for j in pData.Ji[i]) +
-                    sum(γk[findfirst(IPPairPrev,(i,par))]*(sum(mp[:y][i,parNew] for parNew in 1:length(divSet[i]) if revPar(divSetPrev[i],divSet[i][parNew]) == par))
+                    sum(γk[findfirst(IPPairPrev,(i,par))]*(sum(mp[:y][i,parNew] for parNew in revDict[i][par]))
                     for par in 1:length(divSetPrev[i])) for i in pData.II));
             end
         end
@@ -800,7 +817,8 @@ function runPara_Share(pData,disData,treeList,cutList,tcoreList,xcoreList,ubcore
                             treeList[selectNode][3] = 0;
                             cutData = cutList[treeList[selectNode][2]];
                             divData = [treeList[id][4] for id in treeList[selectNode][2]];
-                            mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,wpDict[p],nSplit,pData,disData]);
+                            mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
+                                tbest,xbest,noTh,wpDict[p],nSplit,pData,disData,lDict,H,allSucc,distanceDict]);
                             # update the cutList with the added cuts and two new nodes
                             # update the cutSet
                             # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
