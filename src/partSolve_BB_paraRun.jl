@@ -11,6 +11,14 @@ pathList = ["/scratch/haoxiang/current/11/",
             "/scratch/haoxiang/current/35/",
             "/scratch/haoxiang/current/55/",
             "/scratch/haoxiang/current/75/"];
+
+# pathList = ["/home/haoxiang/scratch/PERT_tests/current/11/",
+#             "/home/haoxiang/scratch/PERT_tests/current/14/",
+#             "/home/haoxiang/scratch/PERT_tests/current/19/",
+#             "/home/haoxiang/scratch/PERT_tests/current/35/",
+#             "/home/haoxiang/scratch/PERT_tests/current/55/",
+#             "/home/haoxiang/scratch/PERT_tests/current/75/"];
+
 # pathList = ["/Users/haoxiangyang/Desktop/PERT_tests/current/11_Lognormal_Exponential",
 #             "/Users/haoxiangyang/Desktop/PERT_tests/current/14_Lognormal_Exponential",
 #             "/Users/haoxiangyang/Desktop/PERT_tests/current/19_Lognormal_Exponential"]
@@ -37,11 +45,11 @@ end
 global sN = 25;
 global MM = 20;
 tic();
-datas = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,1e-4);
+datas = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,3,1e-2);
 timeLasts = toc();
-save("testBB_data_share.jld","data",datas,"timeLast",timeLasts);
+save("testBB_data_share_bn3.jld","data",datas,"timeLast",timeLasts);
 
-tic();
-data = partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,1e-4);
-timeLast = toc();
-save("testBB_data.jld","data",data,"timeLast",timeLast);
+# tic();
+# data = partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,3,1e-2);
+# timeLast = toc();
+# save("testBB_data.jld","data",data,"timeLast",timeLast);

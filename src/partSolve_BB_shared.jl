@@ -804,7 +804,7 @@ function runPara_Series_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ub
     return tbest,xbest,ubCost,lbOverAll;
 end
 
-function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
+function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo = 5,ϵ = 1e-2)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II
@@ -939,12 +939,10 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     push!(treeList,[lbCost,[],-1,[divSet,divDet]]); # the empty set is the list of predecessors of the current node
     push!(cutList,[]);
 
-    global batchNo = 5;
     global lbOverAll = -Inf;
     # transfer the data back to everywhere
     tic();
     tbest,xbest,ubCost,lbOverAll,timeIter = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo);
-    #tbest,xbest,ubCost,lbOverAll = runPara_Share_Series(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,noThreads);
     decompTime = toc();
 
     # need a cut selection process within the callback
