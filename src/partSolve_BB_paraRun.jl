@@ -36,11 +36,10 @@ end
 
 global sN = 25;
 global MM = 20;
-global r = 1e-6;
 tic();
-data = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,1e-4);
-timeLast = toc();
-save("testBB_data_share.jld","data",data,"timeLast",timeLast);
+datas = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,1e-4);
+timeLasts = toc();
+save("testBB_data_share.jld","data",datas,"timeLast",timeLasts);
 
 tic();
 data = partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,1e-4);

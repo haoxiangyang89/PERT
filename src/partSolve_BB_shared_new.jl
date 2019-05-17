@@ -637,7 +637,7 @@ function solveMP_para(data)
     return returnNo,cutSetNew,returnSet,tbest,xbest,minimum(ubCostList),tcoreNew,xcoreNew,ubcoreNew;
 end
 
-function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
+@everywhere function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2,nSplit = 5)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II
@@ -753,7 +753,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     @sync begin
         for ip in 1:length(npList)
             p = npList[ip];
-            @async begin
+            tError = @async begin
                 while true
                     # if all nodes are processed and no nodes are being processed, exit
                     boolFinished = true;
@@ -776,7 +776,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
                             cutData = cutList[treeList[selectNode][2]];
                             divData = [treeList[id][4] for id in treeList[selectNode][2]];
                             tic();
-                            mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
+                            mpSolveInfo = remotecall_fetch(solveMP_para,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
                                 tbest,xbest,noTh,wpDict[p],nSplit,pData,disData,lDict,H,allSucc,distanceDict]);
                             timeDict[selectNode] = toc();
                             # update the cutList with the added cuts and two new nodes
@@ -819,6 +819,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
                     end
                 end
             end
+            wait(tError);
         end
     end
 
