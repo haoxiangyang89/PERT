@@ -804,7 +804,7 @@ function runPara_Series_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ub
     return tbest,xbest,ubCost,lbOverAll;
 end
 
-function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
+function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II

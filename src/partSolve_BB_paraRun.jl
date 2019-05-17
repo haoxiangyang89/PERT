@@ -34,39 +34,10 @@ for i in pData.II
     end
 end
 
-# deterministic solution
-tdet,xdet,fdet = detBuild(pData);
-ubdet = ubCalP(pData,disData,Ω,xdet,tdet,999999);
-
-# expected solution
-eH = mean(buildDistrn(nameH,Hparams));
-ed = Dict();
-for i in pData.II
-    if i == 0
-        ed[i] = 0;
-    else
-        ed[i] = mean(buildDistrn(nameD,dparams[i]));
-    end
-end
-texp,xexp,fexp,Gexp,mexp = expModel(pData,eH,ed);
-ubexp = ubCalP(pData,disData,Ω,xexp,texp,999999);
-
-# dOnly solution
-global disData1;
-disData1 = deepcopy(disData);
-for ω in Ω
-    disData[ω].H = mean(buildDistrn(nameH,Hparams));
-end
-tic();
-tdOnly,xdOnly,fdOnly,gdOnly,mdOnly = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
-timedOnly = toc();
-disData = deepcopy(disData1);
-ubdOnly = ubCalP(pData,disData,Ω,xdOnly,tdOnly,999999);
-
 global sN = 25;
 global MM = 20;
 global r = 1e-6;
 tic();
-data = partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,1e-4);
+data = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,1e-4);
 timeLast = toc();
 save("testBB_data.jld","data",data,"timeLast",timeLast);
