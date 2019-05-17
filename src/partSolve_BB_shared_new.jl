@@ -173,7 +173,7 @@ function testFeas(pData,H,divSet,divDet,tcoreList,ubcoreList)
     return tcoreInd;
 end
 
-@everywhere function solveMP_para_Share(data)
+function solveMP_para_Share(data)
     # input: [cutData,cutCurrent,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,wpList]
     #divSet,divDet = recoverDiv(data[3]);
     pData = data[13];
@@ -562,7 +562,7 @@ end
         revDict = Dict();
         for i in pData.II
             revDict[i] = Dict();
-            for par in 1:length(divSetPrev[i]))
+            for par in 1:length(divSetPrev[i])
                 revDict[i][par] = [];
                 for parNew in 1:length(divSet[i])
                     if (divSet[i][parNew].startH >= divSetPrev[i][par].startH)&(divSet[i][parNew].endH <= divSetPrev[i][par].endH)
