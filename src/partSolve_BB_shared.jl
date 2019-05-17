@@ -948,5 +948,5 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     decompTime = toc();
 
     # need a cut selection process within the callback
-    return tbest,xbest,ubCost,lbOverAll;
+    return tbest,xbest,ubCost,lbOverAll,timeIter;
 end
