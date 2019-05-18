@@ -263,6 +263,7 @@ function solveMP_para_Share(data)
             tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
             # here is the issue, pack it in a function prevent separating it
             dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp);
+            cutScen = [];
             for ω in Ω
                 if length(dataList[ω]) == 3
                     push!(tError,that);
@@ -272,18 +273,21 @@ function solveMP_para_Share(data)
                     push!(tcoreError,tcore);
                     push!(xcoreError,xcore);
                     push!(ycoreError,ycore);
-                    push!(infeasList,ω);
-                elseif length(dataList[ω]) == 6
-                    push!(tUnbounded,that);
-                    push!(xUnbounded,xhat);
-                    push!(yUnbounded,yhat);
-                    push!(UnboundedωList,ω);
-                    push!(tcoreUnbounded,tcore);
-                    push!(xcoreUnbounded,xcore);
-                    push!(ycoreUnbounded,ycore);
+                else
+                    if (dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)])
+                        push!(cutScen,ω);
+                    end
+                    if length(dataList[ω]) == 6
+                        push!(tUnbounded,that);
+                        push!(xUnbounded,xhat);
+                        push!(yUnbounded,yhat);
+                        push!(UnboundedωList,ω);
+                        push!(tcoreUnbounded,tcore);
+                        push!(xcoreUnbounded,xcore);
+                        push!(ycoreUnbounded,ycore);
+                    end
                 end
             end
-            cutScen = [ω for ω in Ω (if dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)]&(!(ω in infeasList)))];
             πSet = zeros(length(pData.II),length(cutScen));
             λSet = zeros(length(IJPair),length(cutScen));
             γSet = zeros(length(IPPair),length(cutScen));
