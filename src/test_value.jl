@@ -1,5 +1,5 @@
-addprocs(30);
-global noThreads = 30;
+addprocs(31);
+global noThreads = 31;
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
 # test sbb
@@ -32,8 +32,8 @@ for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
     pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
     global pData = pData;
-    #dataRaw = load(filePath*"solData_500.jld");
-    global disData = disDataSet[1];
+    dataRaw = load(filePath*"solData_500.jld");
+    # global disData = disDataSet[1];
     dDict[fileInd] = [];
     ubDict[fileInd] = [];
 

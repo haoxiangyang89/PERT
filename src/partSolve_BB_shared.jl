@@ -535,10 +535,10 @@ function solveMP_para_Share(data)
 end
 
 
-function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noTh,ϵ = 1e-2,nSplit = 5)
+function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noTh,ϵ = 1e-2,nSplit = 5,toLimit = 10800)
     # separate the workers to main processors and workers
     npList = workers()[1:batchNo];
-    global noMo = div(noThreads,batchNo);
+    global noMo = div(noThreads - 1,batchNo);
     noPa = noMo - noTh;
     wpDict = Dict();
     for npi in 1:length(npList)
@@ -547,6 +547,9 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
     global keepIter = true;
     lbOverAll = -Inf;
     timeDict = Dict();
+    timerThread = workers()[noThreads];
+    push!(npList,timerThread);
+    elapsedtime = 0;
 
     @sync begin
         for ip in 1:length(npList)
@@ -554,68 +557,77 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
             @async begin
                 while true
                     # if all nodes are processed and no nodes are being processed, exit
-                    boolFinished = true;
-                    for l in 1:length(treeList)
-                        if treeList[l][3] != 1
-                            boolFinished = false;
+                    if p != timerThread
+                        boolFinished = true;
+                        for l in 1:length(treeList)
+                            if treeList[l][3] != 1
+                                boolFinished = false;
+                            end
                         end
-                    end
-                    println("-------------",boolFinished," ",keepIter," ",[treeList[l][3] for l in 1:length(treeList)],[treeList[l][1] for l in 1:length(treeList)],"-------------");
-                    if (boolFinished) || (!(keepIter))
-                        println("break");
-                        break
-                    end
-                    openNodes = [(treeList[l][1],l) for l in 1:length(treeList) if treeList[l][3] == -1];
-                    if openNodes != []
-                        selectNode = sort(openNodes, by = x -> x[1])[1][2];
-                        if treeList[selectNode][1] < ubCost
-                            println("On core: ",p," processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]," upper bound is: ",minimum(ubcoreList));
-                            treeList[selectNode][3] = 0;
-                            cutData = cutList[treeList[selectNode][2]];
-                            divData = [treeList[id][4] for id in treeList[selectNode][2]];
-                            tic();
-                            # mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
-                            #     tbest,xbest,noTh,wpDict[p],nSplit,pData,disData,lDict,H,allSucc,distanceDict]);
-                            mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
-                                tbest,xbest,noTh,wpDict[p],nSplit]);
-                            timeDict[selectNode] = toc();
-                            # update the cutList with the added cuts and two new nodes
-                            # update the cutSet
-                            # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
-                            treeList[selectNode][3] = 1;
-                            if mpSolveInfo[1] > -Inf
-                                append!(tcoreList,mpSolveInfo[7]);
-                                append!(xcoreList,mpSolveInfo[8]);
-                                append!(ubcoreList,mpSolveInfo[9]);
-                                if mpSolveInfo[6] < ubCost
-                                    ubCost = mpSolveInfo[6];
-                                    tbest = mpSolveInfo[4];
-                                    xbest = mpSolveInfo[5];
-                                end
-                                if (ubCost - lbOverAll)/ubCost < ϵ
-                                    keepIter = false;
-                                else
-                                    # update the current node cut
-                                    cutList[selectNode] = mpSolveInfo[2];
-                                    # push the branched nodes
-                                    if (mpSolveInfo[1] < ubCost)
-                                        ancestorTemp = deepcopy(treeList[selectNode][2]);
-                                        push!(ancestorTemp,selectNode);
-                                        for newN in 1:length(mpSolveInfo[3])
-                                            push!(treeList,[mpSolveInfo[1],ancestorTemp,-1,mpSolveInfo[3][newN]]);
-                                            push!(cutList,[]);
+                        println("-------------",boolFinished," ",keepIter," ",[treeList[l][3] for l in 1:length(treeList)],[treeList[l][1] for l in 1:length(treeList)],"-------------");
+                        if (boolFinished) || (!(keepIter))
+                            println("break");
+                            break
+                        end
+                        openNodes = [(treeList[l][1],l) for l in 1:length(treeList) if treeList[l][3] == -1];
+                        if openNodes != []
+                            selectNode = sort(openNodes, by = x -> x[1])[1][2];
+                            if treeList[selectNode][1] < ubCost
+                                println("On core: ",p," processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]," upper bound is: ",minimum(ubcoreList));
+                                treeList[selectNode][3] = 0;
+                                cutData = cutList[treeList[selectNode][2]];
+                                divData = [treeList[id][4] for id in treeList[selectNode][2]];
+                                tic();
+                                # mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
+                                #     tbest,xbest,noTh,wpDict[p],nSplit,pData,disData,lDict,H,allSucc,distanceDict]);
+                                mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
+                                    tbest,xbest,noTh,wpDict[p],nSplit]);
+                                timeDict[selectNode] = toc();
+                                # update the cutList with the added cuts and two new nodes
+                                # update the cutSet
+                                # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
+                                treeList[selectNode][3] = 1;
+                                if mpSolveInfo[1] > -Inf
+                                    append!(tcoreList,mpSolveInfo[7]);
+                                    append!(xcoreList,mpSolveInfo[8]);
+                                    append!(ubcoreList,mpSolveInfo[9]);
+                                    if mpSolveInfo[6] < ubCost
+                                        ubCost = mpSolveInfo[6];
+                                        tbest = mpSolveInfo[4];
+                                        xbest = mpSolveInfo[5];
+                                    end
+                                    if (ubCost - lbOverAll)/ubCost < ϵ
+                                        keepIter = false;
+                                    else
+                                        # update the current node cut
+                                        cutList[selectNode] = mpSolveInfo[2];
+                                        # push the branched nodes
+                                        if (mpSolveInfo[1] < ubCost)
+                                            ancestorTemp = deepcopy(treeList[selectNode][2]);
+                                            push!(ancestorTemp,selectNode);
+                                            for newN in 1:length(mpSolveInfo[3])
+                                                push!(treeList,[mpSolveInfo[1],ancestorTemp,-1,mpSolveInfo[3][newN]]);
+                                                push!(cutList,[]);
+                                            end
                                         end
                                     end
                                 end
+                                if [treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1] != []
+                                    lbOverAll = minimum([treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1]);
+                                end
                             end
-                            if [treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1] != []
-                                lbOverAll = minimum([treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1]);
-                            end
+                            treeList[selectNode][3] = 1;
+                        else
+                            println("**************Worker $(p) waiting for open nodes.**************");
+                            remotecall_fetch(sleep, p, 10);
                         end
-                        treeList[selectNode][3] = 1;
                     else
-                        println("**************Worker $(p) waiting for open nodes.**************");
-                        remotecall_fetch(sleep, p, 10);
+                        remotecall_fetch(sleep, p, 100);
+                        elapsedtime += 100;
+                        if elapsedtime > toLimit
+                            ϵ = 1;
+                            break
+                        end
                     end
                 end
             end
@@ -680,7 +692,7 @@ function runPara_Series_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ub
     return tbest,xbest,ubCost,lbOverAll;
 end
 
-function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,ϵ = 1e-2,nSplit = 5)
+function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,ϵ = 1e-2,nSplit = 5,toLimit = 10800)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II
@@ -818,7 +830,7 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,�
     global lbOverAll = -Inf;
     # transfer the data back to everywhere
     tic();
-    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,ϵ,nSplit);
+    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,ϵ,nSplit,toLimit);
     decompTime = toc();
 
     # need a cut selection process within the callback
