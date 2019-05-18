@@ -626,8 +626,8 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                             remotecall_fetch(sleep, p, 10);
                         end
                     else
-                        remotecall_fetch(sleep, p, 100);
-                        elapsedtime += 100;
+                        remotecall_fetch(sleep, p, 10);
+                        elapsedtime += 10;
                         if elapsedtime > toLimit
                             ϵ = 1;
                             break
