@@ -111,13 +111,10 @@ for fileInd in 1:length(pathList)
     #@time tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
     tic();
     #include("partSolve_Callback_tightened_sol.jl");
-    tFull,xFull,ubFull,lbFull,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,6);
+    tFull,xFull,ubFull,lbFull,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,3,1,1e-2,6);
     timeFull = toc();
-    gapFull = (ubCost - lbCost)/ubCost;
-    ubFull = ubCost;
-    fFull = lbCost;
-    xFull = deepcopy(xbest);
-    tFull = deepcopy(tbest);
+    gapFull = (ubFull - lbFull)/ubFull;
+    fFull = lbFull;
     push!(dDict[fileInd],[tFull,xFull,fFull,ubFull,gapFull,timeFull]);
     save("test_Ext_value.jld","dDict",dDict,"ubDict",ubDict);
 

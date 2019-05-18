@@ -264,7 +264,6 @@ function solveMP_para_Share(data)
             # here is the issue, pack it in a function prevent separating it
             dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp);
             for ω in Ω
-                infeasBool = false;
                 if length(dataList[ω]) == 3
                     push!(tError,that);
                     push!(xError,xhat);
@@ -273,7 +272,7 @@ function solveMP_para_Share(data)
                     push!(tcoreError,tcore);
                     push!(xcoreError,xcore);
                     push!(ycoreError,ycore);
-                    infeasBool = true;
+                    push!(infeasList,ω);
                 elseif length(dataList[ω]) == 6
                     push!(tUnbounded,that);
                     push!(xUnbounded,xhat);
@@ -283,11 +282,8 @@ function solveMP_para_Share(data)
                     push!(xcoreUnbounded,xcore);
                     push!(ycoreUnbounded,ycore);
                 end
-                if infeasBool
-                    return JuMP.StopTheSolver;
-                end
             end
-            cutScen = [ω for ω in Ω if dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)]];
+            cutScen = [ω for ω in Ω (if dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω))&(!(ω in infeasList))]];
             πSet = zeros(length(pData.II),length(cutScen));
             λSet = zeros(length(IJPair),length(cutScen));
             γSet = zeros(length(IPPair),length(cutScen));
