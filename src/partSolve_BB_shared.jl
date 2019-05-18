@@ -721,7 +721,7 @@ function partSolve_BB_para_share(pData,disData,Î©,sN,MM,noThreads,batchNo,noTh,Ï
     p0BShare[2] = pData.B;
     p0BShare[3] = Tmax;
     IIShare = SharedArray{Int,1}(length(pData.II));
-    DShare = SharedArray{Int,1}(length(pData.II));
+    DShare = SharedArray{Float64,1}(length(pData.II));
     for i in 1:length(pData.II)
         IIShare[i] = pData.II[i];
         DShare[i] = pData.D[pData.II[i]];
