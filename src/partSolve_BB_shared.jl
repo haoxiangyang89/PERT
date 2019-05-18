@@ -219,24 +219,17 @@ function solveMP_para_Share(data)
         println("lazy,$(currentLB)");
         if currentLB <= minimum(ubCostList)
             # the callback function
-            #that = SharedArray{Float64,1}((length(pData.II)));
             that = Dict();
-            #xhat = SharedArray{Float64,1}((length(IJPair)));
             xhat = Dict();
-            #θhat = SharedArray{Float64,1}((length(Ω)));
-            #yhat = SharedArray{Float64,1}((length(IPPair)));
             yhat = Dict();
             θhat = Dict();
             # obtain the solution at the current node
             for i in pData.II
-                #that[findfirst(pData.II,i)] = getvalue(t[i]);
                 that[i] = getvalue(t[i]);
                 for j in pData.Ji[i]
-                    #xhat[findfirst(IJPair,(i,j))] = getvalue(x[i,j]);
                     xhat[i,j] = getvalue(x[i,j]);
                 end
                 for par in 1:length(divSet[i])
-                    #yhat[findfirst(IPPair,(i,par))] = round(getvalue(y[i,par]));
                     yhat[i,par] = round(getvalue(y[i,par]));
                 end
             end
@@ -266,7 +259,6 @@ function solveMP_para_Share(data)
             end
             push!(ubCostList,ubTemp);
 
-            #dataList = pmap(ω -> sub_divT(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict), Ω);
             # obtain the cores
             tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
             # here is the issue, pack it in a function prevent separating it
@@ -296,10 +288,6 @@ function solveMP_para_Share(data)
                 end
             end
             cutScen = [ω for ω in Ω if dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)]];
-            # πSet = SharedArray{Float64,2}((length(pData.II),length(cutScen)));
-            # λSet = SharedArray{Float64,2}((length(IJPair),length(cutScen)));
-            # γSet = SharedArray{Float64,2}((length(IPPair),length(cutScen)));
-            # vSet = SharedArray{Float64,1}((length(cutScen)));
             πSet = zeros(length(pData.II),length(cutScen));
             λSet = zeros(length(IJPair),length(cutScen));
             γSet = zeros(length(IPPair),length(cutScen));
@@ -376,8 +364,6 @@ function solveMP_para_Share(data)
 
     # move the createMaster_Callback here
     mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Method = 1, Threads = noTh, Cutoff = ubCost));
-    #mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Method = 1, NumericFocus = 3, Threads = noTh, Cutoff = ubCost));
-    # mp = Model(solver = GurobiSolver(Threads = noThreads));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -535,11 +521,11 @@ function solveMP_para_Share(data)
             divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreak,distanceDict);
             divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
             divSet1,divDet1 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit);
-            # divSet1,divDet1 = splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit)
+            #divSet1,divDet1 = splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit)
 
             divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
             divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
-            # divSet2,divDet2 = splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
+            #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
             returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
         else
             # if all i's having binary G's, we reach optimum for this node, ub = lb
@@ -698,7 +684,7 @@ function runPara_Series_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ub
     return tbest,xbest,ubCost,lbOverAll;
 end
 
-function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,ϵ = 1e-2)
+function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,ϵ = 1e-2,nSplit = 5)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II
@@ -776,9 +762,9 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,�
     end
 
     # start with an upper bound based on the smaller stochastic solution
-    data141 = load("14_test1_ubData.jld");
-    ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = data141["data"];
-    #ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
+    # data141 = load("14_test1_ubData.jld");
+    # ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = data141["data"];
+    ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
     lbCost = -Inf;
     lbCostList = [];
     global ubCost = ubInc;
@@ -836,7 +822,7 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,�
     global lbOverAll = -Inf;
     # transfer the data back to everywhere
     tic();
-    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,ϵ);
+    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,ϵ,nSplit);
     decompTime = toc();
 
     # need a cut selection process within the callback

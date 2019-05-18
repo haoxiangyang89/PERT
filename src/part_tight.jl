@@ -491,7 +491,7 @@ function splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θl
         # select the split in a greedy manner
         θDiv = [];
         for ω in Ω
-            if (θInt[ω] - θlp[ω] > θInt[ω]*1e-3)*(!(ω in divΩ))
+            if (θInt[ω] - θlp[ω] > θInt[ω]*1e-3)&(!(ω in divΩ))
                 # if we select ω to branch on
                 θgain = θInt[ω] - θlp[ω];
                 θgainB = [];
@@ -551,6 +551,74 @@ function splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θl
         else
             contBool = false;
         end
+        n += 1;
+    end
+    return divSetNew,divDetNew;
+end
+
+function splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θlp,θInt,nSplit)
+    # select the partition according to both sparsity and scenario improvement
+    GCurrent = GList[length(GList)];
+    divSetNew = deepcopy(divSet);
+    divDetNew = deepcopy(divDet);
+    divΩ = [];
+    n = 1;
+    while (n <= nSplit)
+        divDict = Dict();
+        for i in pData.II
+            divDict[i] = [];
+        end
+        # select the split in a greedy manner
+        for i in pData.II
+            θDiv = [];
+            if i != 0
+                for ω in Ω
+                    if (θInt[ω] - θlp[ω] > θInt[ω]*1e-3)
+                        # if we select ω to branch on
+                        θgain = 0;
+                        # obtain the original partition diameter
+                        currentpar = -1;
+                        for par in 1:length(divSetNew[i])
+                            if (ω > divSetNew[i][par].startH) & (ω < divSetNew[i][par].endH)
+                                currentpar = par;
+                            end
+                        end
+                        if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)&(currentpar != -1)
+                            if divDetNew[i][currentpar] == 0
+                                # if G is fractional
+                                oriD = H[divSetNew[i][currentpar].endH] - H[divSetNew[i][currentpar].startH];
+                                for ωn in (divSetNew[i][currentpar].startH+1):(ω-1)
+                                    currentD = H[ω] - H[divSetNew[i][currentpar].startH];
+                                    if tCurrent[i] > H[ωn] + 1e-6
+                                        θgain += (1 - GCurrent[ω][i])*disData[ωn].d[i]*(1/currentD - 1/oriD);
+                                    elseif tCurrent[i] < H[ω] - 1e-6
+                                        θgain += GCurrent[ω][i]*disData[ωn].d[i]*(1/currentD - 1/oriD);
+                                    else
+                                        θgain += min(1 - GCurrent[ω][i],GCurrent[ωn][i])*disData[ωn].d[i]*(1/currentD - 1/oriD);
+                                    end
+                                end
+                                for ωn in (ω+1):(divSetNew[i][currentpar].endH-1)
+                                    currentD = H[divSetNew[i][currentpar].endH] - H[ω];
+                                    if tCurrent[i] > H[ωn] + 1e-6
+                                        θgain += (1 - GCurrent[ωn][i])*disData[ωn].d[i]*(1/currentD - 1/oriD);
+                                    elseif tCurrent[i] < H[ω] - 1e-6
+                                        θgain += GCurrent[ωn][i]*disData[ωn].d[i]*(1/currentD - 1/oriD);
+                                    else
+                                        θgain += min(1 - GCurrent[ωn][i],GCurrent[ωn][i])*disData[ωn].d[i]*(1/currentD - 1/oriD);
+                                    end
+                                end
+                                push!(θDiv,(θgain,ω));
+                            end
+                        end
+                    end
+                end
+                if θDiv != []
+                    estθDiff,ωSelect = maximum(θDiv);
+                    push!(divDict[i],ωSelect);
+                end
+            end
+        end
+        divSetNew,divDetNew = splitAny(divSetNew,divDetNew,Ω,divDict);
         n += 1;
     end
     return divSetNew,divDetNew;
