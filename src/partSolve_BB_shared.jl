@@ -283,7 +283,7 @@ function solveMP_para_Share(data)
                     push!(ycoreUnbounded,ycore);
                 end
             end
-            cutScen = [ω for ω in Ω (if dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω))&(!(ω in infeasList))]];
+            cutScen = [ω for ω in Ω (if dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)]&(!(ω in infeasList)))];
             πSet = zeros(length(pData.II),length(cutScen));
             λSet = zeros(length(IJPair),length(cutScen));
             γSet = zeros(length(IPPair),length(cutScen));
