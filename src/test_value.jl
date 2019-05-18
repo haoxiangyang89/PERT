@@ -26,15 +26,14 @@ global Ω = 1:Ωsize;
 global ϵ = 1e-2;
 global sN = 2;
 global MM = 25;
-global bAlt = 1;
 global nSplit = 5;
 
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
     pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
     global pData = pData;
-    dataRaw = load(filePath*"solData_500.jld");
-    global disData = dataRaw["disData"];
+    #dataRaw = load(filePath*"solData_500.jld");
+    global disData = disDataSet[1];
     dDict[fileInd] = [];
     ubDict[fileInd] = [];
 
@@ -98,12 +97,11 @@ for fileInd in 1:length(pathList)
     end
     #tHOnly,xHOnly,fHOnly,gHOnly,mHOnly = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
     tic();
-    include("partSolve_Callback_tightened_sol.jl");
+    #include("partSolve_Callback_tightened_sol.jl");
+    tHOnly,xHOnly,ubHOnly,lbHOnly,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,6);
     timeHOnly = toc();
-    gapHOnly = (ubCost - lbCost)/ubCost;
-    fHOnly = ubCost;
-    xHOnly = deepcopy(xbest);
-    tHOnly = deepcopy(tbest);
+    gapHOnly = (ubHOnly - lbHOnly)/ubHOnly;
+    fHOnly = ubHOnly;
     disData = deepcopy(disData1);
     ubHOnly = ubCalP(pData,disData,Ω,xHOnly,tHOnly,999999);
     push!(dDict[fileInd],[tHOnly,xHOnly,fHOnly,ubHOnly,gapHOnly,timeHOnly]);
@@ -112,7 +110,8 @@ for fileInd in 1:length(pathList)
     # full solution
     #@time tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
     tic();
-    include("partSolve_Callback_tightened_sol.jl");
+    #include("partSolve_Callback_tightened_sol.jl");
+    tFull,xFull,ubFull,lbFull,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,6);
     timeFull = toc();
     gapFull = (ubCost - lbCost)/ubCost;
     ubFull = ubCost;

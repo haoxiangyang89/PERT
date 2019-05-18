@@ -35,7 +35,7 @@ for fileInd in 1:length(pathList)
     global pData = pData;
     for Ωl in 1:length(Ωsize)
         global Ω = 1:Ωsize[Ωl];
-        disDataRaw = load(pathList[fileInd]*"solData_$Ωl.jld");
+        disDataRaw = load(pathList[fileInd]*"solData_$(Ωsize[Ωl]).jld");
         disDataSet = disDataRaw["data"];
         global ϵ = 1e-2;
         dDict[fileInd][Ωsize[Ωl]] = [];

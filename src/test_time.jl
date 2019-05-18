@@ -30,7 +30,7 @@ for fileInd in 1:length(pathList)
         global ϵ = 1e-2;
         global pData;
         pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl]);
-        dataRaw = load(filePath*"solData_$Ωl.jld");
+        dataRaw = load(filePath*"solData_$(Ωsize[Ωl]).jld");
         global disData = dataRaw["data"][1];
 
         global allSucc = findSuccAll(pData);
