@@ -363,7 +363,7 @@ function solveMP_para_Share(data)
     end
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Method = 1, Threads = noTh, Cutoff = ubCost));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Method = 1, Threads = noTh, Cutoff = ubCost, TimeLimit = 600));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -470,8 +470,69 @@ function solveMP_para_Share(data)
     mpStatus = solve(mp);
     mpObj = getobjectivevalue(mp);
 
-    if mpStatus == :Optimal
+    if (mpStatus == :Optimal)
         returnNo = mpObj;
+        for i in pData.II
+            tCurrent[i] = getvalue(mp[:t][i]);
+            for j in pData.Ji[i]
+                xCurrent[i,j] = getvalue(mp[:x][i,j]);
+            end
+            for par in 1:length(divSet[i])
+                yCurrent[i,par] = getvalue(mp[:y][i,par]);
+            end
+        end
+        # for ω in Ω
+        #     θCurrent[ω] = getvalue(mp[:θ][ω]);
+        # end
+        θCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict),Ω);
+        ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
+        # branch
+        GCurrent = GList[length(GList)];
+        θDiff = [θIntCurrent[ω] - θCurrent[ω] for ω in Ω];
+        θDiffPerm = sortperm(θDiff,rev = true);
+        locBreak = θDiffPerm[1];
+        θgain = 0;
+        lGFracInd = -1;
+        for i in pData.II
+            θgainTemp = 0;
+            if i != 0
+                if tCurrent[i] > H[locBreak] + 1e-6
+                    if (GCurrent[locBreak][i] < 1 - 1e-6)&(GCurrent[locBreak][i] > 1e-6)
+                        θgainTemp += (1 - GCurrent[locBreak][i])*disData[locBreak].d[i];
+                    end
+                elseif tCurrent[i] < H[locBreak] - 1e-6
+                    if (GCurrent[locBreak][i] < 1 - 1e-6)&(GCurrent[locBreak][i] > 1e-6)
+                        θgainTemp += GCurrent[locBreak][i]*disData[locBreak].d[i];
+                    end
+                else
+                    if (GCurrent[locBreak][i] < 1 - 1e-6)&(GCurrent[locBreak][i] > 1e-6)
+                        θgainTemp += min(1 - GCurrent[locBreak][i],GCurrent[locBreak][i])*disData[locBreak].d[i];
+                    end
+                end
+            end
+            if θgainTemp > θgain
+                θgain = θgainTemp;
+                lGFracInd = i;
+            end
+        end
+        # initialize the breakPoints dictionary
+        if lGFracInd != -1
+            #locBreak = Int64(floor((GFrac[lGFracInd][1]*fracBreak + GFrac[lGFracInd][2]*(1 - fracBreak))));
+            divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreak,distanceDict);
+            divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
+            divSet1,divDet1 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit);
+            #divSet1,divDet1 = splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit)
+
+            divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
+            divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
+            #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
+            returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
+        else
+            # if all i's having binary G's, we reach optimum for this node, ub = lb
+            returnSet = [];
+        end
+    elseif (mpStatus == :UserLimit)
+        returnNo = getobjectivebound(mp);
         for i in pData.II
             tCurrent[i] = getvalue(mp[:t][i]);
             for j in pData.Ji[i]
