@@ -416,6 +416,7 @@ function solveMP_para_Share(data)
     xCurrent = Dict();
     θCurrent = Dict();
     yCurrent = Dict();
+    GCurrent = Dict();
 
     # add the cut
     # cutInfo = 2 dimensional vector, first dimention record the primal solution,
@@ -551,6 +552,7 @@ function solveMP_para_Share(data)
             # end
             θCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict),Ω);
             ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
+            GCurrent = GList[length(GList)];
         else
             # if we cannot find a feasible solution within the time limit
             # usually at least we will find a MIPSOL, stored in ubcoreNew
@@ -559,12 +561,15 @@ function solveMP_para_Share(data)
                 tCurrent = deepcopy(tcoreNew[ubInd]);
                 xCurrent = deepcopy(xcoreNew[ubInd]);
                 yCurrent = deepcopy(ycoreNew[ubInd]);
-                θCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict),Ω);
+                dataCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),Ω);
+                for ω in Ω
+                    θCurrent[ω] = dataCurrent[ω][1];
+                    GCurrent[ω] = dataCurrent[ω][2];
+                end
                 ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
             end
         end
         # branch
-        GCurrent = GList[length(GList)];
         θDiff = [θIntCurrent[ω] - θCurrent[ω] for ω in Ω];
         θDiffPerm = sortperm(θDiff,rev = true);
         locBreak = θDiffPerm[1];
@@ -692,7 +697,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                                                 lbNode = maximum([treeList[l][1] for l in ancestorTemp]);
                                             end
                                             for newN in 1:length(mpSolveInfo[3])
-                                                push!(treeList,[mpSolveInfo[1],ancestorTemp,-1,mpSolveInfo[3][newN]]);
+                                                push!(treeList,[lbNode,ancestorTemp,-1,mpSolveInfo[3][newN]]);
                                                 push!(cutList,[]);
                                             end
                                         end
@@ -916,7 +921,7 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,�
     global lbOverAll = -Inf;
     # transfer the data back to everywhere
     tic();
-    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,ϵ,nSplit,roundLimit,oLimit);
+    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,ϵ,nSplit,roundLimit,toLimit);
     decompTime = toc();
 
     # need a cut selection process within the callback

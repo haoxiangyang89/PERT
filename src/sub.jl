@@ -624,7 +624,7 @@ function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
     vk = getobjectivevalue(sp);
     if returnOpt == 0
         return vk;
-    else
+    elseif returnOpt == 1
         # the cut generated is θ >= v - λ(x - xhat) - π(t - that)
         λdict = Dict();             # dual for x
         πdict = Dict();             # dual for t
@@ -650,6 +650,12 @@ function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
             Ghat[i] = getvalue(sp[:G][i]);
         end
         return πdict,λdict,γdict,vk,Ghat;
+    elseif returnOpt == 2
+        Ghat = Dict();
+        for i in pData.II
+            Ghat[i] = getvalue(sp[:G][i]);
+        end
+        return vk,Ghat;
     end
 end
 
