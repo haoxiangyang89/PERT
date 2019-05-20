@@ -197,6 +197,7 @@ function solveMP_para_Share(data)
     GList = [];
     tcoreNew = [];
     xcoreNew = [];
+    ycoreNew = [];
     ubcoreNew = [];
     cutSetNew = [];
     tError = [];
@@ -241,6 +242,7 @@ function solveMP_para_Share(data)
             push!(ycoreList,yhat);
             push!(tcoreNew,that);
             push!(xcoreNew,xhat);
+            push!(ycoreNew,yhat);
 
             # generate cuts
             θInt = Dict();
@@ -533,20 +535,33 @@ function solveMP_para_Share(data)
         end
     elseif (mpStatus == :UserLimit)
         returnNo = getobjectivebound(mp);
-        for i in pData.II
-            tCurrent[i] = getvalue(mp[:t][i]);
-            for j in pData.Ji[i]
-                xCurrent[i,j] = getvalue(mp[:x][i,j]);
+        if mpObj != NaN
+            for i in pData.II
+                tCurrent[i] = getvalue(mp[:t][i]);
+                for j in pData.Ji[i]
+                    xCurrent[i,j] = getvalue(mp[:x][i,j]);
+                end
+                for par in 1:length(divSet[i])
+                    yCurrent[i,par] = getvalue(mp[:y][i,par]);
+                end
             end
-            for par in 1:length(divSet[i])
-                yCurrent[i,par] = getvalue(mp[:y][i,par]);
+            # for ω in Ω
+            #     θCurrent[ω] = getvalue(mp[:θ][ω]);
+            # end
+            θCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict),Ω);
+            ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
+        else
+            # if we cannot find a feasible solution within the time limit
+            # usually at least we will find a MIPSOL, stored in ubcoreNew
+            if ubcoreNew != []
+                ubInd = indmin(ubcoreNew);
+                tCurrent = deepcopy(tcoreNew[ubInd]);
+                xCurrent = deepcopy(xcoreNew[ubInd]);
+                yCurrent = deepcopy(ycoreNew[ubInd]);
+                θCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict),Ω);
+                ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
             end
         end
-        # for ω in Ω
-        #     θCurrent[ω] = getvalue(mp[:θ][ω]);
-        # end
-        θCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict),Ω);
-        ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
         # branch
         GCurrent = GList[length(GList)];
         θDiff = [θIntCurrent[ω] - θCurrent[ω] for ω in Ω];
@@ -670,6 +685,11 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                                         if (mpSolveInfo[1] < ubCost)
                                             ancestorTemp = deepcopy(treeList[selectNode][2]);
                                             push!(ancestorTemp,selectNode);
+                                            if mpSolveInfo[1] > maximum([treeList[l][1] for l in ancestorTemp])
+                                                lbNode = mpSolveInfo[1];
+                                            else
+                                                lbNode = maximum([treeList[l][1] for l in ancestorTemp]);
+                                            end
                                             for newN in 1:length(mpSolveInfo[3])
                                                 push!(treeList,[mpSolveInfo[1],ancestorTemp,-1,mpSolveInfo[3][newN]]);
                                                 push!(cutList,[]);
