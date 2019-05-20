@@ -191,6 +191,7 @@ function solveMP_para_Share(data)
     noTh = data[10];
     wp = CachingPool(data[11]);
     nSplit = data[12];
+    roundLimit = data[13];
     Ω = 1:length(disData);
 
     Tmax1 =lDict[0];
@@ -365,7 +366,7 @@ function solveMP_para_Share(data)
     end
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Method = 1, Threads = noTh, Cutoff = ubCost, TimeLimit = 600));
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Method = 1, Threads = noTh, Cutoff = ubCost, TimeLimit = roundLimit));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
@@ -615,7 +616,7 @@ function solveMP_para_Share(data)
 end
 
 
-function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noTh,ϵ = 1e-2,nSplit = 5,toLimit = 10800)
+function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noTh,ϵ = 1e-2,nSplit = 5,roundLimit = 1000,toLimit = 10800)
     # separate the workers to main processors and workers
     npList = workers()[1:batchNo];
     global noMo = div(noThreads - 1,batchNo);
@@ -661,7 +662,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                                 # mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
                                 #     tbest,xbest,noTh,wpDict[p],nSplit,pData,disData,lDict,H,allSucc,distanceDict]);
                                 mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
-                                    tbest,xbest,noTh,wpDict[p],nSplit]);
+                                    tbest,xbest,noTh,wpDict[p],nSplit,roundLimit]);
                                 timeDict[selectNode] = toc();
                                 # update the cutList with the added cuts and two new nodes
                                 # update the cutSet
@@ -777,7 +778,7 @@ function runPara_Series_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ub
     return tbest,xbest,ubCost,lbOverAll;
 end
 
-function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,ϵ = 1e-2,nSplit = 5,toLimit = 10800)
+function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,ϵ = 1e-2,nSplit = 5,roundLimit = 1000,toLimit = 10800)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II
