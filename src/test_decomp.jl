@@ -21,6 +21,7 @@ global ϵ = 1e-2;
 global sN = 2;
 global MM = 25;
 
+fileInd = 5;
 filePath = pathList[fileInd];
 pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
 global pData = pData;
