@@ -537,7 +537,7 @@ function solveMP_para_Share(data)
         end
     elseif (mpStatus == :UserLimit)
         returnNo = getobjectivebound(mp);
-        if mpObj != NaN
+        if !(isnan(mpObj))
             for i in pData.II
                 tCurrent[i] = getvalue(mp[:t][i]);
                 for j in pData.Ji[i]
@@ -695,6 +695,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                                                 lbNode = mpSolveInfo[1];
                                             else
                                                 lbNode = maximum([treeList[l][1] for l in ancestorTemp]);
+                                                roundLimit = roundLimit * 2;
                                             end
                                             for newN in 1:length(mpSolveInfo[3])
                                                 push!(treeList,[lbNode,ancestorTemp,-1,mpSolveInfo[3][newN]]);

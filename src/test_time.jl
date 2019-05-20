@@ -61,7 +61,6 @@ for fileInd in 1:length(pathList)
         gapext = (mext.objVal - mext.objBound)/mext.objVal;
         ubext = ubCal(pData,disData,Ω,xext,text,9999999);
         dDict[fileInd][Ωsize[Ωl]] = [tFull,xFull,lbFull,ubFull,gapdecomp,timedecomp,
-                            tFull1,xFull1,lbFull1,ubFull1,gapdecomp1,timedecomp1,
                             text,xext,lbmp,ubmp,ubext,gapext,timeext];
         save("test_Ext_time.jld","dDict",dDict);
     end

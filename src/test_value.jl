@@ -33,6 +33,7 @@ for fileInd in 1:length(pathList)
     pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize);
     global pData = pData;
     dataRaw = load(filePath*"solData_500.jld");
+    disData = dataRaw["data"][1];
     # global disData = disDataSet[1];
     dDict[fileInd] = [];
     ubDict[fileInd] = [];
@@ -98,7 +99,7 @@ for fileInd in 1:length(pathList)
     #tHOnly,xHOnly,fHOnly,gHOnly,mHOnly = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
     tic();
     #include("partSolve_Callback_tightened_sol.jl");
-    tHOnly,xHOnly,ubHOnly,lbHOnly,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,6);
+    tHOnly,xHOnly,ubHOnly,lbHOnly,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,1000,10800);
     timeHOnly = toc();
     gapHOnly = (ubHOnly - lbHOnly)/ubHOnly;
     fHOnly = ubHOnly;
@@ -111,7 +112,7 @@ for fileInd in 1:length(pathList)
     #@time tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
     tic();
     #include("partSolve_Callback_tightened_sol.jl");
-    tFull,xFull,ubFull,lbFull,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,3,1,1e-2,6);
+    tFull,xFull,ubFull,lbFull,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,1000,10800);
     timeFull = toc();
     gapFull = (ubFull - lbFull)/ubFull;
     fFull = lbFull;
