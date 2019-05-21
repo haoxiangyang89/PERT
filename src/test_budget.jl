@@ -34,7 +34,15 @@ for fileInd in 1:length(pathList)
     Ω1 = 1:length(disData1);
     pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,1);
     global pData = pData;
-    for Ωl in 1:length(Ωsize)
+    global allSucc = findSuccAll(pData);
+    global distanceDict = Dict();
+    for i in pData.II
+        for j in allSucc[i]
+            distanceDict[i,j] = detCal(pData,i,j);
+        end
+    end
+
+    for Ωl in 5:length(Ωsize)
         global Ω = 1:Ωsize[Ωl];
         disDataRaw = load(pathList[fileInd]*"solData_$(Ωsize[Ωl]).jld");
         disDataSet = disDataRaw["data"];
@@ -46,13 +54,6 @@ for fileInd in 1:length(pathList)
             # try
             global disData = disDataSet[n];
 
-            global allSucc = findSuccAll(pData);
-            global distanceDict = Dict();
-            for i in pData.II
-                for j in allSucc[i]
-                    distanceDict[i,j] = detCal(pData,i,j);
-                end
-            end
             # our decomposition method
             if Ωl <= 4
                 tic();

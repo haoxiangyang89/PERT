@@ -633,9 +633,6 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
     global keepIter = true;
     lbOverAll = -Inf;
     timeDict = Dict();
-    timerThread = workers()[noThreads];
-    push!(npList,timerThread);
-    elapsedtime = 0;
 
     @sync begin
         for ip in 1:length(npList)
