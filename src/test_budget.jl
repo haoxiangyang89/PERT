@@ -25,7 +25,8 @@ dDict = Dict();
 sNList = [0,0,0,0,20,20,20,20,25,20,30,40];
 MMList = [0,0,0,0,10,15,20,25,30,50,50,50];
 for fileInd in 1:length(pathList)
-    simuPath = pathList[fileInd]*"simuData.jld";
+    filePath = pathList[fileInd]
+    simuPath = filePath*"simuData.jld";
     data5000Raw = load(simuPath);
 
     dDict[fileInd] = Dict();
@@ -53,28 +54,25 @@ for fileInd in 1:length(pathList)
                 end
             end
             # our decomposition method
-            if Ωl < 4
+            if Ωl <= 4
                 tic();
-                tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
+                tFull,xFull,ubFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
                 timedecomp = toc();
                 gapdecomp = 0;
-                lbCost = fFull;
-                ubCost = fFull;
+                lbFull = getobjectivebound(mFull);
             else
                 global sN = sNList[Ωl];
                 global MM = MMList[Ωl];
                 global nSplit = 5;
                 global bAlt = 1;
                 tic();
-                include("partSolve_Callback_tightened_sol.jl");
+                tFull,xFull,ubFull,lbFull,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,1000);
                 timedecomp = toc();
-                gapdecomp = (ubCost - lbCost)/ubCost;
-                xFull = deepcopy(xbest);
-                tFull = deepcopy(tbest);
+                gapdecomp = (ubFull - lbFull)/ubFull;
             end
 
             ubTemp = ubCalP(pData,disData1,Ω1,xFull,tFull,999999);
-            push!(dDict[fileInd][Ωsize[Ωl]],[tFull,xFull,lbCost,ubCost,gapdecomp,timedecomp,ubTemp]);
+            push!(dDict[fileInd][Ωsize[Ωl]],[tFull,xFull,lbFull,ubFull,gapdecomp,timedecomp,ubTemp]);
             save("test_Ext_budget.jld","dDict",dDict);
             n += 1;
             # catch

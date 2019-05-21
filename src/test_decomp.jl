@@ -41,7 +41,7 @@ end
 
 tic();
 #include("partSolve_Callback_tightened_sol.jl");
-tFull,xFull,ubFull,lbFull,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,300,21600);
+tFull,xFull,ubFull,lbFull,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,300);
 timeFull = toc();
 
 save("test_decomp_55.jld","data",[tFull,xFull,ubFull,lbFull,timeIter,treeList,timeFull]);
