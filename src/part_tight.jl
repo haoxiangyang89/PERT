@@ -754,15 +754,15 @@ function combinePart(pData,disData,Ω,divSet,divDet,H,tcoreList,xcoreList,ycoreL
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
       t[i in pData.II] >= 0
-      y[i in pData.II, par in 1:length(divSet[i])], Bin
+      y[i in pData.II, par in 1:length(divSetNew[i])], Bin
     end);
     @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
     @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
-    @constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSet[i][par].endH]*y[i,par] for par in 1:length(divSetNew[i])));
-    @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSetNew[i])));
-    @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
-    @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
+    @constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSetNew[i][par].endH]*y[i,par] for par in 1:length(divSetNew[i])));
+    @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSetNew[i][par].startH]*y[i,par] for par in 1:length(divSetNew[i])));
+    @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSetNew[i])) == 1);
+    @constraint(mp, yLimit[i in pData.II, par in 1:length(divSetNew[i]); divDetNew[i][par] != 0], y[i,par] == 0);
 
     @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
 
