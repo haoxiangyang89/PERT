@@ -624,36 +624,36 @@ function splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θ
     return divSetNew,divDetNew;
 end
 
-function combinePart(pData,disData,Ω,divSet,divDet,H,tcoreList,xcoreList,ycoreList,wp,noTh,ubCost)
+function combinePart(pData,disData,Ω,divSetOld,divDetOld,H,tcoreList,xcoreList,ycoreList,wp,noTh,ubCost)
     # first combine the divSet and divDet to create new partitions
     # new partitions should be easy to solve
     # obtain the solution with the coarse partition, which will be guaranteed to be feasible
-    divSetNew = Dict();
-    divDetNew = Dict();
+    divSet = Dict();
+    divDet = Dict();
     # combine the partition
     for i in pData.II
-        divSetNew[i] = [];
-        divDetNew[i] = [];
+        divSet[i] = [];
+        divDet[i] = [];
         earliest0 = 0;
         latest0 = length(H) - 1;
-        for par in 1:length(divSet[i])
-            if divDet[i][par] == 1
-                earliest0 = divSet[i][par].endH;
+        for par in 1:length(divSetOld[i])
+            if divDetOld[i][par] == 1
+                earliest0 = divSetOld[i][par].endH;
             end
-            if (divDet[i][par] == -1)&(divSet[i][par].startH < latest0)
-                latest0 = divSet[i][par].startH;
+            if (divDetOld[i][par] == -1)&(divSetOld[i][par].startH < latest0)
+                latest0 = divSetOld[i][par].startH;
             end
         end
         # create new partition
         if earliest0 > 0
-            push!(divSetNew[i],partType(0,earliest0));
-            push!(divDetNew[i],1);
+            push!(divSet[i],partType(0,earliest0));
+            push!(divDet[i],1);
         end
-        push!(divSetNew[i],partType(earliest0,latest0));
-        push!(divDetNew[i],0);
+        push!(divSet[i],partType(earliest0,latest0));
+        push!(divDet[i],0);
         if latest0 < length(H) - 1
-            push!(divSetNew[i],partType(latest0,length(H) - 1));
-            push!(divDetNew[i],-1);
+            push!(divSet[i],partType(latest0,length(H) - 1));
+            push!(divDet[i],-1);
         end
     end
 
@@ -686,7 +686,7 @@ function combinePart(pData,disData,Ω,divSet,divDet,H,tcoreList,xcoreList,ycoreL
             push!(ubCLTemp,ubTemp);
 
             # obtain the cores
-            tcore,xcore,ycore = avgCore(pData,divSetNew,tcoreList,xcoreList,ycoreList);
+            tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
             # here is the issue, pack it in a function prevent separating it
             dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp);
             cutScen = [];
@@ -754,15 +754,15 @@ function combinePart(pData,disData,Ω,divSet,divDet,H,tcoreList,xcoreList,ycoreL
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
       t[i in pData.II] >= 0
-      y[i in pData.II, par in 1:length(divSetNew[i])], Bin
+      y[i in pData.II, par in 1:length(divSet[i])], Bin
     end);
     @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
     @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
-    @constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSetNew[i][par].endH]*y[i,par] for par in 1:length(divSetNew[i])));
-    @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSetNew[i][par].startH]*y[i,par] for par in 1:length(divSetNew[i])));
-    @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSetNew[i])) == 1);
-    @constraint(mp, yLimit[i in pData.II, par in 1:length(divSetNew[i]); divDetNew[i][par] != 0], y[i,par] == 0);
+    @constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSet[i][par].endH]*y[i,par] for par in 1:length(divSet[i])));
+    @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSet[i])));
+    @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
+    @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
 
     @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
 
