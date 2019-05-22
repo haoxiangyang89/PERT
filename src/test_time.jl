@@ -19,8 +19,8 @@ pathList = ["/scratch/haoxiang/current/11/",
 #             "/home/haoxiang/scratch/PERT_tests/current/75/"];
 
 Ωsize = [100,200,500,1000,1500,2000];
-sNList = [10,20,20,20,30,40];
-MMList = [10,10,25,50,50,50];
+sNList = [10,20,25,25,30,40];
+MMList = [10,10,20,40,50,50];
 dDict = Dict();
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
@@ -47,15 +47,12 @@ for fileInd in 1:length(pathList)
         gapdecomp = (ubFull - lbFull)/ubFull;
 
         # extensive formulation
-        tic();
-        text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-4,10800);
-        timeext = toc();
-        ubmp = mext.objVal;
-        lbmp = mext.objBound;
-        gapext = (mext.objVal - mext.objBound)/mext.objVal;
-        ubext = ubCal(pData,disData,Ω,xext,text,9999999);
+        text,xext,fext,gext,mext,timeext = extForm_cheat_new(pData,disData,Ω,sN,MM,1e-2,10800,noThreads);
+        ubext = mext.objVal;
+        lbext = mext.objBound;
+        gapext = (ubext - lbext)/ubext;
         dDict[fileInd][Ωsize[Ωl]] = [tFull,xFull,lbFull,ubFull,gapdecomp,timedecomp,
-                            text,xext,lbmp,ubmp,ubext,gapext,timeext];
+                            text,xext,lbext,ubext,gapext,timeext];
         save("test_Ext_time.jld","dDict",dDict);
     end
 end
