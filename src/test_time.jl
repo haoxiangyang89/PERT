@@ -18,9 +18,9 @@ pathList = ["/scratch/haoxiang/current/11/",
 #             "/home/haoxiang/scratch/PERT_tests/current/55/",
 #             "/home/haoxiang/scratch/PERT_tests/current/75/"];
 
-Ωsize = [10,20,50,100,200,300,400,500,750,1000,1500,2000];
-sNList = [0,0,0,0,20,20,20,20,25,20,30,40];
-MMList = [0,0,0,0,10,15,20,25,30,50,50,50];
+Ωsize = [100,200,500,1000,1500,2000];
+sNList = [10,20,20,20,30,40];
+MMList = [10,10,25,50,50,50];
 dDict = Dict();
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
@@ -43,18 +43,12 @@ for fileInd in 1:length(pathList)
         # our decomposition method
         global sN = sNList[Ωl];
         global MM = MMList[Ωl];
-        tic();
-        include("partSolve_Callback_tightened_sol.jl");
-        timedecomp = toc();
-        gapdecomp = (ubCost - lbCost)/ubCost;
-        ubFull = ubCost;
-        lbFull = lbCost;
-        xFull = deepcopy(xbest);
-        tFull = deepcopy(tbest);
+        tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,1000);
+        gapdecomp = (ubFull - lbFull)/ubFull;
 
         # extensive formulation
         tic();
-        text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-4,9999999);
+        text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-4,10800);
         timeext = toc();
         ubmp = mext.objVal;
         lbmp = mext.objBound;

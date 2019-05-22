@@ -42,7 +42,7 @@ for fileInd in 1:length(pathList)
         end
     end
 
-    for Ωl in 5:length(Ωsize)
+    for Ωl in 1:length(Ωsize)
         global Ω = 1:Ωsize[Ωl];
         disDataRaw = load(pathList[fileInd]*"solData_$(Ωsize[Ωl]).jld");
         disDataSet = disDataRaw["data"];
@@ -72,6 +72,7 @@ for fileInd in 1:length(pathList)
             ubTemp = ubCalP(pData,disData1,Ω1,xFull,tFull,999999);
             push!(dDict[fileInd][Ωsize[Ωl]],[tFull,xFull,lbFull,ubFull,gapdecomp,timedecomp,ubTemp]);
             save("test_Ext_budget.jld","dDict",dDict);
+            println("========= Case $(fileInd) Budget $(Ωsize[Ωl]) Sample $(n) Processed, Lower bound $(lbFull), Upper bound $(ubFull) =========");
             n += 1;
             # catch
             # println("Error in Data!");
