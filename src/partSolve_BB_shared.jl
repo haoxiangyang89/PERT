@@ -410,31 +410,31 @@ function solveMP_para_Share(data)
         for ω in Ω
             setvalue(θ[ω],θfeas[ω]);
         end
-    else
-        # solve the simple problem to identify a feasible solution
-        # combine all 0 partitions to be a single partition, solve the master problem on this simple partition
-        tfeas,xfeas = combinePart(pData,disData,Ω,divSet,divDet,H,tcoreList,xcoreList,ycoreList,wp,noTh,ubCost);
-        yfeas = Dict();
-        for i in pData.II
-            setvalue(t[i], tfeas[i]);
-            for j in pData.Ji[i]
-                setvalue(x[i,j],xfeas[i,j]);
-            end
-            for par in 1:length(divSet[i])
-                if (tfeas[i] >= H[divSet[i][par].startH])&(tfeas[i] < H[divSet[i][par].endH])
-                    yfeas[i,par] = 1;
-                elseif (abs(tfeas[i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
-                    yfeas[i,par] = 1;
-                else
-                    yfeas[i,par] = 0;
-                end
-                setvalue(y[i,par],yfeas[i,par]);
-            end
-        end
-        θfeas = subPara1(pData,disData,Ω,tfeas,xfeas,yfeas,divSet,H,lDict,wp);
-        for ω in Ω
-            setvalue(θ[ω],θfeas[ω]);
-        end
+    # else
+    #     # solve the simple problem to identify a feasible solution
+    #     # combine all 0 partitions to be a single partition, solve the master problem on this simple partition
+    #     tfeas,xfeas = combinePart(pData,disData,Ω,divSet,divDet,H,tcoreList,xcoreList,ycoreList,wp,noTh,ubCost,Tmax1);
+    #     yfeas = Dict();
+    #     for i in pData.II
+    #         setvalue(t[i], tfeas[i]);
+    #         for j in pData.Ji[i]
+    #             setvalue(x[i,j],xfeas[i,j]);
+    #         end
+    #         for par in 1:length(divSet[i])
+    #             if (tfeas[i] >= H[divSet[i][par].startH])&(tfeas[i] < H[divSet[i][par].endH])
+    #                 yfeas[i,par] = 1;
+    #             elseif (abs(tfeas[i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
+    #                 yfeas[i,par] = 1;
+    #             else
+    #                 yfeas[i,par] = 0;
+    #             end
+    #             setvalue(y[i,par],yfeas[i,par]);
+    #         end
+    #     end
+    #     θfeas = subPara1(pData,disData,Ω,tfeas,xfeas,yfeas,divSet,H,lDict,wp);
+    #     for ω in Ω
+    #         setvalue(θ[ω],θfeas[ω]);
+    #     end
     end
 
     tCurrent = Dict();
@@ -578,68 +578,81 @@ function solveMP_para_Share(data)
             θCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict),Ω);
             ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
             GCurrent = GList[length(GList)];
-        else
-            # if we cannot find a feasible solution within the time limit
-            # usually at least we will find a MIPSOL, stored in ubcoreNew
-            while ubcoreNew == []
-                roundLimit = roundLimit*2;
-                setparam!(mp.internalModel.inner,"TimeLimit",roundLimit);
-                solve(mp);
-            end
-            ubInd = indmin(ubcoreNew);
-            tCurrent = deepcopy(tcoreNew[ubInd]);
-            xCurrent = deepcopy(xcoreNew[ubInd]);
-            yCurrent = deepcopy(ycoreNew[ubInd]);
-            dataCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),Ω);
-            for ω in Ω
-                θCurrent[ω] = dataCurrent[ω][1];
-                GCurrent[ω] = dataCurrent[ω][2];
-            end
-            ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
-        end
-        # branch
-        θDiff = [θIntCurrent[ω] - θCurrent[ω] for ω in Ω];
-        θDiffPerm = sortperm(θDiff,rev = true);
-        locBreak = θDiffPerm[1];
-        θgain = 0;
-        lGFracInd = -1;
-        for i in pData.II
-            θgainTemp = 0;
-            if i != 0
-                if tCurrent[i] > H[locBreak] + 1e-6
-                    if (GCurrent[locBreak][i] < 1 - 1e-6)&(GCurrent[locBreak][i] > 1e-6)
-                        θgainTemp += (1 - GCurrent[locBreak][i])*disData[locBreak].d[i];
-                    end
-                elseif tCurrent[i] < H[locBreak] - 1e-6
-                    if (GCurrent[locBreak][i] < 1 - 1e-6)&(GCurrent[locBreak][i] > 1e-6)
-                        θgainTemp += GCurrent[locBreak][i]*disData[locBreak].d[i];
-                    end
-                else
-                    if (GCurrent[locBreak][i] < 1 - 1e-6)&(GCurrent[locBreak][i] > 1e-6)
-                        θgainTemp += min(1 - GCurrent[locBreak][i],GCurrent[locBreak][i])*disData[locBreak].d[i];
+            # branch
+            θDiff = [θIntCurrent[ω] - θCurrent[ω] for ω in Ω];
+            θDiffPerm = sortperm(θDiff,rev = true);
+            locBreak = θDiffPerm[1];
+            θgain = 0;
+            lGFracInd = -1;
+            for i in pData.II
+                θgainTemp = 0;
+                if i != 0
+                    if tCurrent[i] > H[locBreak] + 1e-6
+                        if (GCurrent[locBreak][i] < 1 - 1e-6)&(GCurrent[locBreak][i] > 1e-6)
+                            θgainTemp += (1 - GCurrent[locBreak][i])*disData[locBreak].d[i];
+                        end
+                    elseif tCurrent[i] < H[locBreak] - 1e-6
+                        if (GCurrent[locBreak][i] < 1 - 1e-6)&(GCurrent[locBreak][i] > 1e-6)
+                            θgainTemp += GCurrent[locBreak][i]*disData[locBreak].d[i];
+                        end
+                    else
+                        if (GCurrent[locBreak][i] < 1 - 1e-6)&(GCurrent[locBreak][i] > 1e-6)
+                            θgainTemp += min(1 - GCurrent[locBreak][i],GCurrent[locBreak][i])*disData[locBreak].d[i];
+                        end
                     end
                 end
+                if θgainTemp > θgain
+                    θgain = θgainTemp;
+                    lGFracInd = i;
+                end
             end
-            if θgainTemp > θgain
-                θgain = θgainTemp;
-                lGFracInd = i;
-            end
-        end
-        # initialize the breakPoints dictionary
-        if lGFracInd != -1
-            #locBreak = Int64(floor((GFrac[lGFracInd][1]*fracBreak + GFrac[lGFracInd][2]*(1 - fracBreak))));
-            divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreak,distanceDict);
-            divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
-            divSet1,divDet1 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit);
-            #divSet1,divDet1 = splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit)
+            # initialize the breakPoints dictionary
+            if lGFracInd != -1
+                #locBreak = Int64(floor((GFrac[lGFracInd][1]*fracBreak + GFrac[lGFracInd][2]*(1 - fracBreak))));
+                divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreak,distanceDict);
+                divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
+                divSet1,divDet1 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit);
+                #divSet1,divDet1 = splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit)
 
-            divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
-            divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
-            #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
-            returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
+                divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
+                divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
+                #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
+                returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
+            else
+                # if all i's having binary G's, we reach optimum for this node, ub = lb
+                returnSet = [];
+            end
         else
-            # if all i's having binary G's, we reach optimum for this node, ub = lb
-            returnSet = [];
+            # branch only + equal branching rules
+            # select the activity with the largest variance in the past solution to branch
+            lGFracInd = -1;
+            maxVar = 0;
+            for i in pData.II
+                tHistory = [tcoreList[ll][i] for ll in 1:length(tcoreList)];
+                if var(tHistory) > maxVar
+                    lGFracInd = i;
+                    maxVar = var(tHistory);
+                end
+            end
+            earliest0 = 0;
+            latest0 = length(H) - 1;
+            for par in 1:length(divSet[lGFracInd])
+                if divDet[lGFracInd][par] == 1
+                    earliest0 = divSet[lGFracInd][par].endH;
+                end
+                if (divDet[lGFracInd][par] == -1)&(divSet[lGFracInd][par].startH < latest0)
+                    latest0 = divSet[lGFracInd][par].startH;
+                end
+            end
+            if latest0 - earliest0 > 1
+                locBreak = Int64(floor((earliest0 + latest0)/2));
+                divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreak,distanceDict);
+                divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
+                divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
+                returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
+            else
+                returnSet = [[divSet,divDet]];
+            end
         end
     else
         returnNo = -Inf;
