@@ -65,10 +65,7 @@ for fileInd in 1:length(pathList)
                 global sN = sNList[Ωl];
                 global MM = MMList[Ωl];
                 global nSplit = 5;
-                global bAlt = 1;
-                tic();
-                tFull,xFull,ubFull,lbFull,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,1000);
-                timedecomp = toc();
+                tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,1000);
                 gapdecomp = (ubFull - lbFull)/ubFull;
             end
 

@@ -623,3 +623,159 @@ function splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θ
     end
     return divSetNew,divDetNew;
 end
+
+function combinePart(pData,disData,Ω,divSet,divDet,H,tcoreList,xcoreList,ycoreList,wp)
+    # first combine the divSet and divDet to create new partitions
+    # new partitions should be easy to solve
+    # obtain the solution with the coarse partition, which will be guaranteed to be feasible
+    divSetNew = Dict();
+    divDetNew = Dict();
+    # combine the partition
+    for i in pData.II
+        divSetNew[i] = [];
+        divDetNew[i] = [];
+        earliest0 = 0;
+        latest0 = length(H) - 1;
+        for par in 1:length(divSet[i])
+            if divDet[i][par] == 1
+                earliest0 = divSet[i][par].endH;
+            end
+            if (divDet[i][par] == -1)&(divSet[i][par].startH < latest0)
+                latest0 = divSet[i][par].startH;
+            end
+        end
+        # create new partition
+        if earliest0 > 0
+            push!(divSetNew[i],partType(0,earliest0));
+            push!(divDetNew[i],1);
+        end
+        push!(divSetNew[i],partType(earliest0,latest0));
+        push!(divDetNew[i],0);
+        if latest0 < length(H) - 1
+            push!(divSetNew[i],partType(latest0,length(H) - 1));
+            push!(divDetNew[i],-1);
+        end
+    end
+
+    ubCLTemp = [Inf];
+
+    function partBendersC(cb)
+        currentLB = MathProgBase.cbgetbestbound(cb);
+        if currentLB <= minimum(ubCLTemp)
+            # the callback function
+            that = Dict();
+            xhat = Dict();
+            yhat = Dict();
+            θhat = Dict();
+            # obtain the solution at the current node
+            for i in pData.II
+                that[i] = getvalue(t[i]);
+                for j in pData.Ji[i]
+                    xhat[i,j] = getvalue(x[i,j]);
+                end
+                for par in 1:length(divSet[i])
+                    yhat[i,par] = round(getvalue(y[i,par]));
+                end
+            end
+            for ω in 1:length(Ω)
+                θhat[ω] = getvalue(θ[Ω[ω]]);
+            end
+            # generate cuts
+            θInt = Dict();
+            ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1,wp);
+            push!(ubCLTemp,ubTemp);
+
+            # obtain the cores
+            tcore,xcore,ycore = avgCore(pData,divSetNew,tcoreList,xcoreList,ycoreList);
+            # here is the issue, pack it in a function prevent separating it
+            dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp);
+            cutScen = [];
+            for ω in Ω
+                if length(dataList[ω]) != 3
+                    if (dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)])
+                        push!(cutScen,ω);
+                    end
+                end
+            end
+            πSet = zeros(length(pData.II),length(cutScen));
+            λSet = zeros(length(IJPair),length(cutScen));
+            γSet = zeros(length(IPPair),length(cutScen));
+            πSet1 = zeros(length(pData.II),length(cutScen));
+            λSet1 = zeros(length(IJPair),length(cutScen));
+            γSet1 = zeros(length(IPPair),length(cutScen));
+            vSet = zeros(length(cutScen));
+            for ωi in 1:length(cutScen)
+                ω = cutScen[ωi];
+                vSet[ωi] = dataList[ω][4];
+                for i in pData.II
+                    vSet[ωi] -= dataList[ω][1][i]*that[i];
+                    if abs(dataList[ω][1][i]) >= 1e-7
+                        πSet[findfirst(pData.II,i),ωi] = dataList[ω][1][i];
+                    else
+                        πSet[findfirst(pData.II,i),ωi] = 0;
+                        if dataList[ω][1][i] < 0
+                            vSet[ωi] += dataList[ω][1][i];
+                        end
+                    end
+                    for j in pData.Ji[i]
+                        vSet[ωi] -= dataList[ω][2][i,j]*xhat[i,j];
+                        if abs(dataList[ω][2][i,j]) >= 1e-5
+                            λSet[findfirst(IJPair,(i,j)),ωi] = dataList[ω][2][i,j];
+                        else
+                            λSet[findfirst(IJPair,(i,j)),ωi] = 0;
+                            if dataList[ω][2][i,j] < 0
+                                vSet[ωi] += dataList[ω][2][i,j];
+                            end
+                        end
+                    end
+                    for par in 1:length(divSet[i])
+                        vSet[ωi] -= dataList[ω][3][i,par]*yhat[i,par];
+                        if abs(dataList[ω][3][i,par]) >= 1e-5
+                            γSet[findfirst(IPPair,(i,par)),ωi] = dataList[ω][3][i,par];
+                        else
+                            γSet[findfirst(IPPair,(i,par)),ωi] = 0;
+                            if dataList[ω][3][i,par] < 0
+                                vSet[ωi] += dataList[ω][3][i,par];
+                            end
+                        end
+                    end
+                end
+                @lazyconstraint(cb, θ[ω] >= vSet[ωi] + sum(πSet[findfirst(pData.II,i),ωi]*t[i] for i in pData.II) +
+                    sum(sum(λSet[findfirst(IJPair,(i,j)),ωi]*x[i,j] for j in pData.Ji[i]) for i in pData.II) +
+                    sum(sum(γSet[findfirst(IPPair,(i,par)),ωi]*y[i,par] for par in 1:length(divSet[i])) for i in pData.II));
+            end
+        else
+            return JuMP.StopTheSolver;
+        end
+    end
+
+    mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Method = 1, Threads = noTh, Cutoff = ubCost, TimeLimit = roundLimit));
+    @variables(mp, begin
+      θ[Ω] >= 0
+      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
+      t[i in pData.II] >= 0
+      y[i in pData.II, par in 1:length(divSet[i])], Bin
+    end);
+    @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
+    @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+    @constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSet[i][par].endH]*y[i,par] for par in 1:length(divSetNew[i])));
+    @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSetNew[i])));
+    @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
+    @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
+
+    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
+
+    addlazycallback(mp, partBendersC);
+    mpStatus = solve(mp);
+    tfeas = Dict();
+    xfeas = Dict();
+    for i in pData.II
+        tfeas[i] = getvalue(mp[:t][i]);
+        for j in pData.Ji[i]
+            xfeas[i,j] = getvalue(mp[:x][i,j]);
+        end
+    end
+
+    return tfeas,xfeas;
+end

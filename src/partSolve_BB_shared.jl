@@ -410,6 +410,31 @@ function solveMP_para_Share(data)
         for ω in Ω
             setvalue(θ[ω],θfeas[ω]);
         end
+    else
+        # solve the simple problem to identify a feasible solution
+        # combine all 0 partitions to be a single partition, solve the master problem on this simple partition
+        tfeas,xfeas = combinePart(pData,disData,Ω,divSet,divDet,H,tcoreList,xcoreList,ycoreList,wp);
+        yfeas = Dict();
+        for i in pData.II
+            setvalue(t[i], tfeas[i]);
+            for j in pData.Ji[i]
+                setvalue(x[i,j],xfeas[i,j]);
+            end
+            for par in 1:length(divSet[i])
+                if (tfeas[i] >= H[divSet[i][par].startH])&(tfeas[i] < H[divSet[i][par].endH])
+                    yfeas[i,par] = 1;
+                elseif (abs(tfeas[i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
+                    yfeas[i,par] = 1;
+                else
+                    yfeas[i,par] = 0;
+                end
+                setvalue(y[i,par],yfeas[i,par]);
+            end
+        end
+        θfeas = subPara1(pData,disData,Ω,tfeas,xfeas,yfeas,divSet,H,lDict,wp);
+        for ω in Ω
+            setvalue(θ[ω],θfeas[ω]);
+        end
     end
 
     tCurrent = Dict();
@@ -556,18 +581,20 @@ function solveMP_para_Share(data)
         else
             # if we cannot find a feasible solution within the time limit
             # usually at least we will find a MIPSOL, stored in ubcoreNew
-            if ubcoreNew != []
-                ubInd = indmin(ubcoreNew);
-                tCurrent = deepcopy(tcoreNew[ubInd]);
-                xCurrent = deepcopy(xcoreNew[ubInd]);
-                yCurrent = deepcopy(ycoreNew[ubInd]);
-                dataCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),Ω);
-                for ω in Ω
-                    θCurrent[ω] = dataCurrent[ω][1];
-                    GCurrent[ω] = dataCurrent[ω][2];
-                end
-                ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
+            while ubcoreNew == []
+                roundLimit = roundLimit*2;
+                setparam!(mp.internalModel.inner,"TimeLimit",roundLimit);
             end
+            ubInd = indmin(ubcoreNew);
+            tCurrent = deepcopy(tcoreNew[ubInd]);
+            xCurrent = deepcopy(xcoreNew[ubInd]);
+            yCurrent = deepcopy(ycoreNew[ubInd]);
+            dataCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),Ω);
+            for ω in Ω
+                θCurrent[ω] = dataCurrent[ω][1];
+                GCurrent[ω] = dataCurrent[ω][2];
+            end
+            ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
         end
         # branch
         θDiff = [θIntCurrent[ω] - θCurrent[ω] for ω in Ω];
@@ -630,7 +657,6 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
     for npi in 1:length(npList)
         wpDict[npList[npi]] = workers()[(batchNo + (npi - 1)*noPa + 1):(batchNo + npi*noPa)];
     end
-    global keepIter = true;
     lbOverAll = -Inf;
     timeDict = Dict();
 
@@ -641,13 +667,15 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                 while true
                     # if all nodes are processed and no nodes are being processed, exit
                     boolFinished = true;
-                    for l in 1:length(treeList)
-                        if treeList[l][3] != 1
-                            boolFinished = false;
+                    if (ubCost - lbOverAll)/ubCost >= ϵ
+                        for l in 1:length(treeList)
+                            if treeList[l][3] != 1
+                                boolFinished = false;
+                            end
                         end
                     end
-                    println("-------------",boolFinished," ",keepIter," ",[treeList[l][3] for l in 1:length(treeList)],[treeList[l][1] for l in 1:length(treeList)],"-------------");
-                    if (boolFinished) || (!(keepIter))
+                    println("-------------",boolFinished," ",[treeList[l][3] for l in 1:length(treeList)],[treeList[l][1] for l in 1:length(treeList)],"-------------");
+                    if boolFinished
                         println("break");
                         break
                     end
@@ -678,26 +706,22 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                                     tbest = mpSolveInfo[4];
                                     xbest = mpSolveInfo[5];
                                 end
-                                if (ubCost - lbOverAll)/ubCost < ϵ
-                                    keepIter = false;
-                                else
-                                    # update the current node cut
-                                    cutList[selectNode] = mpSolveInfo[2];
-                                    # push the branched nodes
-                                    if (mpSolveInfo[1] < ubCost)
-                                        ancestorTemp = deepcopy(treeList[selectNode][2]);
-                                        push!(ancestorTemp,selectNode);
-                                        rlTemp = treeList[selectNode][5];
-                                        if mpSolveInfo[1] > maximum([treeList[l][1] for l in ancestorTemp])
-                                            lbNode = mpSolveInfo[1];
-                                        else
-                                            lbNode = maximum([treeList[l][1] for l in ancestorTemp]);
-                                            rlTemp = rlTemp * 2;
-                                        end
-                                        for newN in 1:length(mpSolveInfo[3])
-                                            push!(treeList,[lbNode,ancestorTemp,-1,mpSolveInfo[3][newN],rlTemp]);
-                                            push!(cutList,[]);
-                                        end
+                                # update the current node cut
+                                cutList[selectNode] = mpSolveInfo[2];
+                                # push the branched nodes
+                                if (mpSolveInfo[1] < ubCost)
+                                    ancestorTemp = deepcopy(treeList[selectNode][2]);
+                                    push!(ancestorTemp,selectNode);
+                                    rlTemp = treeList[selectNode][5];
+                                    if mpSolveInfo[1] > maximum([treeList[l][1] for l in ancestorTemp])
+                                        lbNode = mpSolveInfo[1];
+                                    else
+                                        lbNode = maximum([treeList[l][1] for l in ancestorTemp]);
+                                        rlTemp = rlTemp * 2;
+                                    end
+                                    for newN in 1:length(mpSolveInfo[3])
+                                        push!(treeList,[lbNode,ancestorTemp,-1,mpSolveInfo[3][newN],rlTemp]);
+                                        push!(cutList,[]);
                                     end
                                 end
                             end

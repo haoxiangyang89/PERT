@@ -1,6 +1,6 @@
 # test the decomposition for a single problem
-addprocs(31);
-global noThreads = 31;
+addprocs(30);
+global noThreads = 30;
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
 # test sbb
