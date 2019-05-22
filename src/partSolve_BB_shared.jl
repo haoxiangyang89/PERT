@@ -584,6 +584,7 @@ function solveMP_para_Share(data)
             while ubcoreNew == []
                 roundLimit = roundLimit*2;
                 setparam!(mp.internalModel.inner,"TimeLimit",roundLimit);
+                solve(mp);
             end
             ubInd = indmin(ubcoreNew);
             tCurrent = deepcopy(tcoreNew[ubInd]);
