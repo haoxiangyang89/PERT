@@ -624,7 +624,7 @@ function splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θ
     return divSetNew,divDetNew;
 end
 
-function combinePart(pData,disData,Ω,divSet,divDet,H,tcoreList,xcoreList,ycoreList,wp)
+function combinePart(pData,disData,Ω,divSet,divDet,H,tcoreList,xcoreList,ycoreList,wp,noTh,ubCost)
     # first combine the divSet and divDet to create new partitions
     # new partitions should be easy to solve
     # obtain the solution with the coarse partition, which will be guaranteed to be feasible

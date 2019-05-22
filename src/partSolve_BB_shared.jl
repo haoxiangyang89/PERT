@@ -413,7 +413,7 @@ function solveMP_para_Share(data)
     else
         # solve the simple problem to identify a feasible solution
         # combine all 0 partitions to be a single partition, solve the master problem on this simple partition
-        tfeas,xfeas = combinePart(pData,disData,Ω,divSet,divDet,H,tcoreList,xcoreList,ycoreList,wp);
+        tfeas,xfeas = combinePart(pData,disData,Ω,divSet,divDet,H,tcoreList,xcoreList,ycoreList,wp,noTh,ubCost);
         yfeas = Dict();
         for i in pData.II
             setvalue(t[i], tfeas[i]);
