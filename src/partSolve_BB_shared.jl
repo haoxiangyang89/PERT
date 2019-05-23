@@ -695,7 +695,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                     openNodes = [(treeList[l][1],l) for l in 1:length(treeList) if treeList[l][3] == -1];
                     if openNodes != []
                         selectNode = sort(openNodes, by = x -> x[1])[1][2];
-                        if treeList[selectNode][1] < ubCost
+                        if (treeList[selectNode][1] < ubCost)&((ubCost - treeList[selectNode][1])/ubCost >= ϵ)
                             println("On core: ",p," processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]," upper bound is: ",minimum(ubcoreList));
                             treeList[selectNode][3] = 0;
                             cutData = cutList[treeList[selectNode][2]];
