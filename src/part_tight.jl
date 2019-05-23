@@ -373,8 +373,7 @@ function splitAny(PartSet,PartDet,Ω,breakPoints)
     return newPartSet,newPartDet;
 end
 
-function splitPrep3(pData,disData,Ω,H,HRev,GList,divSet,divDet)
-    GCurrent = GList[length(GList)];
+function splitPrep3(pData,disData,Ω,H,HRev,GCurrent,divSet,divDet)
     GFrac = Dict();
     for i in pData.II
         GFraciList = [disData[ω].H for ω in Ω if (GCurrent[ω][i] < 1 - 1e-6)&(GCurrent[ω][i] > 1e-6)];
@@ -395,9 +394,8 @@ function splitPrep3(pData,disData,Ω,H,HRev,GList,divSet,divDet)
     return divSetNew,divDetNew;
 end
 
-function splitPrepld(pData,disData,Ω,H,HRev,GList,divSet,divDet,θlp,θInt,nSplit)
+function splitPrepld(pData,disData,Ω,H,GCurrent,divSet,divDet,θlp,θInt,nSplit)
     # split the partition according to the largest deviation between the lp relaxation and the ip sub
-    GCurrent = GList[length(GList)];
     θDiff = [θInt[ω] - θlp[ω] for ω in Ω];
     θDiffPerm = sortperm(θDiff,rev = true);
     # initialize the breakPoints dictionary
@@ -418,9 +416,8 @@ function splitPrepld(pData,disData,Ω,H,HRev,GList,divSet,divDet,θlp,θInt,nSpl
     return divSetNew,divDetNew;
 end
 
-function splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θlp,θInt,nSplit)
+function splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet,divDet,θlp,θInt,nSplit)
     # split the partition according to the largest fraction impact (= G deviation * disData.d)
-    GCurrent = GList[length(GList)];
     divDict = Dict();
     for i in pData.II
         divDict[i] = [];
@@ -475,9 +472,8 @@ function splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θlp,
     return divSetNew,divDetNew;
 end
 
-function splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θlp,θInt,nSplit)
+function splitPrepSmart(pData,disData,Ω,H,GCurrent,tCurrent,divSet,divDet,θlp,θInt,nSplit)
     # select the partition according to both sparsity and scenario improvement
-    GCurrent = GList[length(GList)];
     divSetNew = deepcopy(divSet);
     divDetNew = deepcopy(divDet);
     divΩ = [];
@@ -556,9 +552,8 @@ function splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θl
     return divSetNew,divDetNew;
 end
 
-function splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θlp,θInt,nSplit)
+function splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet,divDet,θlp,θInt,nSplit)
     # select the partition according to both sparsity and scenario improvement
-    GCurrent = GList[length(GList)];
     divSetNew = deepcopy(divSet);
     divDetNew = deepcopy(divDet);
     divΩ = [];

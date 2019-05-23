@@ -510,16 +510,14 @@ function solveMP_para_Share(data)
                 yCurrent[i,par] = getvalue(mp[:y][i,par]);
             end
         end
-        # for ω in Ω
-        #     θCurrent[ω] = getvalue(mp[:θ][ω]);
-        # end
-        θCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict),Ω);
+        subInfo = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),Ω);
+        GCurrent = [subInfo[ω][2] for ω in Ω];
         ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
         # branch
-        GCurrent = GList[length(GList)];
         θDiff = [θIntCurrent[ω] - θCurrent[ω] for ω in Ω];
         θDiffPerm = sortperm(θDiff,rev = true);
         locBreak = θDiffPerm[1];
+        locBreakH = HRev[disData[locBreak].H];
         θgain = 0;
         lGFracInd = -1;
         for i in pData.II
@@ -547,14 +545,14 @@ function solveMP_para_Share(data)
         # initialize the breakPoints dictionary
         if lGFracInd != -1
             #locBreak = Int64(floor((GFrac[lGFracInd][1]*fracBreak + GFrac[lGFracInd][2]*(1 - fracBreak))));
-            divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreak,distanceDict);
+            divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreakH,distanceDict);
             divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
-            divSet1,divDet1 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit);
-            #divSet1,divDet1 = splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit)
+            divSet1,divDet1 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit);
+            #divSet1,divDet1 = splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit)
 
             divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
-            divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
-            #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
+            divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
+            #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
             returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
         else
             # if all i's having binary G's, we reach optimum for this node, ub = lb
@@ -572,9 +570,8 @@ function solveMP_para_Share(data)
                     yCurrent[i,par] = getvalue(mp[:y][i,par]);
                 end
             end
-            # for ω in Ω
-            #     θCurrent[ω] = getvalue(mp[:θ][ω]);
-            # end
+            subInfo = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),Ω);
+            GCurrent = [subInfo[ω][2] for ω in Ω];
             θCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict),Ω);
             ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
             GCurrent = GList[length(GList)];
@@ -582,6 +579,7 @@ function solveMP_para_Share(data)
             θDiff = [θIntCurrent[ω] - θCurrent[ω] for ω in Ω];
             θDiffPerm = sortperm(θDiff,rev = true);
             locBreak = θDiffPerm[1];
+            locBreakH = HRev[disData[locBreak].H];
             θgain = 0;
             lGFracInd = -1;
             for i in pData.II
@@ -609,14 +607,14 @@ function solveMP_para_Share(data)
             # initialize the breakPoints dictionary
             if lGFracInd != -1
                 #locBreak = Int64(floor((GFrac[lGFracInd][1]*fracBreak + GFrac[lGFracInd][2]*(1 - fracBreak))));
-                divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreak,distanceDict);
+                divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreakH,distanceDict);
                 divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
-                divSet1,divDet1 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit);
-                #divSet1,divDet1 = splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit)
+                divSet1,divDet1 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit);
+                #divSet1,divDet1 = splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit)
 
                 divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
-                divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
-                #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
+                divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
+                #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
                 returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
             else
                 # if all i's having binary G's, we reach optimum for this node, ub = lb
@@ -646,7 +644,8 @@ function solveMP_para_Share(data)
             end
             if latest0 - earliest0 > 1
                 locBreak = Int64(floor((earliest0 + latest0)/2));
-                divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreak,distanceDict);
+                locBreakH = HRev[disData[locBreak].H];
+                divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreakH,distanceDict);
                 divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
                 divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
                 returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
