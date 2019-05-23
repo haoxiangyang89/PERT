@@ -574,7 +574,6 @@ function solveMP_para_Share(data)
             GCurrent = [subInfo[ω][2] for ω in Ω];
             θCurrent = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict),Ω);
             ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
-            GCurrent = GList[length(GList)];
             # branch
             θDiff = [θIntCurrent[ω] - θCurrent[ω] for ω in Ω];
             θDiffPerm = sortperm(θDiff,rev = true);
