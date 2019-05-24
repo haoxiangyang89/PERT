@@ -289,6 +289,8 @@ function solveMP_para_Share(data)
                         push!(xcoreUnbounded,xcore);
                         push!(ycoreUnbounded,ycore);
                     end
+                    GCurrent = [dataList[ω][5] for ω in Ω];
+                    push!(GList,GCurrent);
                 end
             end
             πSet = zeros(length(pData.II),length(cutScen));
@@ -341,8 +343,6 @@ function solveMP_para_Share(data)
             newCuts = [cutScen,πSet,λSet,γSet,vSet];
             #push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
             push!(cutSetNew,newCuts);
-            GCurrent = [dataList[ω][5] for ω in Ω];
-            push!(GList,GCurrent);
         else
             return JuMP.StopTheSolver;
         end
