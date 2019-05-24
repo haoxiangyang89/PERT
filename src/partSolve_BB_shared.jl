@@ -294,7 +294,7 @@ function solveMP_para_Share(data)
                 end
             end
             if !(errorInd)
-                GCurrent[ω] = dataList[ω][5] for ω in Ω];
+                GCurrent[ω] = [dataList[ω][5] for ω in Ω];
                 push!(GList,GCurrent);
             end
             πSet = zeros(length(pData.II),length(cutScen));
