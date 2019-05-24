@@ -1,5 +1,5 @@
-addprocs(31);
-global noThreads = 31;
+addprocs(30);
+global noThreads = 30;
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
 # test sbb
@@ -24,7 +24,7 @@ ubDict = Dict();
 Ωsize = 500;
 global Ω = 1:Ωsize;
 global ϵ = 1e-2;
-global sN = 2;
+global sN = 20;
 global MM = 25;
 global nSplit = 5;
 
@@ -96,11 +96,8 @@ for fileInd in 1:length(pathList)
             end
         end
     end
-    #tHOnly,xHOnly,fHOnly,gHOnly,mHOnly = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
-    tic();
-    #include("partSolve_Callback_tightened_sol.jl");
-    tHOnly,xHOnly,ubHOnly,lbHOnly,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,1000,10800);
-    timeHOnly = toc();
+    #tHOnly,xHOnly,fHOnly,gHOnly,mHOnly = extForm_cheat(pData,disData,Ω,1e-2,999999,noThreads);
+    tHOnly,xHOnly,ubHOnly,lbHOnly,timeIter,treeList,timeHOnly = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,1000);
     gapHOnly = (ubHOnly - lbHOnly)/ubHOnly;
     fHOnly = ubHOnly;
     disData = deepcopy(disData1);
@@ -109,11 +106,8 @@ for fileInd in 1:length(pathList)
     save("test_Ext_value.jld","dDict",dDict,"ubDict",ubDict);
 
     # full solution
-    #@time tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
-    tic();
-    #include("partSolve_Callback_tightened_sol.jl");
-    tFull,xFull,ubFull,lbFull,timeIter,treeList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,1000,10800);
-    timeFull = toc();
+    #tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-2,999999,noThreads);
+    tFull,xFull,ubFull,lbFull,timeIter,treeList,timeFull = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,1000);
     gapFull = (ubFull - lbFull)/ubFull;
     fFull = lbFull;
     push!(dDict[fileInd],[tFull,xFull,fFull,ubFull,gapFull,timeFull]);

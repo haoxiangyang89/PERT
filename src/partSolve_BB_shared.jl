@@ -672,6 +672,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
     end
     lbOverAll = -Inf;
     timeDict = Dict();
+    lbDict = Dict();
 
     @sync begin
         for ip in 1:length(npList)
@@ -695,57 +696,55 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                     openNodes = [(treeList[l][1],l) for l in 1:length(treeList) if treeList[l][3] == -1];
                     if openNodes != []
                         selectNode = sort(openNodes, by = x -> x[1])[1][2];
-                        if (treeList[selectNode][1] < ubCost)
-                            if ((ubCost - treeList[selectNode][1])/ubCost >= ϵ)
-                                println("On core: ",p," processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]," upper bound is: ",minimum(ubcoreList));
-                                treeList[selectNode][3] = 0;
-                                cutData = cutList[treeList[selectNode][2]];
-                                divData = [treeList[id][4] for id in treeList[selectNode][2]];
-                                tic();
-                                # mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
-                                #     tbest,xbest,noTh,wpDict[p],nSplit,pData,disData,lDict,H,allSucc,distanceDict]);
-                                mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
-                                    tbest,xbest,noTh,wpDict[p],nSplit,treeList[selectNode][5]]);
-                                timeDict[selectNode] = toc();
-                                # update the cutList with the added cuts and two new nodes
-                                # update the cutSet
-                                # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
-                                treeList[selectNode][3] = 1;
-                                if mpSolveInfo[1] > -Inf
-                                    append!(tcoreList,mpSolveInfo[7]);
-                                    append!(xcoreList,mpSolveInfo[8]);
-                                    append!(ubcoreList,mpSolveInfo[9]);
-                                    if mpSolveInfo[6] < ubCost
-                                        ubCost = mpSolveInfo[6];
-                                        tbest = mpSolveInfo[4];
-                                        xbest = mpSolveInfo[5];
+                        # before solving the node, the node's lower bound should be its father node's lb value
+                        lbDict[selectNode] = treeList[selectNode][1];
+                        if (treeList[selectNode][1] < ubCost) & ((ubCost - lbDict[selectNode])/ubCost >= ϵ)
+                            println("On core: ",p," processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]," upper bound is: ",minimum(ubcoreList));
+                            treeList[selectNode][3] = 0;
+                            cutData = cutList[treeList[selectNode][2]];
+                            divData = [treeList[id][4] for id in treeList[selectNode][2]];
+                            tic();
+                            # mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
+                            #     tbest,xbest,noTh,wpDict[p],nSplit,pData,disData,lDict,H,allSucc,distanceDict]);
+                            mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
+                                tbest,xbest,noTh,wpDict[p],nSplit,treeList[selectNode][5]]);
+                            timeDict[selectNode] = toc();
+                            # update the cutList with the added cuts and two new nodes
+                            # update the cutSet
+                            # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
+                            treeList[selectNode][3] = 1;
+                            if mpSolveInfo[1] > -Inf
+                                append!(tcoreList,mpSolveInfo[7]);
+                                append!(xcoreList,mpSolveInfo[8]);
+                                append!(ubcoreList,mpSolveInfo[9]);
+                                # the problem is solved and a lower bound is generated
+                                lbDict[selectNode] = mpSolveInfo[1];
+                                if mpSolveInfo[6] < ubCost
+                                    ubCost = mpSolveInfo[6];
+                                    tbest = mpSolveInfo[4];
+                                    xbest = mpSolveInfo[5];
+                                end
+                                # update the current node cut
+                                cutList[selectNode] = mpSolveInfo[2];
+                                # push the branched nodes
+                                if (mpSolveInfo[1] < ubCost)
+                                    ancestorTemp = deepcopy(treeList[selectNode][2]);
+                                    push!(ancestorTemp,selectNode);
+                                    rlTemp = treeList[selectNode][5];
+                                    if mpSolveInfo[1] > maximum([treeList[l][1] for l in ancestorTemp])
+                                        lbNode = mpSolveInfo[1];
+                                    else
+                                        lbNode = maximum([treeList[l][1] for l in ancestorTemp]);
+                                        rlTemp = rlTemp * 2;
                                     end
-                                    # update the current node cut
-                                    cutList[selectNode] = mpSolveInfo[2];
-                                    # push the branched nodes
-                                    if (mpSolveInfo[1] < ubCost)
-                                        ancestorTemp = deepcopy(treeList[selectNode][2]);
-                                        push!(ancestorTemp,selectNode);
-                                        rlTemp = treeList[selectNode][5];
-                                        if mpSolveInfo[1] > maximum([treeList[l][1] for l in ancestorTemp])
-                                            lbNode = mpSolveInfo[1];
-                                        else
-                                            lbNode = maximum([treeList[l][1] for l in ancestorTemp]);
-                                            rlTemp = rlTemp * 2;
-                                        end
-                                        for newN in 1:length(mpSolveInfo[3])
-                                            push!(treeList,[lbNode,ancestorTemp,-1,mpSolveInfo[3][newN],rlTemp]);
-                                            push!(cutList,[]);
-                                        end
+                                    for newN in 1:length(mpSolveInfo[3])
+                                        push!(treeList,[lbNode,ancestorTemp,-1,mpSolveInfo[3][newN],rlTemp]);
+                                        push!(cutList,[]);
                                     end
                                 end
-                                if [treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1] != []
-                                    lbOverAll = minimum([treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1]);
-                                end
-                            else
-                                if lbOverAll < treeList[selectNode][1]
-                                    lbOverAll = treeList[selectNode][1]
-                                end
+                            end
+                            if [treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1] != []
+                                lbOverAll = minimum([treeList[l][1] for l in 1:length(treeList) if treeList[l][3] != 1]);
                             end
                         end
                         treeList[selectNode][3] = 1;
@@ -758,7 +757,24 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
         end
     end
 
-    return tbest,xbest,ubCost,lbOverAll,timeDict,treeList;
+    # search the tree for all leaf nodes to obtain the lower bound
+    treeStruct = Dict();
+    for l in 1:length(treeList)
+        treeStruct[l] = [];
+        for item in treeList[l]
+            push!(treeStruct[treeList[l][2]],l);
+        end
+    end
+    minLB = Inf;
+    for l in 1:length(treeList)
+        if treeStruct[l] == []
+            if lbDict[l] < minLB
+                minLB = lbDict[l];
+            end
+        end
+    end
+
+    return tbest,xbest,ubCost,minLB,timeDict,treeList;
 end
 
 function runPara_Series_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,nSplit = 5)
