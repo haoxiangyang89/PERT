@@ -658,7 +658,7 @@ function solveMP_para_Share(data)
             end
         end
     else
-        returnNo = -Inf;
+        returnNo = Inf;
         returnSet = [];
     end
     return returnNo,cutSetNew,returnSet,tbest,xbest,minimum(ubCostList),tcoreNew,xcoreNew,ubcoreNew;
@@ -717,12 +717,12 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                             # update the cutSet
                             # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
                             treeList[selectNode][3] = 1;
-                            if mpSolveInfo[1] > -Inf
+                            # the problem is solved and a lower bound is generated
+                            lbDict[selectNode] = mpSolveInfo[1];
+                            if mpSolveInfo[1] < Inf
                                 append!(tcoreList,mpSolveInfo[7]);
                                 append!(xcoreList,mpSolveInfo[8]);
                                 append!(ubcoreList,mpSolveInfo[9]);
-                                # the problem is solved and a lower bound is generated
-                                lbDict[selectNode] = mpSolveInfo[1];
                                 if mpSolveInfo[6] < ubCost
                                     ubCost = mpSolveInfo[6];
                                     tbest = mpSolveInfo[4];
@@ -765,8 +765,8 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
     treeStruct = Dict();
     for l in 1:length(treeList)
         treeStruct[l] = [];
-        for item in treeList[l]
-            push!(treeStruct[treeList[l][2]],l);
+        for item in treeList[l][2]
+            push!(treeStruct[item],l);
         end
     end
     minLB = Inf;
