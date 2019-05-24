@@ -267,6 +267,7 @@ function solveMP_para_Share(data)
             # here is the issue, pack it in a function prevent separating it
             dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp);
             cutScen = [];
+            errorInd = false;
             for ω in Ω
                 if length(dataList[ω]) == 3
                     push!(tError,that);
@@ -276,6 +277,7 @@ function solveMP_para_Share(data)
                     push!(tcoreError,tcore);
                     push!(xcoreError,xcore);
                     push!(ycoreError,ycore);
+                    errorInd = true;
                 else
                     if (dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)])
                         push!(cutScen,ω);
@@ -289,9 +291,11 @@ function solveMP_para_Share(data)
                         push!(xcoreUnbounded,xcore);
                         push!(ycoreUnbounded,ycore);
                     end
-                    GCurrent = [dataList[ω][5] for ω in Ω];
-                    push!(GList,GCurrent);
                 end
+            end
+            if !(errorInd)
+                GCurrent[ω] = dataList[ω][5] for ω in Ω];
+                push!(GList,GCurrent);
             end
             πSet = zeros(length(pData.II),length(cutScen));
             λSet = zeros(length(IJPair),length(cutScen));
