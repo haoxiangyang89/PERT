@@ -772,8 +772,10 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
     minLB = Inf;
     for l in 1:length(treeList)
         if treeStruct[l] == []
-            if lbDict[l] < minLB
-                minLB = lbDict[l];
+            if l in keys(lbDict)
+                if lbDict[l] < minLB
+                    minLB = lbDict[l];
+                end
             end
         end
     end
