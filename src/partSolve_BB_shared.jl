@@ -700,8 +700,6 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                     openNodes = [(treeList[l][1],l) for l in 1:length(treeList) if treeList[l][3] == -1];
                     if openNodes != []
                         selectNode = sort(openNodes, by = x -> x[1])[1][2];
-                        # before solving the node, the node's lower bound should be its father node's lb value
-                        lbDict[selectNode] = treeList[selectNode][1];
                         if (treeList[selectNode][1] < ubCost) & ((ubCost - lbDict[selectNode])/ubCost >= ϵ)
                             println("On core: ",p," processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]," upper bound is: ",minimum(ubcoreList));
                             treeList[selectNode][3] = 0;
@@ -744,6 +742,8 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                                     for newN in 1:length(mpSolveInfo[3])
                                         push!(treeList,[lbNode,ancestorTemp,-1,mpSolveInfo[3][newN],rlTemp]);
                                         push!(cutList,[]);
+                                        # before solving the node, the node's lower bound should be its father node's lb value
+                                        lbDict[length(treeList)] = lbNode;
                                     end
                                 end
                             end
