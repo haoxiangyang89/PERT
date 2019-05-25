@@ -677,6 +677,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
     lbOverAll = -Inf;
     timeDict = Dict();
     lbDict = Dict();
+    lbDict[1] = -Inf;
 
     @sync begin
         for ip in 1:length(npList)
