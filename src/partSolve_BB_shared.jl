@@ -613,11 +613,11 @@ function solveMP_para_Share(data)
                 #locBreak = Int64(floor((GFrac[lGFracInd][1]*fracBreak + GFrac[lGFracInd][2]*(1 - fracBreak))));
                 divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreakH,distanceDict);
                 divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
-                divSet1,divDet1 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit);
+                #divSet1,divDet1 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit);
                 #divSet1,divDet1 = splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit)
 
                 divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
-                divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
+                #divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
                 #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
                 returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
             else
