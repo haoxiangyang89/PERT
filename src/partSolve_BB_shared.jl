@@ -528,11 +528,11 @@ function solveMP_para_Share(data)
         for i in pData.II
             θgainTemp = 0;
             if i != 0
-                if tCurrent[i] > H[locBreak] + 1e-6
+                if tCurrent[i] > H[locBreakH] + 1e-6
                     if (GCurrent[locBreak][i] < 1 - 1e-6)&(GCurrent[locBreak][i] > 1e-6)
                         θgainTemp += (1 - GCurrent[locBreak][i])*disData[locBreak].d[i];
                     end
-                elseif tCurrent[i] < H[locBreak] - 1e-6
+                elseif tCurrent[i] < H[locBreakH] - 1e-6
                     if (GCurrent[locBreak][i] < 1 - 1e-6)&(GCurrent[locBreak][i] > 1e-6)
                         θgainTemp += GCurrent[locBreak][i]*disData[locBreak].d[i];
                     end
@@ -589,11 +589,11 @@ function solveMP_para_Share(data)
             for i in pData.II
                 θgainTemp = 0;
                 if i != 0
-                    if tCurrent[i] > H[locBreak] + 1e-6
+                    if tCurrent[i] > H[locBreakH] + 1e-6
                         if (GCurrent[locBreak][i] < 1 - 1e-6)&(GCurrent[locBreak][i] > 1e-6)
                             θgainTemp += (1 - GCurrent[locBreak][i])*disData[locBreak].d[i];
                         end
-                    elseif tCurrent[i] < H[locBreak] - 1e-6
+                    elseif tCurrent[i] < H[locBreakH] - 1e-6
                         if (GCurrent[locBreak][i] < 1 - 1e-6)&(GCurrent[locBreak][i] > 1e-6)
                             θgainTemp += GCurrent[locBreak][i]*disData[locBreak].d[i];
                         end
