@@ -620,37 +620,43 @@ function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
     @objective(sp, Min, t[0]);
 
     # obtain the dual variables for cuts
-    solve(sp);
-    vk = getobjectivevalue(sp);
+    spStatus = solve(sp);
     if returnOpt == 0
+        vk = getobjectivevalue(sp);
         return vk;
     elseif returnOpt == 1
         # the cut generated is θ >= v - λ(x - xhat) - π(t - that)
-        λdict = Dict();             # dual for x
-        πdict = Dict();             # dual for t
-        γdict = Dict();             # dual for y
-        for i in pData.II
-            πdict[i] = -getdual(sp[:GCons1][i]) - getdual(sp[:GCons2][i]) +
-                (getdual(sp[:tFnAnt1][i]) + getdual(sp[:tFnAnt2][i]));
-            for j in pData.Ji[i]
-                λdict[i,j] = (getdual(sp[:xFnAnt1][i,j]) + getdual(sp[:xFnAnt2][i,j]));
-            end
-            for par in 1:length(divSet[i])
-                γdict[i,par] = H[divSet[i][par].startH]*getdual(sp[:GCons2][i]) +
-                    getdual(sp[:GyRelax2][i,par]) + getdual(sp[:GyRelax3][i,par]);
-                if dDω.H <= H[divSet[i][par].startH]
-                    γdict[i,par] += getdual(sp[:GFixed0][i]);
-                elseif dDω.H >= H[divSet[i][par].endH]
-                    γdict[i,par] -= getdual(sp[:GFixed1][i]);
+        if spStatus == :Optimal
+            vk = getobjectivevalue(sp);
+            λdict = Dict();             # dual for x
+            πdict = Dict();             # dual for t
+            γdict = Dict();             # dual for y
+            for i in pData.II
+                πdict[i] = -getdual(sp[:GCons1][i]) - getdual(sp[:GCons2][i]) +
+                    (getdual(sp[:tFnAnt1][i]) + getdual(sp[:tFnAnt2][i]));
+                for j in pData.Ji[i]
+                    λdict[i,j] = (getdual(sp[:xFnAnt1][i,j]) + getdual(sp[:xFnAnt2][i,j]));
+                end
+                for par in 1:length(divSet[i])
+                    γdict[i,par] = H[divSet[i][par].startH]*getdual(sp[:GCons2][i]) +
+                        getdual(sp[:GyRelax2][i,par]) + getdual(sp[:GyRelax3][i,par]);
+                    if dDω.H <= H[divSet[i][par].startH]
+                        γdict[i,par] += getdual(sp[:GFixed0][i]);
+                    elseif dDω.H >= H[divSet[i][par].endH]
+                        γdict[i,par] -= getdual(sp[:GFixed1][i]);
+                    end
                 end
             end
+            Ghat = Dict();
+            for i in pData.II
+                Ghat[i] = getvalue(sp[:G][i]);
+            end
+            return πdict,λdict,γdict,vk,Ghat;
+        else
+            return that,xhat,yhat;
         end
-        Ghat = Dict();
-        for i in pData.II
-            Ghat[i] = getvalue(sp[:G][i]);
-        end
-        return πdict,λdict,γdict,vk,Ghat;
     elseif returnOpt == 2
+        vk = getobjectivevalue(sp);
         Ghat = Dict();
         for i in pData.II
             Ghat[i] = getvalue(sp[:G][i]);

@@ -40,9 +40,7 @@ for hIter in keys(H)
 end
 
 # start with an upper bound based on the smaller stochastic solution
-#ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
-data141 = load("14_test1_ubData.jld");
-ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = data141["data"];
+ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
 lbCost = -Inf;
 lbCostList = [];
 global ubCost = ubInc;
@@ -279,7 +277,6 @@ while keepIter
     # second dimension record the dual solution for every scenario
     for nc in 1:length(cutSet)
         for l in 1:length(cutSet[nc][2])
-            println(nc," ",l);
             ω = cutSet[nc][2][l][1];
             vk = cutSet[nc][2][l][2];
             πk = cutSet[nc][2][l][3];
@@ -355,9 +352,9 @@ while keepIter
             yCurrent[i,par] = getvalue(mp[:y][i,par]);
         end
     end
-    for ω in Ω
-        θCurrent[ω] = getvalue(mp[:θ][ω]);
-    end
+    subInfo = pmap(ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),Ω);
+    GCurrent = [subInfo[ω][2] for ω in Ω];
+    θCurrent = [subInfo[ω][1] for ω in Ω];
     ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1);
 
     # need to come up with a rule to partition: gradient descent like binary search
@@ -373,9 +370,9 @@ while keepIter
         if bAlt == 1
             divSet,divDet = splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θCurrent,θIntCurrent,nSplit);
         elseif bAlt == 2
-            divSet,divDet = splitPrepld(pData,disData,Ω,H,HRev,GList,divSet,divDet,θCurrent,θIntCurrent,nSplit);
+            divSet,divDet = splitPrepld(pData,disData,Ω,H,GCurrent,tCurrent,divSet,divDet,θCurrent,θIntCurrent,nSplit);
         elseif bAlt == 3
-            divSet,divDet = splitPrepld2(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θCurrent,θIntCurrent,nSplit);
+            divSet,divDet = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet,divDet,θCurrent,θIntCurrent,nSplit);
         else
             divSet,divDet = splitPrep3(pData,disData,Ω,H,HRev,GList,divSet,divDet);
         end
