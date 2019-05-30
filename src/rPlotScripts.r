@@ -66,3 +66,20 @@ points(time11$V1,time11$V3,pch = 20, col = "#E41A1C", cex = 2)
 legend("topleft",c("Decomposition","Extensive"),col = c("#377EB8","#E41A1C"),pch = 20);
 dev.off();
 dev.off();
+
+
+#=========================================================================================
+# New plots
+valueGraph <- read.csv("/Users/haoxiangyang/Desktop/PERT_tests/results/value_figure_title.csv",header = TRUE)
+detList <- valueGraph$DET/valueGraph$FULL;
+expList <- valueGraph$EXP/valueGraph$FULL;
+donlyList <- valueGraph$dOnly/valueGraph$FULL;
+honlyList <- valueGraph$HOnly/valueGraph$FULL;
+fullList <- valueGraph$FULL/valueGraph$FULL;
+test <- rbind(detList,expList,donlyList,honlyList,fullList)
+png(file = "/Users/haoxiangyang/Desktop/Git/PERT/Writeup/graphValues.png", width= 10,height=6,units = 'in',res = 300);
+barplot(test,beside=T,legend.text = c("DET","EXP","dOnly","HOnly","FULL"),
+        args.legend = list(x=25,y = 2,bty = "n",cex = 1.2),main = "Upper bound estimation of alternative solutions",
+        ylab="Upper bound",xpd=FALSE,ylim = c(0.8,2),xlab = "Test Cases",
+        names.arg = c("Case 11","Case 14","Case 19","Case 35"))
+dev.off();
