@@ -82,6 +82,7 @@ function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,ϵ = 1e
     ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
     lbCost = -Inf;
     lbCostList = [];
+    cutSet = [];
     global ubCost = ubInc;
     tcoreList = deepcopy(textList);
     xcoreList = deepcopy(xextList);
