@@ -124,20 +124,19 @@ function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,ϵ = 1e
     end
 
     # pre-separate the partition
-    for l in 1:length(textList)
-        ycoreItem = Dict();
+    ycoreList = [];
+    for ll in 1:length(tcoreList)
+        yTemp = Dict();
         for i in pData.II
             for par in 1:length(divSet[i])
-                if (textList[l][i] >= H[divSet[i][par].startH])&(textList[l][i] < H[divSet[i][par].endH])
-                    ycoreItem[i,par] = 1;
-                elseif (abs(textList[l][i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
-                    ycoreItem[i,par] = 1;
+                if (tcoreList[ll][i] >= H[divSet[i][par].startH])&(tcoreList[ll][i] < H[divSet[i][par].endH])
+                    yTemp[i,par] = 1;
                 else
-                    ycoreItem[i,par] = 0;
+                    yTemp[i,par] = 0;
                 end
             end
         end
-        push!(ycoreList,ycoreItem);
+        push!(ycoreList,yTemp);
     end
 
     function partBenders(cb)
