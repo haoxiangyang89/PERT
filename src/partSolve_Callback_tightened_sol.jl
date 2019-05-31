@@ -305,6 +305,7 @@ function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,ϵ = 1e
         xCurrent = Dict();
         θCurrent = Dict();
         yCurrent = Dict();
+        GList = [];
 
         # add the cut
         # cutInfo = 2 dimensional vector, first dimention record the primal solution,
