@@ -289,40 +289,46 @@ function iniPart(pData,disData,Ω,sN,MM,returnOpt = 0,noThreads = 30)
     θBest = Dict();
     textList = [];
     xextList = [];
-    for m in 1:MM
-        #randList = rand(Ω,sN);
-        disData1 = Dict();
-        Ω1 = 1:sN;
-        randList = [(ω - 1)*MM + m for ω in Ω1];
-        for i in Ω1
-            disData1[i] = deepcopy(disData[randList[i]]);
-            disData1[i].prDis = (1 - pData.p0)/length(Ω1);
-        end
-        text,xext,fext,gext,mext = extForm_cheat(pData,disData1,Ω1,1e-4,999999,noThreads);
-        for i in pData.II
-            if abs(text[i]) <= 1e-5
-                text[i] = 0.0;
+    m = 1;
+    while m <= MM
+        try
+            #randList = rand(Ω,sN);
+            disData1 = Dict();
+            Ω1 = 1:sN;
+            randList = [(ω - 1)*MM + m for ω in Ω1];
+            for i in Ω1
+                disData1[i] = deepcopy(disData[randList[i]]);
+                disData1[i].prDis = (1 - pData.p0)/length(Ω1);
             end
-        end
-        push!(textList,text);
-        push!(xextList,xext);
-        ubext,cωList = ubCalP(pData,disData,Ω,xext,text,999999,1);
-        push!(ubList,ubext);
-        # record the best solution
-        if ubext < ubMin
-            ubMin = ubext;
+            text,xext,fext,gext,mext = extForm_cheat(pData,disData1,Ω1,1e-4,999999,noThreads);
             for i in pData.II
-                tBest[i] = text[i];
-                for j in pData.Ji[i]
-                    xBest[i,j] = xext[i,j];
+                if abs(text[i]) <= 1e-5
+                    text[i] = 0.0;
                 end
             end
-            for ω in Ω
-                θBest[ω] = cωList[ω];
+            push!(textList,text);
+            push!(xextList,xext);
+            ubext,cωList = ubCalP(pData,disData,Ω,xext,text,999999,1);
+            push!(ubList,ubext);
+            # record the best solution
+            if ubext < ubMin
+                ubMin = ubext;
+                for i in pData.II
+                    tBest[i] = text[i];
+                    for j in pData.Ji[i]
+                        xBest[i,j] = xext[i,j];
+                    end
+                end
+                for ω in Ω
+                    θBest[ω] = cωList[ω];
+                end
             end
-        end
-        for i in pData.II
-            push!(tList[i],text[i]);
+            for i in pData.II
+                push!(tList[i],text[i]);
+            end
+            m += 1;
+        catch
+            sleep(30);
         end
     end
 
