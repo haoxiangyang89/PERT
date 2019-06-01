@@ -577,6 +577,7 @@ function partSolve_BB_para_noMW(pData,disData,Ω,noThreads,batchNo,noTh,ϵ = 1e-
     if ubGen
         ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
         global ubCost = ubInc;
+        sleep(60);
     end
 
 
