@@ -19,6 +19,8 @@ include("partitionSolve.jl");
 include("convexify.jl");
 include("cutSelection.jl");
 include("instanceMaker.jl");
+
+include("recover_share.jl");
 include("partSolve_BB_shared.jl");
 include("partSolve_Callback_tightened_sol.jl");
-include("partSolve_BB_shared_new.jl");
+#include("partSolve_BB_shared_new.jl");

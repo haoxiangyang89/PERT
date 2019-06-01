@@ -1,29 +1,82 @@
-# generate regular Benders cuts
+# generate MW cuts but without the upper bound
 
-function subPara1_noMW(pData,disData,Ω,tbest,xbest,ybest,divSet,H,lDict,wp = CachingPool(workers()))
-    θList = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict,1),Ω);
+function subPara1_noUB(pData,disData,Ω,tbest,xbest,ybest,divSet,H,lDict,wp = CachingPool(workers()))
+    θList = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict),Ω);
     return θList;
 end
 
-function solveMP_para_Share_noMW(data)
-    # input: [cutData,divData,treeList[selectNode][4],ubCost,noTh,wpDict[p],nSplit,treeList[selectNode][5]]
+function subPara_noUB(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp = CachingPool(workers()))
+    dataList = pmap(wp,ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
+    return dataList;
+end
+
+function testFeas(pData,H,divSet,divDet,tcoreList,ubcoreList)
+    # test the feasibility of each of the past solution
+    tcoreInd = -1;
+    ubcoreMin = Inf;
+    for tSoli in 1:length(tcoreList)
+        tSol = tcoreList[tSoli];
+        feasBool = true;
+        for i in pData.II
+            ibSet = [l for l in 1:length(divSet[i]) if divDet[i][l] == 0];
+            iub = divSet[i][maximum(ibSet)].endH;
+            ilb = divSet[i][minimum(ibSet)].startH;
+            if (tSol[i] < H[ilb])|(tSol[i] >= H[iub])
+                feasBool = false;
+            end
+        end
+        if feasBool
+            if ubcoreList[tSoli] < ubcoreMin
+                tcoreInd = tSoli;
+                ubcoreMin = ubcoreList[tSoli];
+            end
+        end
+    end
+    return tcoreInd;
+end
+
+function solveMP_para_Share_noUB(data)
+    # input: [cutData,cutCurrent,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,wpList]
+    #divSet,divDet = recoverDiv(data[3]);
     divSet,divDet = data[3];
     divData = data[2];
     cutSet = data[1];           # historical cuts
     IJPair = [(i,j) for i in pData.II for j in pData.Ji[i]];
     IPPair = [(i,par) for i in pData.II for par in 1:length(divSet[i])];
-    ubCost = data[4];
-    noTh = data[5];
-    wp = CachingPool(data[6]);
-    nSplit = data[7];
-    roundLimit = data[8];
+    #tcoreList,xcoreList,ubcoreList = recoverCoreList(pData.II,IJPair,data[4],data[5],data[6]);
+    tcoreList = data[4];
+    xcoreList = data[5];
+    ubcoreList = data[6];
+    ubCost = data[7];
+    tbest = data[8];
+    xbest = data[9];
+    noTh = data[10];
+    wp = CachingPool(data[11]);
+    nSplit = data[12];
+    roundLimit = data[13];
     Ω = 1:length(disData);
-    tbest = Dict();
-    xbest = Dict();
 
     Tmax1 =lDict[0];
     GList = [];
+    tcoreNew = [];
+    xcoreNew = [];
+    ycoreNew = [];
+    ubcoreNew = [];
     cutSetNew = [];
+    tError = [];
+    xError = [];
+    yError = [];
+    ErrorωList = [];
+    tcoreError = [];
+    xcoreError = [];
+    ycoreError = [];
+    tUnbounded = [];
+    xUnbounded = [];
+    yUnbounded = [];
+    UnboundedωList = [];
+    tcoreUnbounded = [];
+    xcoreUnbounded = [];
+    ycoreUnbounded = [];
 
     function partBenders(cb)
         currentLB = MathProgBase.cbgetbestbound(cb);
@@ -47,11 +100,19 @@ function solveMP_para_Share_noMW(data)
             for ω in 1:length(Ω)
                 θhat[ω] = getvalue(θ[Ω[ω]]);
             end
+            push!(tcoreList,that);
+            push!(xcoreList,xhat);
+            push!(ycoreList,yhat);
+            push!(tcoreNew,that);
+            push!(xcoreNew,xhat);
+            push!(ycoreNew,yhat);
 
             # generate cuts
             θInt = Dict();
             ubCost = minimum(ubCostList);
             ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1,wp);
+            push!(ubcoreList,ubTemp);
+            push!(ubcoreNew,ubTemp);
 
             if ubCost > ubTemp
                 for i in pData.II
@@ -63,8 +124,14 @@ function solveMP_para_Share_noMW(data)
             end
             push!(ubCostList,ubTemp);
 
-            # here is the issue, pack it in a function prevent separating it
-            dataList = subPara1_noMW(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,wp);
+            if tcoreList != []
+                # obtain the cores
+                tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
+                # here is the issue, pack it in a function prevent separating it
+                dataList = subPara_noUB(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp);
+            else
+                dataList = subPara_noUB(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,wp);
+            end
             cutScen = [];
             errorInd = false;
             for ω in Ω
@@ -80,6 +147,15 @@ function solveMP_para_Share_noMW(data)
                 else
                     if (dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)])
                         push!(cutScen,ω);
+                    end
+                    if length(dataList[ω]) == 6
+                        push!(tUnbounded,that);
+                        push!(xUnbounded,xhat);
+                        push!(yUnbounded,yhat);
+                        push!(UnboundedωList,ω);
+                        push!(tcoreUnbounded,tcore);
+                        push!(xcoreUnbounded,xcore);
+                        push!(ycoreUnbounded,ycore);
                     end
                 end
             end
@@ -135,6 +211,7 @@ function solveMP_para_Share_noMW(data)
                     sum(sum(γSet[findfirst(IPPair,(i,par)),ωi]*y[i,par] for par in 1:length(divSet[i])) for i in pData.II));
             end
             newCuts = [cutScen,πSet,λSet,γSet,vSet];
+            #push!(cutSet,[[that,xhat,yhat,divSet],cutDual]);
             push!(cutSetNew,newCuts);
         else
             return JuMP.StopTheSolver;
@@ -143,6 +220,20 @@ function solveMP_para_Share_noMW(data)
 
     # correct all ycoreList
     ubCostList = [ubCost];
+    ycoreList = [];
+    for ll in 1:length(tcoreList)
+        yTemp = Dict();
+        for i in pData.II
+            for par in 1:length(divSet[i])
+                if (tcoreList[ll][i] >= H[divSet[i][par].startH])&(tcoreList[ll][i] < H[divSet[i][par].endH])
+                    yTemp[i,par] = 1;
+                else
+                    yTemp[i,par] = 0;
+                end
+            end
+        end
+        push!(ycoreList,yTemp);
+    end
 
     # move the createMaster_Callback here
     mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noTh, Cutoff = ubCost, TimeLimit = roundLimit));
@@ -161,6 +252,35 @@ function solveMP_para_Share_noMW(data)
     @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
 
     @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
+    # @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) + sum((t[i] - tbest[i])^2 for i in pData.II));
+
+    # find a feasible solution and plug in the best feasible solution
+    tcoreInd = testFeas(pData,H,divSet,divDet,tcoreList,ubcoreList);
+    if tcoreInd != -1
+        yfeas = Dict();
+        tfeas = tcoreList[tcoreInd];
+        xfeas = xcoreList[tcoreInd];
+        for i in pData.II
+            setvalue(t[i], tfeas[i]);
+            for j in pData.Ji[i]
+                setvalue(x[i,j],xfeas[i,j]);
+            end
+            for par in 1:length(divSet[i])
+                if (tfeas[i] >= H[divSet[i][par].startH])&(tfeas[i] < H[divSet[i][par].endH])
+                    yfeas[i,par] = 1;
+                elseif (abs(tfeas[i] - H[length(H) - 1]) < 1e-4)&(divSet[i][par].endH == length(H) - 1)
+                    yfeas[i,par] = 1;
+                else
+                    yfeas[i,par] = 0;
+                end
+                setvalue(y[i,par],yfeas[i,par]);
+            end
+        end
+        θfeas = subPara1_noUB(pData,disData,Ω,tfeas,xfeas,yfeas,divSet,H,lDict,wp);
+        for ω in Ω
+            setvalue(θ[ω],θfeas[ω]);
+        end
+    end
 
     tCurrent = Dict();
     xCurrent = Dict();
@@ -270,6 +390,7 @@ function solveMP_para_Share_noMW(data)
         end
         # initialize the breakPoints dictionary
         if lGFracInd != -1
+            #locBreak = Int64(floor((GFrac[lGFracInd][1]*fracBreak + GFrac[lGFracInd][2]*(1 - fracBreak))));
             divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreakH,distanceDict);
             divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
             divSet1,divDet1 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit);
@@ -328,12 +449,15 @@ function solveMP_para_Share_noMW(data)
             end
             # initialize the breakPoints dictionary
             if lGFracInd != -1
+                #locBreak = Int64(floor((GFrac[lGFracInd][1]*fracBreak + GFrac[lGFracInd][2]*(1 - fracBreak))));
                 divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreakH,distanceDict);
                 divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
                 divSet1,divDet1 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit);
+                #divSet1,divDet1 = splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet1,divDet1,θCurrent,θIntCurrent,nSplit)
 
                 divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
                 divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
+                #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
                 returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
             else
                 # if all i's having binary G's, we reach optimum for this node, ub = lb
@@ -376,23 +500,23 @@ function solveMP_para_Share_noMW(data)
         returnNo = Inf;
         returnSet = [];
     end
-    return returnNo,cutSetNew,returnSet,tbest,xbest,minimum(ubCostList);
+    return returnNo,cutSetNew,returnSet,tbest,xbest,minimum(ubCostList),tcoreNew,xcoreNew,ubcoreNew;
 end
 
 
-function runPara_Share_noMW(treeList,cutList,ubCost,batchNo,noTh,ϵ = 1e-2,nSplit = 5)
+function runPara_Share_noUB(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noTh,ϵ = 1e-2,nSplit = 5,noPa = 1)
     # separate the workers to main processors and workers
     npList = workers()[1:batchNo];
     global noMo = div(noThreads,batchNo);
-    noPa = noMo - noTh;
+    # noPa = noMo - noTh;
     wpDict = Dict();
     for npi in 1:length(npList)
         wpDict[npList[npi]] = workers()[(batchNo + (npi - 1)*noPa + 1):(batchNo + npi*noPa)];
     end
-    lbOverAll = 0;
+    lbOverAll = -Inf;
     timeDict = Dict();
     lbDict = Dict();
-    lbDict[1] = 0;
+    lbDict[1] = -Inf;
 
     @sync begin
         for ip in 1:length(npList)
@@ -417,20 +541,24 @@ function runPara_Share_noMW(treeList,cutList,ubCost,batchNo,noTh,ϵ = 1e-2,nSpli
                     if openNodes != []
                         selectNode = sort(openNodes, by = x -> x[1])[1][2];
                         if (treeList[selectNode][1] < ubCost) & ((ubCost - lbDict[selectNode])/ubCost >= ϵ)
-                            println("On core: ",p," processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]," upper bound is: ",ubCost);
+                            println("On core: ",p," processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]," upper bound is: ",minimum(ubcoreList));
                             treeList[selectNode][3] = 0;
                             cutData = cutList[treeList[selectNode][2]];
                             divData = [treeList[id][4] for id in treeList[selectNode][2]];
                             tic();
-                            mpSolveInfo = remotecall_fetch(solveMP_para_Share_noMW,p,[cutData,divData,treeList[selectNode][4],ubCost,
-                                noTh,wpDict[p],nSplit,treeList[selectNode][5]]);
+                            mpSolveInfo = remotecall_fetch(solveMP_para_Share_noUB,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
+                                tbest,xbest,noTh,wpDict[p],nSplit,treeList[selectNode][5]]);
                             timeDict[selectNode] = toc();
                             # update the cutList with the added cuts and two new nodes
                             # update the cutSet
+                            # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
                             treeList[selectNode][3] = 1;
                             # the problem is solved and a lower bound is generated
                             lbDict[selectNode] = mpSolveInfo[1];
                             if mpSolveInfo[1] < Inf
+                                append!(tcoreList,mpSolveInfo[7]);
+                                append!(xcoreList,mpSolveInfo[8]);
+                                append!(ubcoreList,mpSolveInfo[9]);
                                 if mpSolveInfo[6] < ubCost
                                     ubCost = mpSolveInfo[6];
                                     tbest = mpSolveInfo[4];
@@ -493,7 +621,7 @@ function runPara_Share_noMW(treeList,cutList,ubCost,batchNo,noTh,ϵ = 1e-2,nSpli
     return tbest,xbest,ubCost,minLB,timeDict,treeList;
 end
 
-function partSolve_BB_para_noMW(pData,disData,Ω,noThreads,batchNo,noTh,ϵ = 1e-2,nSplit = 5,roundLimit = 1000,ubGen = true)
+function partSolve_BB_para_noUB(pData,disData,Ω,noThreads,batchNo,noTh,ϵ = 1e-2,nSplit = 5,roundLimit = 1000,noPa = 1)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II
@@ -570,15 +698,12 @@ function partSolve_BB_para_noMW(pData,disData,Ω,noThreads,batchNo,noTh,ϵ = 1e-
        remotecall_fetch(runRecover,i,IIShare,DShare,effShare,bShare,KShare,p0BShare,HOriShare,disdShare,disPrShare,distanceShare,lDictShare);
     end
 
-    # start with an upper bound based on the smaller stochastic solution
-    lbCost = 0;
+    lbCost = -Inf;
     lbCostList = [];
-    global ubCost = 9999999.0;
-    if ubGen
-        ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
-        global ubCost = ubInc;
-    end
-
+    global ubCost = 9999999;
+    tcoreList = [];
+    xcoreList = [];
+    ubcoreList = [];
 
     brInfo = precludeRelNew(pData,H,ubCost);
 
@@ -615,16 +740,18 @@ function partSolve_BB_para_noMW(pData,disData,Ω,noThreads,batchNo,noTh,ϵ = 1e-
             end
         end
     end
+
     # set up a tree list
     global treeList = [];
     global cutList = [];
     push!(treeList,[lbCost,[],-1,[divSet,divDet],roundLimit]); # the empty set is the list of predecessors of the current node
     push!(cutList,[]);
 
-    global lbOverAll = 0;
+    global lbOverAll = -Inf;
     # transfer the data back to everywhere
     tic();
-    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share_noMW(treeList,cutList,ubCost,batchNo,noTh,ϵ,nSplit);
+    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share_noUB(treeList,cutList,tcoreList,xcoreList,
+        ubcoreList,ubCost,tbest,xbest,batchNo,noTh,ϵ,nSplit,noPa);
     decompTime = toc();
 
     # need a cut selection process within the callback

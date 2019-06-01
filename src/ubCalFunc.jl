@@ -1,7 +1,7 @@
 function subInt(pData,dDω,xhat,that)
     # solve the MIP recourse problem
     # sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    sp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
 
@@ -25,7 +25,7 @@ end
 function subIntC(pData,dDω,xhat,that,M = 999999,returnOpt = 0)
     # solve the MIP recourse problem
     # sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    sp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, 0 <= s[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
@@ -64,7 +64,7 @@ function subIntG(pData,dDω,xhat,that,Ghatω)
     # solve the MIP recourse problem
     M = sum(max(pData.D[i],pData.D[i]+dDω.d[i]) for i in pData.II if i != 0);
 
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    sp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
     # sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
@@ -89,7 +89,7 @@ end
 function subIntGMixed(pData,dDω,xhat,that,ωCurr,Ghatω,M = 400,returnOpt = 0)
     # solve the MIP recourse problem
     #sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
-    sp = Model(solver = GurobiSolver(OutputFlag = 0));
+    sp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     @variable(sp, s[i in pData.II, j in pData.Ji[i]] >= 0);
