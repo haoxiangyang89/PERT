@@ -494,7 +494,7 @@ function runPara_Share_noMW(treeList,cutList,ubCost,batchNo,noTh,noPa,ϵ = 1e-2,
     return tbest,xbest,ubCost,minLB,timeDict,treeList;
 end
 
-function partSolve_BB_para_noMW(pData,disData,Ω,noThreads,batchNo,noTh,noPa,ϵ = 1e-2,nSplit = 5,roundLimit = 1000,ubGen = true)
+function partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,noPa,ϵ = 1e-2,nSplit = 5,roundLimit = 1000,ubGen = true)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II
