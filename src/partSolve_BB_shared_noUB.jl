@@ -110,7 +110,11 @@ function solveMP_para_Share_noUB(data)
 
             # generate cuts
             θInt = Dict();
-            ubCost = minimum(ubCostList);
+            if ubCostList != []
+                ubCost = minimum(ubCostList);
+            else
+                ubCost = Inf;
+            end
             ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1,wp);
             push!(ubcoreList,ubTemp);
             push!(ubcoreNew,ubTemp);
