@@ -392,6 +392,8 @@ function runPara_Share_noMW(treeList,cutList,ubCost,batchNo,noTh,noPa,ϵ = 1e-2,
     timeDict = Dict();
     lbDict = Dict();
     lbDict[1] = 0;
+    tbest = Dict();
+    xbest = Dict();
 
     @sync begin
         for ip in 1:length(npList)

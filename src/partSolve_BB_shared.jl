@@ -782,7 +782,6 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,�
     # data141 = load("14_test1_ubData.jld");
     # ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = data141["data"];
     ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
-    sleep(60);
     lbCost = -Inf;
     lbCostList = [];
     global ubCost = ubInc;

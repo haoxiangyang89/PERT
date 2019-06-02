@@ -55,6 +55,7 @@ function solveMP_para_Share_noUB(data)
     nSplit = data[12];
     roundLimit = data[13];
     Ω = 1:length(disData);
+    ubCostList = [ubCost];
 
     Tmax1 =lDict[0];
     GList = [];
@@ -219,7 +220,6 @@ function solveMP_para_Share_noUB(data)
     end
 
     # correct all ycoreList
-    ubCostList = [ubCost];
     ycoreList = [];
     for ll in 1:length(tcoreList)
         yTemp = Dict();
@@ -748,6 +748,8 @@ function partSolve_BB_para_noUB(pData,disData,Ω,noThreads,batchNo,noTh,ϵ = 1e-
     push!(cutList,[]);
 
     global lbOverAll = -Inf;
+    tbest = Dict();
+    xbest = Dict();
     # transfer the data back to everywhere
     tic();
     tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share_noUB(treeList,cutList,tcoreList,xcoreList,
