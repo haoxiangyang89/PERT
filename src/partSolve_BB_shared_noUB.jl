@@ -545,7 +545,12 @@ function runPara_Share_noUB(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCo
                     if openNodes != []
                         selectNode = sort(openNodes, by = x -> x[1])[1][2];
                         if (treeList[selectNode][1] < ubCost) & ((ubCost - lbDict[selectNode])/ubCost >= ϵ)
-                            println("On core: ",p," processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]," upper bound is: ",minimum(ubcoreList));
+                            if ubcoreList != []
+                                ubprint = minimum(ubcoreList);
+                            else
+                                ubprint = ubCost;
+                            end
+                            println("On core: ",p," processing node: ",selectNode," lower bound is: ",treeList[selectNode][1]," upper bound is: ",);
                             treeList[selectNode][3] = 0;
                             cutData = cutList[treeList[selectNode][2]];
                             divData = [treeList[id][4] for id in treeList[selectNode][2]];
@@ -704,7 +709,7 @@ function partSolve_BB_para_noUB(pData,disData,Ω,noThreads,batchNo,noTh,ϵ = 1e-
 
     lbCost = -Inf;
     lbCostList = [];
-    global ubCost = 9999999;
+    global ubCost = 9999999.0;
     tcoreList = [];
     xcoreList = [];
     ubcoreList = [];
