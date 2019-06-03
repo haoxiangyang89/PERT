@@ -57,14 +57,12 @@ tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noUB(
 tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,1e-2,5,10800,5);
 
 
+Ωl = 6;
+global Ω = 1:Ωsize[Ωl];
+randNo = 1;
 resultDict = Dict();
 
 for fileInd in 1:4
-    Ωl = 6;
-    filePath = pathList[fileInd];
-    global Ω = 1:Ωsize[Ωl];
-    randNo = 1;
-
     pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,1);
     global pData = pData;
     disDataRaw = load(pathList[fileInd]*"solData_$(Ωsize[Ωl]).jld");

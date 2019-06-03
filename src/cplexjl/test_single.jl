@@ -28,7 +28,7 @@ MMList = [0,0,0,0,10,20,50,50];
 for fileInd in 1:4
     filePath = pathList[fileInd];
 
-    Ωl = 7;
+    Ωl = 5;
     global Ω = 1:Ωsize[Ωl];
     randNo = 1;
     extBool = true;
