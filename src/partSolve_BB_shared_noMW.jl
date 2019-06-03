@@ -380,7 +380,7 @@ function solveMP_para_Share_noMW(data)
 end
 
 
-function runPara_Share_noMW(treeList,cutList,ubCost,batchNo,noTh,noPa,ϵ = 1e-2,nSplit = 5)
+function runPara_Share_noMW(treeList,cutList,ubCost,tbest,xbest,batchNo,noTh,noPa,ϵ = 1e-2,nSplit = 5)
     # separate the workers to main processors and workers
     npList = workers()[1:batchNo];
     global noMo = div(noThreads,batchNo);
@@ -392,8 +392,6 @@ function runPara_Share_noMW(treeList,cutList,ubCost,batchNo,noTh,noPa,ϵ = 1e-2,
     timeDict = Dict();
     lbDict = Dict();
     lbDict[1] = 0;
-    tbest = Dict();
-    xbest = Dict();
 
     @sync begin
         for ip in 1:length(npList)
@@ -578,6 +576,9 @@ function partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,no
     if ubGen
         ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
         global ubCost = ubInc;
+    else
+        tbest = Dict();
+        xbest = Dict();
     end
 
 
@@ -625,7 +626,7 @@ function partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,no
     global lbOverAll = 0;
     # transfer the data back to everywhere
     tic();
-    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share_noMW(treeList,cutList,ubCost,batchNo,noTh,noPa,ϵ,nSplit);
+    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share_noMW(treeList,cutList,ubCost,tbest,xbest,batchNo,noTh,noPa,ϵ,nSplit);
     decompTime = toc();
 
     # need a cut selection process within the callback
