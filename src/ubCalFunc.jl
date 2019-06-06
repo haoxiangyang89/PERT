@@ -25,7 +25,8 @@ end
 function subIntC(pData,dDω,xhat,that,M = 999999,returnOpt = 0)
     # solve the MIP recourse problem
     # sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
-    sp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
+    global GUROBI_ENV;
+    sp = Model(solver = GurobiSolver(GUROBI_ENV,OutputFlag = 0,Threads = 1));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, 0 <= s[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);

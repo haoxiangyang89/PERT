@@ -84,13 +84,13 @@ for fileInd in 1:4
 
     for altOpt in 1:4
         if altOpt == 1
-            tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,false);
+            tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,5,6,5,5e-3,5,10800,false);
         elseif altOpt == 2
-            tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,true);
+            tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,5,6,5,5e-3,5,10800,true);
         elseif altOpt == 3
-            tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noUB(pData,disData,Ω,noThreads,5,6,1e-2,5,10800,5);
+            tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noUB(pData,disData,Ω,noThreads,5,6,5e-3,5,10800,5);
         elseif altOpt == 4
-            tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,1e-2,5,10800,5);
+            tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5e-3,5,10800,5);
         end
         gapdecomp = (ubFull - lbFull)/ubFull;
         push!(resultDict[fileInd],[tFull,xFull,ubFull,lbFull,timedecomp]);
