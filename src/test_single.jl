@@ -1,9 +1,11 @@
 # test the running time given a number of scenarios and obtain the result
 
 addprocs(30);
-global noThreads = 30;
+@everywhere global noThreads = 30;
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
+@everywhere const GUROBI_ENV = Gurobi.Env()
+
 # test sbb
 @everywhere include("header.jl");
 
@@ -23,15 +25,15 @@ pathList = ["/home/haoxiang/scratch/PERT_tests/current/11/",
 
 #fileInd = 1;
 Ωsize = [10,20,50,100,200,500,1000,2000];
-sNList = [0,0,0,0,20,25,20,40];
-MMList = [0,0,0,0,10,20,50,50];
+sNList = [0,0,0,20,20,25,20,40];
+MMList = [0,0,0,5,10,20,50,50];
 for fileInd in 1:4
     filePath = pathList[fileInd];
 
     Ωl = 7;
     global Ω = 1:Ωsize[Ωl];
     randNo = 1;
-    extBool = true;
+    extBool = false;
 
     pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,1);
     global pData = pData;
