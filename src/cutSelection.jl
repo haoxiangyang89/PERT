@@ -67,11 +67,54 @@ function examineCuts_count_2(disData,Ω,cutSet,divSet,that,xhat,θhat,yhat)
     return cutSel;
 end
 
+function examineCuts_count_3(pData,disData,Ω,cutSet,divSet,that,xhat,θhat,yhat,IJPair,IPPair)
+    # check for each cut whether it is tight, if not update the counts
+    cutSel = Dict();
+    for nc in 1:length(cutSet)
+        cutSel[nc] = [];
+        # how many rounds have been through
+        for l in 1:length(cutSet[nc][1])
+            # for each cut
+            ω = cutSet[nc][1][l];
+            cutV = cutSet[nc][5][l];
+            for i in pData.II
+                cutV += cutSet[nc][2][findfirst(pData.II,i),l]*that[i];
+                for j in pData.Ji[i]
+                    cutV += cutSet[nc][3][findfirst(IJPair,(i,j)),l]*xhat[i,j];
+                end
+                for par in 1:length(divSet[i])
+                    cutV += cutSet[nc][4][findfirst(IPPair,(i,par)),l]*yhat[i,par];
+                end
+            end
+            if abs(θhat[ω] - cutV)/θhat[ω] <= 1e-4
+                # tight
+                push!(cutSel[nc],l);
+            end
+        end
+    end
+    return cutSel;
+end
+
 function selectCuts2(cutSet,cutSetSel)
     cutSetNew = [];
     for nc in 1:length(cutSet)
         leftSet = [l for l in 1:length(cutSet[nc][2]) if (nc,l) in cutSetSel];
         push!(cutSetNew, [cutSet[nc][1],cutSet[nc][2][leftSet]]);
+    end
+    return cutSetNew;
+end
+
+function selectCuts3(cutSet,cutSetSel)
+    cutSetNew = deepcopy(cutSet);
+    for nc in 1:length(cutSet)
+        if cutSet[nc][1] != []
+            # if the original set is not empty
+            cutSetNew[nc][1] = cutSet[nc][1][cutSel[nc]];
+            cutSetNew[nc][2] = cutSet[nc][2][:,cutSel[nc]];
+            cutSetNew[nc][3] = cutSet[nc][3][:,cutSel[nc]];
+            cutSetNew[nc][4] = cutSet[nc][4][:,cutSel[nc]];
+            cutSetNew[nc][5] = cutSet[nc][5][cutSel[nc]];
+        end
     end
     return cutSetNew;
 end

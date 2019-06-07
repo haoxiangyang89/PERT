@@ -424,8 +424,8 @@ function solveMP_para_Share(data)
             returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
             # select the cuts
             if cutSelOpt
-                cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
-                cutSetRe = selectCuts2(cutSetNew,cutSel);
+                cutSel = examineCuts_count_3(pData,disData,Ω,cutSetNew,divSet,tCurrent,xCurrent,θCurrent,yCurrent,IJPair,IPPair);
+                cutSetRe = selectCuts3(cutSetNew,cutSel);
             else
                 cutSetRe = deepcopy(cutSetNew);
             end
@@ -492,8 +492,8 @@ function solveMP_para_Share(data)
                 #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
                 returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
                 if cutSelOpt
-                    cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
-                    cutSetRe = selectCuts2(cutSetNew,cutSel);
+                    cutSel = examineCuts_count_3(pData,disData,Ω,cutSetNew,divSet,tCurrent,xCurrent,θCurrent,yCurrent,IJPair,IPPair);
+                    cutSetRe = selectCuts3(cutSetNew,cutSel);
                 else
                     cutSetRe = deepcopy(cutSetNew);
                 end
