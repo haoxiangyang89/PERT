@@ -104,7 +104,7 @@ function selectCuts2(cutSet,cutSetSel)
     return cutSetNew;
 end
 
-function selectCuts3(cutSet,cutSetSel)
+function selectCuts3(cutSet,cutSel)
     cutSetNew = deepcopy(cutSet);
     for nc in 1:length(cutSet)
         if cutSet[nc][1] != []
