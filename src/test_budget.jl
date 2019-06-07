@@ -24,8 +24,8 @@ pathList = ["/scratch/haoxiang/current/11/",
 # filePath = "/Users/haoxiangyang/Desktop/PERT_tests/14_Lognormal_Exponential/"
 dDict = Dict();
 Ωsize = [10,20,50,100,200,500,1000,2000];
-sNList = [0,0,0,0,20,25,20,40];
-MMList = [0,0,0,0,10,20,50,50];
+sNList = [0,0,0,0,20,25,25,40];
+MMList = [0,0,0,0,10,20,40,50];
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd]
     simuPath = filePath*"simuData.jld";
@@ -65,7 +65,7 @@ for fileInd in 1:length(pathList)
             else
                 global sN = sNList[Ωl];
                 global MM = MMList[Ωl];
-                tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,1000);
+                tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,1e-2,5,10800,5);
                 gapdecomp = (ubFull - lbFull)/ubFull;
             end
 

@@ -1,4 +1,4 @@
-# test the extensive formulation with a preset upper bound
+# test the extensive formulation with a preset lower bound
 addprocs(30);
 global noThreads = 30;
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
@@ -25,8 +25,8 @@ pathList = ["/scratch/haoxiang/current/11/",
 #             "/Users/haoxiangyang/Desktop/PERT_tests/current/14_Lognormal_Exponential",
 #             "/Users/haoxiangyang/Desktop/PERT_tests/current/19_Lognormal_Exponential"]
 Ωsize = [100,200,500,1000];
-sNList = [20,20,25,25];
-MMList = [5,10,20,40];
+sNList = [50,50,100,100];
+MMList = [2,4,5,10];
 data = Dict();
 
 for fileInd in 1:4
@@ -51,23 +51,11 @@ for fileInd in 1:4
         for randNo in 1:20
             disData = disDataRaw["data"][randNo];
             tic();
-            ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
+            lbest = iniLB(pData,disData,Ω,sN,MM);
             tub = toc();
-            push!(dataList,(ubInc,tub));
+            push!(dataList,lbest);
         end
         data[fileInd][Ωsize[Ωl]] = dataList;
-        save("test_UB.jld","data",data);
-    end
-end
-
-################################################################################
-# print the output
-dataB = load("test_Ext_budget.jld");
-gapDict = Dict();
-timeDict = Dict();
-for i in 1:4
-    for j in [100,200,500]
-        gapDict[i,j] = [(data["data"][i][j][k][1] - dataB["dDict"][i][j][k][4])/dataB["dDict"][i][j][k][4]*100 for k in 1:20];
-        timeDict[i,j] = [data["data"][i][j][k][2] for k in 1:20];
+        save("test_LB.jld","data",data);
     end
 end

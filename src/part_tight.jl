@@ -780,3 +780,25 @@ function combinePart(pData,disData,Ω,divSetOld,divDetOld,H,tcoreList,xcoreList,
 
     return tfeas,xfeas;
 end
+
+function iniLB(pData,disData,Ω,sN,MM,noThreads = 30)
+    # sample sN scenarios and solve the small extensive formulation
+    m = 1;
+    lbest = 0;
+    while m <= MM
+        #randList = rand(Ω,sN);
+        disData1 = Dict();
+        Ω1 = 1:sN;
+        randList = [(ω - 1)*MM + m for ω in Ω1];
+        for i in Ω1
+            disData1[i] = deepcopy(disData[randList[i]]);
+            disData1[i].prDis = (1 - pData.p0)/length(Ω);
+        end
+        pDataTemp = deepcopy(pData);
+        pDataTemp.p0 = pData.p0/MM;
+        text,xext,fext,gext,mext = extForm_cheat(pDataTemp,disData1,Ω1,1e-4,999999,noThreads);
+        lbest += fext;
+        m += 1;
+    end
+    return lbest;
+end
