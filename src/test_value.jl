@@ -99,7 +99,7 @@ for fileInd in 1:length(pathList)
         end
     end
     #tHOnly,xHOnly,fHOnly,gHOnly,mHOnly = extForm_cheat(pData,disData,Ω,1e-2,999999,noThreads);
-    tHOnly,xHOnly,ubHOnly,lbHOnly,timeIter,treeList,timeHOnly = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,2000);
+    tHOnly,xHOnly,ubHOnly,lbHOnly,timeIter,treeList,timeHOnly = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,2000);
     gapHOnly = (ubHOnly - lbHOnly)/ubHOnly;
     fHOnly = ubHOnly;
     disData = deepcopy(disData1);
@@ -109,7 +109,7 @@ for fileInd in 1:length(pathList)
 
     # full solution
     #tFull,xFull,fFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-2,999999,noThreads);
-    tFull,xFull,ubFull,lbFull,timeIter,treeList,timeFull = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,2000);
+    tFull,xFull,ubFull,lbFull,timeIter,treeList,timeFull = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,2000);
     gapFull = (ubFull - lbFull)/ubFull;
     fFull = lbFull;
     push!(dDict[fileInd],[tFull,xFull,fFull,ubFull,gapFull,timeFull]);

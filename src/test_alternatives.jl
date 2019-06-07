@@ -55,8 +55,8 @@ global sN = sNList[Ωl];
 global MM = MMList[Ωl];
 
 tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,true);
-tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noUB(pData,disData,Ω,noThreads,5,6,1e-2,5,10800,5);
-tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,1e-2,5,10800,5);
+tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noUB(pData,disData,Ω,noThreads,5,6,5,1e-2,5,10800);
+tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800);
 
 
 resultDict = Dict();

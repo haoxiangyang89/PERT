@@ -5,6 +5,7 @@ include("readIn.jl");
 include("master.jl");
 include("sub.jl");
 include("cuts.jl");
+include("cutSelection.jl");
 include("iSolve.jl");
 include("branchFunc.jl");
 include("detForm.jl");

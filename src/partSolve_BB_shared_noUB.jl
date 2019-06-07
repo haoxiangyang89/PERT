@@ -630,7 +630,7 @@ function runPara_Share_noUB(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCo
     return tbest,xbest,ubCost,minLB,timeDict,treeList;
 end
 
-function partSolve_BB_para_noUB(pData,disData,Ω,noThreads,batchNo,noTh,ϵ = 1e-2,nSplit = 5,roundLimit = 1000,noPa = 1)
+function partSolve_BB_para_noUB(pData,disData,Ω,noThreads,batchNo,noTh,noPa,ϵ = 1e-2,nSplit = 5,roundLimit = 1000)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II

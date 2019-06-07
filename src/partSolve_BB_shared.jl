@@ -54,6 +54,7 @@ function solveMP_para_Share(data)
     wp = CachingPool(data[11]);
     nSplit = data[12];
     roundLimit = data[13];
+    cutSelOpt = data[14];
     Ω = 1:length(disData);
 
     Tmax1 =lDict[0];
@@ -421,9 +422,13 @@ function solveMP_para_Share(data)
             divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
             #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
             returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
+            # select the cuts
+            cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
+            cutSetRe = selectCuts2(cutSetNew,cutSel);
         else
             # if all i's having binary G's, we reach optimum for this node, ub = lb
             returnSet = [];
+            cutSetRe = [];
         end
     elseif (mpStatus == :UserLimit)
         returnNo = getobjectivebound(mp);
@@ -482,9 +487,12 @@ function solveMP_para_Share(data)
                 divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
                 #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
                 returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
+                cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
+                cutSetRe = selectCuts2(cutSetNew,cutSel);
             else
                 # if all i's having binary G's, we reach optimum for this node, ub = lb
                 returnSet = [];
+                cutSetRe = [];
             end
         else
             # branch only + equal branching rules
@@ -515,19 +523,22 @@ function solveMP_para_Share(data)
                 divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
                 divSet2,divDet2 = divExploit(pData,disData,H,divSet2,divDet2,distanceDict);
                 returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
+                cutSetRe = [];
             else
                 returnSet = [[divSet,divDet]];
+                cutSetRe = [];
             end
         end
     else
         returnNo = Inf;
         returnSet = [];
+        cutSetRe = [];
     end
     return returnNo,cutSetNew,returnSet,tbest,xbest,minimum(ubCostList),tcoreNew,xcoreNew,ubcoreNew;
 end
 
 
-function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noTh,ϵ = 1e-2,nSplit = 5,noPa = 1)
+function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noTh,ϵ = 1e-2,nSplit = 5,noPa = 1,cutSelOpt = true)
     # separate the workers to main processors and workers
     npList = workers()[1:batchNo];
     global noMo = div(noThreads,batchNo);
@@ -572,7 +583,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                             # mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
                             #     tbest,xbest,noTh,wpDict[p],nSplit,pData,disData,lDict,H,allSucc,distanceDict]);
                             mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
-                                tbest,xbest,noTh,wpDict[p],nSplit,treeList[selectNode][5]]);
+                                tbest,xbest,noTh,wpDict[p],nSplit,treeList[selectNode][5],cutSelOpt]);
                             timeDict[selectNode] = toc();
                             # update the cutList with the added cuts and two new nodes
                             # update the cutSet
@@ -701,7 +712,7 @@ function runPara_Series_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ub
     return tbest,xbest,ubCost,lbOverAll;
 end
 
-function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,ϵ = 1e-2,nSplit = 5,roundLimit = 1000,noPa = 1)
+function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,noPa,ϵ = 1e-2,nSplit = 5,roundLimit = 1000,cutSelOpt = true)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II
@@ -839,7 +850,7 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,�
     global lbOverAll = -Inf;
     # transfer the data back to everywhere
     tic();
-    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,ϵ,nSplit,noPa);
+    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,ϵ,nSplit,noPa,cutSelOpt);
     decompTime = toc();
 
     # need a cut selection process within the callback
