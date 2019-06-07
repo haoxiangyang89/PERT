@@ -423,8 +423,12 @@ function solveMP_para_Share(data)
             #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
             returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
             # select the cuts
-            cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
-            cutSetRe = selectCuts2(cutSetNew,cutSel);
+            if cutSelOpt
+                cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
+                cutSetRe = selectCuts2(cutSetNew,cutSel);
+            else
+                cutSetRe = deepcopy(cutSetNew);
+            end
         else
             # if all i's having binary G's, we reach optimum for this node, ub = lb
             returnSet = [];
@@ -487,8 +491,12 @@ function solveMP_para_Share(data)
                 divSet2,divDet2 = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit);
                 #divSet2,divDet2 = splitPrepSmart2(pData,disData,Ω,H,GCurrent,tCurrent,divSet2,divDet2,θCurrent,θIntCurrent,nSplit)
                 returnSet = [[divSet1,divDet1],[divSet2,divDet2]];
-                cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
-                cutSetRe = selectCuts2(cutSetNew,cutSel);
+                if cutSelOpt
+                    cutSel = examineCuts_count_2(disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
+                    cutSetRe = selectCuts2(cutSetNew,cutSel);
+                else
+                    cutSetRe = deepcopy(cutSetNew);
+                end
             else
                 # if all i's having binary G's, we reach optimum for this node, ub = lb
                 returnSet = [];
@@ -534,7 +542,7 @@ function solveMP_para_Share(data)
         returnSet = [];
         cutSetRe = [];
     end
-    return returnNo,cutSetNew,returnSet,tbest,xbest,minimum(ubCostList),tcoreNew,xcoreNew,ubcoreNew;
+    return returnNo,cutSetRe,returnSet,tbest,xbest,minimum(ubCostList),tcoreNew,xcoreNew,ubcoreNew;
 end
 
 
