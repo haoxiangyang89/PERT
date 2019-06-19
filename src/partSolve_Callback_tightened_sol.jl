@@ -80,7 +80,6 @@ function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,nSplit 
     # data141 = load("14_test1_ubData.jld");
     # ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = data141["data"];
     ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
-    sleep(60);
 
     lbCost = -Inf;
     lbCostList = [];
@@ -404,6 +403,11 @@ function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,nSplit 
         if (ubCost - lbCost)/ubCost < ϵ
             keepIter = false;
         else
+            push!(cutHist,sum(length(cutSet[l][2]) for l in 1:length(cutSet)));
+            if cutSelOpt
+                cutSel = examineCuts_count_2(pData,disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
+                cutSet = selectCuts2(cutSet,cutSel);
+            end
             if bAlt == 1
                 divSet,divDet = splitPrepSmart(pData,disData,Ω,H,HRev,GList,tCurrent,divSet,divDet,θCurrent,θIntCurrent,nSplit);
             elseif bAlt == 2
@@ -412,11 +416,6 @@ function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,nSplit 
                 divSet,divDet = splitPrepld2(pData,disData,Ω,H,GCurrent,tCurrent,divSet,divDet,θCurrent,θIntCurrent,nSplit);
             else
                 divSet,divDet = splitPrep3(pData,disData,Ω,H,HRev,GList,divSet,divDet);
-            end
-            push!(cutHist,sum(length(cutSet[l][2]) for l in 1:length(cutSet)));
-            if cutSelOpt
-                cutSel = examineCuts_count_2(pData,disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
-                cutSet = selectCuts2(cutSet,cutSel);
             end
             # cutSet = deepcopy(cutSetNew);
         end

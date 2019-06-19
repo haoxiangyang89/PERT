@@ -50,12 +50,12 @@ function examineCuts_count_2(pData,disData,Ω,cutSet,divSet,that,xhat,θhat,yhat
             ω = cutSet[nc][2][l][1]
             cutV = cutSet[nc][2][l][2];
             for i in pData.II
-                cutV += cutSet[nc][2][l][3][i]*(that[i] - cutSet[nc][1][1][i]);
+                cutV += cutSet[nc][2][l][3][i]*that[i];
                 for j in pData.Ji[i]
-                    cutV += cutSet[nc][2][l][4][i,j]*(xhat[i,j] - cutSet[nc][1][2][i,j]);
+                    cutV += cutSet[nc][2][l][4][i,j]*xhat[i,j];
                 end
-                for par in 1:length(cutSet[nc][1][4][i])
-                    cutV += cutSet[nc][2][l][5][i,par]*(sum(yhat[i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][4][i],divSet[i][parNew]) == par) - cutSet[nc][1][3][i,par]);
+                for par in 1:length(cutSet[nc][1][i])
+                    cutV += cutSet[nc][2][l][5][i,par]*(sum(yhat[i,parNew] for parNew in 1:length(divSet[i]) if revPar(cutSet[nc][1][i],divSet[i][parNew]) == par));
                 end
             end
             if abs(θhat[ω] - cutV)/θhat[ω] <= 1e-4
