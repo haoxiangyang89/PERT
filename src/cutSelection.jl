@@ -40,7 +40,7 @@ function selectCuts(cutSel,cutSet,cutThreshold)
     return cutSelNew,cutSet;
 end
 
-function examineCuts_count_2(disData,Ω,cutSet,divSet,that,xhat,θhat,yhat)
+function examineCuts_count_2(pData,disData,Ω,cutSet,divSet,that,xhat,θhat,yhat)
     # check for each cut whether it is tight, if not update the counts
     cutSel = [];
     for nc in 1:length(cutSet)

@@ -2,6 +2,8 @@ addprocs(30);
 global noThreads = 30;
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
+@everywhere const GUROBI_ENV = Gurobi.Env()
+
 # test sbb
 @everywhere include("header.jl");
 
@@ -43,8 +45,18 @@ for fileInd in 1:length(pathList)
         # our decomposition method
         global sN = sNList[Ωl];
         global MM = MMList[Ωl];
-        tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,5,1000);
-        gapdecomp = (ubFull - lbFull)/ubFull;
+        # Algorithm 1 without cut selection
+        tFull1wo,xFull1wo,ubFull1wo,lbFull1wo,timeIter1wo,timedecomp1wo = partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,3,1e-2,false);
+        gapdecomp1wo = (ubFull1wo - lbFull1wo)/ubFull1wo;
+        # Algorithm 1 with cut selection
+        tFull1wo,xFull1wo,ubFull1wo,lbFull1wo,timeIter1wo,timedecomp1wo = partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,3,1e-2,true);
+        gapdecomp1w = (ubFull1w - lbFull1w)/ubFull1w;
+        # Algorithm 2 without cut selection
+        tFull2wo,xFull2wo,ubFull2wo,lbFull2wo,timeIter2wo,treeList2wo,timedecomp2wo = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,false);
+        gapdecomp2wo = (ubFull2wo - lbFull2wo)/ubFull2wo;
+        # Algorithm 2 with cut selection
+        tFull2w,xFull2w,ubFull2w,lbFull2w,timeIter2w,treeList2w,timedecomp2w = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,true);
+        gapdecomp2w = (ubFull2w - lbFull2w)/ubFull2w;
 
         # extensive formulation
         text,xext,fext,gext,mext,timeext = extForm_cheat_new(pData,disData,Ω,sN,MM,1e-2,10800,noThreads);

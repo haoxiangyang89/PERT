@@ -1,5 +1,5 @@
 # calculate the largest possible starting time for each activity in any disrupted scenario
-function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,ϵ = 1e-2)
+function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,ϵ = 1e-2,cutSelOpt = true)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II
@@ -262,6 +262,7 @@ function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,ϵ = 1e
     cutHist = [];
     intSolHist = [];
     yhistList = [];
+    GList = [];
     mp = Model(solver = GurobiSolver(IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noThreads));
     @variables(mp, begin
       θ[Ω] >= 0
@@ -307,7 +308,6 @@ function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,ϵ = 1e
         xCurrent = Dict();
         θCurrent = Dict();
         yCurrent = Dict();
-        GList = [];
 
         # add the cut
         # cutInfo = 2 dimensional vector, first dimention record the primal solution,
@@ -414,6 +414,10 @@ function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,ϵ = 1e
                 divSet,divDet = splitPrep3(pData,disData,Ω,H,HRev,GList,divSet,divDet);
             end
             push!(cutHist,sum(length(cutSet[l][2]) for l in 1:length(cutSet)));
+            if cutSelOpt
+                cutSel = examineCuts_count_2(pData,disData,Ω,cutSet,divSet,tCurrent,xCurrent,θCurrent,yCurrent);
+                cutSet = selectCuts2(cutSet,cutSel);
+            end
             # cutSet = deepcopy(cutSetNew);
         end
     end

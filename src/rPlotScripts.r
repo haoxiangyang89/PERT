@@ -78,11 +78,11 @@ donlyList <- valueGraph$dOnly/valueGraph$FULL;
 honlyList <- valueGraph$HOnly/valueGraph$FULL;
 fullList <- valueGraph$FULL/valueGraph$FULL;
 test <- rbind(detList,expList,donlyList,honlyList,fullList)
-png(file = "/Users/haoxiangyang/Desktop/Git/PERT/Writeup/graphValues.png", width= 10,height=6,units = 'in',res = 300);
+png(file = "/Users/haoxiangyang/Desktop/Git/PERT/Writeup/graphValues_col.png", width= 10,height=6,units = 'in',res = 300);
 barplot(test,beside=T,legend.text = c("DET","EXP","dOnly","HOnly","FULL"),
         args.legend = list(x=25,y = 2,bty = "n",cex = 1.2),main = "Upper bound estimation of alternative solutions",
         ylab="Upper bound",xpd=FALSE,ylim = c(0.8,2),xlab = "Test Cases",
-        names.arg = c("Case 11","Case 14","Case 19","Case 35"),
+        names.arg = c("Case 11","Case 14","Case 19","Case 35"),col=brewer.pal(n = 5, name = "RdBu"),
         cex.lab=1.2,cex.axis = 1.2,cex.names = 1.2)
 dev.off();
 
