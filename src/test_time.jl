@@ -46,10 +46,10 @@ for fileInd in 1:length(pathList)
         global sN = sNList[Ωl];
         global MM = MMList[Ωl];
         # Algorithm 1 without cut selection
-        tFull1wo,xFull1wo,ubFull1wo,lbFull1wo,timeIter1wo,timedecomp1wo = partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,3,1e-2,false);
+        tFull1wo,xFull1wo,ubFull1wo,lbFull1wo,timeIter1wo,timedecomp1wo = partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,3,5,1e-2,false);
         gapdecomp1wo = (ubFull1wo - lbFull1wo)/ubFull1wo;
         # Algorithm 1 with cut selection
-        tFull1wo,xFull1wo,ubFull1wo,lbFull1wo,timeIter1wo,timedecomp1wo = partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,3,1e-2,true);
+        tFull1wo,xFull1wo,ubFull1wo,lbFull1wo,timeIter1wo,timedecomp1wo = partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,3,5,1e-2,true);
         gapdecomp1w = (ubFull1w - lbFull1w)/ubFull1w;
         # Algorithm 2 without cut selection
         tFull2wo,xFull2wo,ubFull2wo,lbFull2wo,timeIter2wo,treeList2wo,timedecomp2wo = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,false);

@@ -1,5 +1,5 @@
 # calculate the largest possible starting time for each activity in any disrupted scenario
-function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,ϵ = 1e-2,cutSelOpt = true)
+function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,nSplit = 5,ϵ = 1e-2,cutSelOpt = true)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II
