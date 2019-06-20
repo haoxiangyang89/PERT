@@ -23,6 +23,34 @@ pathList = ["/scratch/haoxiang/current/11/",
 Ωsize = [100,200,500,1000,1500,2000];
 sNList = [10,20,25,25,30,40];
 MMList = [10,10,20,40,50,50];
+
+fileInd = 1;
+filePath = pathList[fileInd];
+# compile the functions
+Ωl = 1;
+global Ω = 1:Ωsize[Ωl];
+randNo = 1;
+extBool = true;
+
+pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,1);
+global pData = pData;
+disDataRaw = load(pathList[fileInd]*"solData_100.jld");
+disData = disDataRaw["data"][randNo];
+
+global allSucc = findSuccAll(pData);
+global distanceDict = Dict();
+for i in pData.II
+    for j in allSucc[i]
+        distanceDict[i,j] = detCal(pData,i,j);
+    end
+end
+
+global sN = 20;
+global MM = 5;
+
+tFull1w,xFull1w,ubFull1w,lbFull1w,timeIter1w,timedecomp1w = partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,3,5,1e-2,true);
+tFull2w,xFull2w,ubFull2w,lbFull2w,timeIter2w,treeList2w,timedecomp2w = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,true);
+
 dDict = Dict();
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
