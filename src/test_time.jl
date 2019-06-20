@@ -63,8 +63,11 @@ for fileInd in 1:length(pathList)
         ubext = mext.objVal;
         lbext = mext.objBound;
         gapext = (ubext - lbext)/ubext;
-        dDict[fileInd][Ωsize[Ωl]] = [tFull,xFull,lbFull,ubFull,gapdecomp,timedecomp,
-                            text,xext,lbext,ubext,gapext,timeext];
+        dDict[fileInd][Ωsize[Ωl]] = [[tFull1wo,xFull1wo,ubFull1wo,lbFull1wo,gapdecomp1wo,timedecomp1wo],
+                            [tFull1w,xFull1w,ubFull1w,lbFull1w,gapdecomp1w,timedecomp1w],
+                            [tFull2wo,xFull2wo,ubFull2wo,lbFull2wo,gapdecomp2wo,timedecomp2wo],
+                            [tFull2w,xFull2w,ubFull2w,lbFull2w,gapdecomp2w,timedecomp2w],
+                            [text,xext,lbext,ubext,gapext,timeext]];
         save("test_Ext_time.jld","dDict",dDict);
     end
 end
