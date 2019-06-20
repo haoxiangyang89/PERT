@@ -241,14 +241,11 @@ function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,nSplit 
                             sum(γdict[ω][i,par]*y[i,par] for par in 1:length(divSet[i])) for i in pData.II));
                     end
                 else
-                    push!(errorList,(ω,dataList[ω]));
                     push!(errorInd,ω);
                 end
             end
 
             push!(cutSet,[deepcopy(divSet),cutDual]);
-            GCurrent = [dataList[ω][5] for ω in Ω if !(ω in errorInd)];
-            push!(GList,GCurrent);
         else
             return JuMP.StopTheSolver;
         end

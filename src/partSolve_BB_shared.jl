@@ -157,10 +157,6 @@ function solveMP_para_Share(data)
                     end
                 end
             end
-            if !(errorInd)
-                GCurrent = [dataList[ω][5] for ω in Ω];
-                push!(GList,GCurrent);
-            end
             πSet = zeros(length(pData.II),length(cutScen));
             λSet = zeros(length(IJPair),length(cutScen));
             γSet = zeros(length(IPPair),length(cutScen));
