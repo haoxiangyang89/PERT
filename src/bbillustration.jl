@@ -3,6 +3,7 @@ addprocs(3);
 global noThreads = 3;
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
+@everywhere const GUROBI_ENV = Gurobi.Env();
 # test sbb
 @everywhere include("header.jl");
 

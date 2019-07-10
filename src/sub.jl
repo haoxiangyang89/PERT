@@ -579,8 +579,9 @@ function sub_div(pData,dDω,ωCurr,that,xhat,yhat,divSet,ubInfo,lbInfo,M1 = 9999
 end
 
 function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
-    global GUROBI_ENV;
-    sp = Model(solver = GurobiSolver(GUROBI_ENV,OutputFlag = 0));
+    #global GUROBI_ENV;
+    sp = Model(solver = GurobiSolver(#GUROBI_ENV,
+    IntFeasTol = 1e-8,OutputFlag = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     # relax the logic binary variables
@@ -936,8 +937,10 @@ end
 function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,ycore,returnOpt = 0)
     # Magnanti-Wong with a small perturbation
     # smp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
-    global GUROBI_ENV;
-    smp = Model(solver = GurobiSolver(GUROBI_ENV,OutputFlag = 0));
+    #global GUROBI_ENV;
+    smp = Model(solver = GurobiSolver(
+    #GUROBI_ENV,
+    IntFeasTol = 1e-8,OutputFlag = 0));
     @variable(smp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(smp, t[i in pData.II] >= 0);
     # relax the logic binary variables
@@ -985,7 +988,8 @@ function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,
         end
 
         # solve the subproblem by dual formulation
-        sp = Model(solver = GurobiSolver(GUROBI_ENV,OutputFlag = 0,Method = 1));
+        sp = Model(solver = GurobiSolver(#GUROBI_ENV,
+        OutputFlag = 0,Method = 1));
         @variable(sp, λFG1[i in pData.II, par in 1:length(divSet[i])] <= 0);
         @variable(sp, λFG2[i in pData.II, par in 1:length(divSet[i])] <= 0);
         @variable(sp, λFG3[i in pData.II, par in 1:length(divSet[i])] >= 0);
@@ -1397,7 +1401,7 @@ end
 function sub_divTT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
     # Magnanti-Wong with a small perturbation
     # smp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
-    global GUROBI_ENV;
+    #global GUROBI_ENV;
     Hqt = Dict();
     for i in pData.II
         for par in 1:length(divSet[i])
@@ -1407,7 +1411,9 @@ function sub_divTT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
         end
     end
 
-    smp = Model(solver = GurobiSolver(GUROBI_ENV,OutputFlag = 0,NumericFocus = 3,Method = 1));
+    smp = Model(solver = GurobiSolver(
+    #GUROBI_ENV,
+    OutputFlag = 0,NumericFocus = 3,Method = 1));
     @variable(smp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(smp, t[i in pData.II] >= 0);
     # relax the logic binary variables
