@@ -146,9 +146,7 @@ function solveMP_para_Share_noMW(data)
     ubCostList = [ubCost];
 
     # move the createMaster_Callback here
-    mp = Model(solver = GurobiSolver(
-    #GUROBI_ENV,
-    IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noTh, Cutoff = ubCost, TimeLimit = roundLimit));
+    mp = Model(solver = GurobiSolver(GUROBI_ENV,IntFeasTol = 1e-8, FeasibilityTol = 1e-8, Threads = noTh, Cutoff = ubCost, TimeLimit = roundLimit));
     @variables(mp, begin
       θ[Ω] >= 0
       0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
