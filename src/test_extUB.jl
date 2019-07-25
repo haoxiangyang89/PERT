@@ -66,7 +66,7 @@ dataB = load("test_Ext_budget.jld");
 gapDict = Dict();
 timeDict = Dict();
 for i in 1:4
-    for j in [100,200,500]
+    for j in [100,200,500,1000]
         gapDict[i,j] = [(data["data"][i][j][k][1] - dataB["dDict"][i][j][k][4])/dataB["dDict"][i][j][k][4]*100 for k in 1:20];
         timeDict[i,j] = [data["data"][i][j][k][2] for k in 1:20];
     end

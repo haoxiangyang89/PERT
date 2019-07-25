@@ -57,15 +57,13 @@ for fileInd in 1:length(pathList)
 
             # our decomposition method
             if Ωl <= 4
-                tic();
-                tFull,xFull,ubFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
-                timedecomp = toc();
-                gapdecomp = 0;
+                tFull,xFull,ubFull,gFull,mFull,timedecomp = extForm_cheat_new(pData,disData,Ω,sN,MM,ϵ,36000,noThreads);
+                gapdecomp = (ubFull - lbFull)/ubFull;
                 lbFull = getobjectivebound(mFull);
             else
                 global sN = sNList[Ωl];
                 global MM = MMList[Ωl];
-                tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800);
+                tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,ϵ,5,10800);
                 gapdecomp = (ubFull - lbFull)/ubFull;
             end
 

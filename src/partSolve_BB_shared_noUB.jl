@@ -81,9 +81,9 @@ function solveMP_para_Share_noUB(data)
 
     function partBenders(cb)
         currentLB = MathProgBase.cbgetbestbound(cb);
-        currentUB = minimum(ubcoreList);
+        currentUB = minimum(ubCostList);
         println("lazy, $(currentLB), $(currentUB)");
-        if currentLB <= minimum(ubcoreList)
+        if currentLB <= minimum(ubCostList)
             # the callback function
             that = Dict();
             xhat = Dict();
@@ -118,6 +118,7 @@ function solveMP_para_Share_noUB(data)
             end
             ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1,wp);
             push!(ubcoreList,ubTemp);
+            push!(ubCostList,ubTemp);
             push!(ubcoreNew,ubTemp);
 
             if ubCost > ubTemp
