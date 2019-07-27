@@ -87,7 +87,7 @@ for fileInd in 1:length(pathList)
         gapdecomp2w = (ubFull2w - lbFull2w)/ubFull2w;
 
         # extensive formulation
-        text,xext,fext,gext,mext,timeext = extForm_cheat_new(pData,disData,Ω,sN,MM,1e-2,10800,noThreads);
+        text,xext,fext,gext,mext,timeext = extForm_cheat_new(pData,disData,Ω,sN,MM,1e-2,99999,noThreads);
         ubext = mext.objVal;
         lbext = mext.objBound;
         gapext = (ubext - lbext)/ubext;

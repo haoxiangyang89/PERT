@@ -59,9 +59,11 @@ tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noUB(
 tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800);
 
 
-resultDict = Dict();
+#resultDict = Dict();
+data = load("test_alt.jld");
+resultDict = data["data"];
 
-for fileInd in 1:4
+for fileInd in 2:3
     Ωl = 6;
     filePath = pathList[fileInd];
     global Ω = 1:Ωsize[Ωl];
