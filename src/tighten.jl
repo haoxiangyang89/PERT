@@ -360,6 +360,34 @@ function divExploit(pData,disData,H,PartSet,PartDet,distanceDict)
     return divSetNew,divDetNew;
 end
 
+function divExploitSimple(pData,disData,H,PartSet,PartDet)
+    PartSetNew = deepcopy(PartSet);
+    PartDetNew = deepcopy(PartDet);
+    for i in pData.II
+        # earlyT is the index of H that is right before the earliest possible starting time of i
+        # earlyT is the index of H that is right after the latest possible starting time of i
+        earlyT = 0;
+        lateT = maximum(keys(H));
+        for l in 1:length(PartSet[i])
+            if PartDet[i][l] == 1
+                earlyT = l;
+            end
+        end
+        for l in 1:earlyT
+            PartDetNew[i][l] = 1;
+        end
+        for l in length(PartSet[i]):-1:1
+            if PartDet[i][l] == -1
+                lateT = l;
+            end
+        end
+        for l in lateT:length(PartSet[i])
+            PartDetNew[i][l] = -1;
+        end
+    end
+    return PartSetNew,PartDetNew;
+end
+
 # break the divSet and get 2 updated divSets and divDets
 function breakDiv(pData,disData,H,divSet,divDet,iBreak,locBreak,distanceDict)
     # iBreak is the activity to branch on
