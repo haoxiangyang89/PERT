@@ -52,7 +52,7 @@ tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share
 
 data = Dict();
 for fileInd in 1:4
-    Ωl = 6;
+    Ωl = 7;
     filePath = pathList[fileInd];
     global Ω = 1:Ωsize[Ωl];
     randNo = 1;
@@ -75,9 +75,9 @@ for fileInd in 1:4
 
     # test the solution process with/out FBBT, initial LB is recorded in the treeList
     # with
-    tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,false);
+    tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,true);
     # without
-    tFullo,xFullo,ubFullo,lbFullo,timeItero,treeListo,timedecompo = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,false,false);
+    tFullo,xFullo,ubFullo,lbFullo,timeItero,treeListo,timedecompo = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,true,false);
     data[fileInd] = [tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp,
                     tFullo,xFullo,ubFullo,lbFullo,timeItero,treeListo,timedecompo];
     save("test_FBBT.jld","data",data);
