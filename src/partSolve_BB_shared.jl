@@ -555,7 +555,7 @@ end
 function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noTh,ϵ = 1e-2,nSplit = 5,noPa = 1,cutSelOpt = true,BTOpt = true)
     # separate the workers to main processors and workers
     npList = workers()[1:batchNo];
-    global noMo = div(noThreads,batchNo);
+    noMo = div(noThreads,batchNo);
     # noPa = noMo - noTh;
     wpDict = Dict();
     for npi in 1:length(npList)
@@ -809,7 +809,7 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,n
     ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
     lbCost = -Inf;
     lbCostList = [];
-    global ubCost = ubInc;
+    ubCost = ubInc;
     tcoreList = deepcopy(textList);
     xcoreList = deepcopy(xextList);
     ubcoreList = deepcopy(ubextList);
@@ -860,12 +860,12 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,n
     # divInfoShare = convertDiv(divSet,divDet);
 
     # set up a tree list
-    global treeList = [];
-    global cutList = [];
+    treeList = [];
+    cutList = [];
     push!(treeList,[lbCost,[],-1,[divSet,divDet],roundLimit]); # the empty set is the list of predecessors of the current node
     push!(cutList,[]);
 
-    global lbOverAll = -Inf;
+    lbOverAll = -Inf;
     # transfer the data back to everywhere
     tic();
     tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,ϵ,nSplit,noPa,cutSelOpt,BTOpt);
