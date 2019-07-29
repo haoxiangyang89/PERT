@@ -389,7 +389,7 @@ function divExploitSimple(pData,disData,H,PartSet,PartDet)
 end
 
 # break the divSet and get 2 updated divSets and divDets
-function breakDiv(pData,disData,H,divSet,divDet,iBreak,locBreak,distanceDict)
+function breakDiv(pData,disData,H,divSet,divDet,iBreak,locBreak,distanceDict,BTOpt = true)
     # iBreak is the activity to branch on
     # locBreak is the point of H to break on
 
@@ -419,7 +419,11 @@ function breakDiv(pData,disData,H,divSet,divDet,iBreak,locBreak,distanceDict)
             push!(newPartDet1[iBreak],divDet[iBreak][l]);
         end
     end
-    divSet1,divDet1 = divExploit(pData,disData,H,newPartSet1,newPartDet1,distanceDict);
+    if BTOpt
+        divSet1,divDet1 = divExploit(pData,disData,H,newPartSet1,newPartDet1,distanceDict);
+    else
+        divSet1,divDet1 = divExploitSimple(pData,disData,H,newPartSet1,newPartDet1);
+    end
 
     newPartSet2 = deepcopy(divSet);
     newPartDet2 = deepcopy(divDet);
@@ -436,7 +440,11 @@ function breakDiv(pData,disData,H,divSet,divDet,iBreak,locBreak,distanceDict)
             push!(newPartDet2[iBreak],divDet[iBreak][l]);
         end
     end
-    divSet2,divDet2 = divExploit(pData,disData,H,newPartSet2,newPartDet2,distanceDict);
+    if BTOpt
+        divSet2,divDet2 = divExploit(pData,disData,H,newPartSet2,newPartDet2,distanceDict);
+    else
+        divSet2,divDet2 = divExploitSimple(pData,disData,H,newPartSet2,newPartDet2);
+    end
 
     return divSet1,divDet1,divSet2,divDet2;
 end

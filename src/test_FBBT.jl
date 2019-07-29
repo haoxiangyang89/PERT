@@ -1,4 +1,4 @@
-# script to test the alternative algorithms of decomposition
+# test the effectiveness of FBBT
 addprocs(30);
 global noThreads = 30;
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;
@@ -21,18 +21,13 @@ pathList = ["/scratch/haoxiang/current/11/",
                "/scratch/haoxiang/current/55/",
                "/scratch/haoxiang/current/75/"];
 
-# altOpt: 1: no UB, no MW
-#         2: UB, no MW
-#         3: MW, no UB
-#         4: both
-altOpt = 1
 Ωsize = [10,20,50,100,200,500,1000,2000];
 sNList = [10,0,0,0,20,25,20,40];
 MMList = [1,0,0,0,10,20,50,50];
 
+# precompile
 fileInd = 1;
 filePath = pathList[fileInd];
-# compile the functions
 Ωl = 1;
 global Ω = 1:Ωsize[Ωl];
 randNo = 1;
@@ -53,14 +48,9 @@ end
 
 global sN = sNList[Ωl];
 global MM = MMList[Ωl];
-
-tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,true);
-tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noUB(pData,disData,Ω,noThreads,5,6,5,1e-2,5,10800);
 tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800);
 
-
-resultDict = Dict();
-
+data = Dict();
 for fileInd in 1:4
     Ωl = 6;
     filePath = pathList[fileInd];
@@ -82,20 +72,13 @@ for fileInd in 1:4
 
     global sN = sNList[Ωl];
     global MM = MMList[Ωl];
-    resultDict[fileInd] = [];
 
-    for altOpt in 1:4
-        if altOpt == 1
-            tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,false);
-        elseif altOpt == 2
-            tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,true);
-        elseif altOpt == 3
-            tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_noUB(pData,disData,Ω,noThreads,5,6,5,1e-2,5,10800);
-        elseif altOpt == 4
-            tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,false);
-        end
-        gapdecomp = (ubFull - lbFull)/ubFull;
-        push!(resultDict[fileInd],[tFull,xFull,ubFull,lbFull,timedecomp]);
-        save("test_alt.jld","data",resultDict);
-    end
+    # test the solution process with/out FBBT, initial LB is recorded in the treeList
+    # with
+    tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,false);
+    # without
+    tFullo,xFullo,ubFullo,lbFullo,timeItero,treeListo,timedecompo = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,false,false);
+    data[fileInd] = [tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp,
+                    tFullo,xFullo,ubFullo,lbFullo,timeItero,treeListo,timedecompo];
+    save("test_FBBT.jld","data",data);
 end

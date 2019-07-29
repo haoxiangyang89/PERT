@@ -1216,6 +1216,7 @@ For a feasible solution $(t,x)$ to model~\eqref{eqn:proposition_equivalent} the 
 	\end{table}
 	
 	\tcr{Is Table~\ref{table:heuristics} based on 20 replications? (Either way, we should say. If not, we need to clarify because the first results use 20 replications.) As I indicate above, I'm not sure whether this is for Algorithm~1? In any case, I'm also not sure why the run-time values in Table~\ref{table:heuristics} don't appear somewhere in the 500 row of Table~\ref{table:time}? This section is unclear (to me) on whether FBBT is always being used? And, what is the effect of FBBT?}
+	\tcb{FBBT effectiveness: 1. Test the initial lower bounds on node 1; 2. Test the time comparison with/out the FBBT}
 	
 	Table~\ref{table:heuristics} shows that obtaining a heuristic upper bound can reduce computational effort; this occurs because the bound facilitates earlier fathoming of some nodes in the branch-and-bound tree when solving the master MIP. This outweighs the time required to compute the upper bound; see Table~\ref{table:hub}. Magnanti-Wong cuts are effective for Cases~14 and~19 but not for the other two cases, and the two techniques can have a synergistic effect (Case 14). 
 %The effectiveness of such cuts may depend on the geometric nature of test cases, and it is valuable to investigate this phenomenon with more test cases in the future.
