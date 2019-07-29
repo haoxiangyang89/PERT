@@ -411,7 +411,7 @@ function solveMP_para_Share(data)
         # initialize the breakPoints dictionary
         if lGFracInd != -1
             #locBreak = Int64(floor((GFrac[lGFracInd][1]*fracBreak + GFrac[lGFracInd][2]*(1 - fracBreak))));
-            divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreakH,distanceDict);
+            divSet1,divDet1,divSet2,divDet2 = breakDiv(pData,disData,H,divSet,divDet,lGFracInd,locBreakH,distanceDict,BTOpt);
             if BTOpt
                 divSet1,divDet1 = divExploit(pData,disData,H,divSet1,divDet1,distanceDict);
             else
