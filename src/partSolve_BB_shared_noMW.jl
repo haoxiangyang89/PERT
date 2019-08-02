@@ -25,6 +25,10 @@ function solveMP_para_Share_noMW(data)
     Tmax1 =lDict[0];
     GList = [];
     cutSetNew = [];
+    tError = [];
+    xError = [];
+    yError = [];
+    ErrorωList = [];
 
     function partBenders(cb)
         currentLB = MathProgBase.cbgetbestbound(cb);
@@ -75,9 +79,6 @@ function solveMP_para_Share_noMW(data)
                     push!(xError,xhat);
                     push!(yError,yhat);
                     push!(ErrorωList,ω);
-                    push!(tcoreError,tcore);
-                    push!(xcoreError,xcore);
-                    push!(ycoreError,ycore);
                     errorInd = true;
                 else
                     if (dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)])
