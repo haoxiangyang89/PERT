@@ -60,20 +60,23 @@ tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share
 
 
 resultDict = Dict();
+disDataRaw = Dict();
+Ωl = 6;
+for fileInd in 1:4
+    resultDict[fileInd] = Dict();
+    disDataRaw[fileInd] = load(pathList[fileInd]*"solData_$(Ωsize[Ωl]).jld");
+end
+global Ω = 1:Ωsize[Ωl];
+global sN = sNList[Ωl];
+global MM = MMList[Ωl];
 
 for randNo in 1:20
-    Ωl = 6;
-    global Ω = 1:Ωsize[Ωl];
-    global sN = sNList[Ωl];
-    global MM = MMList[Ωl];
 
     for fileInd in 1:4
         filePath = pathList[fileInd];
-        resultDict[fileInd] = Dict();
+        disData = disDataRaw[fileInd]["data"][randNo];
         pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,1);
         global pData = pData;
-        disDataRaw = load(pathList[fileInd]*"solData_$(Ωsize[Ωl]).jld");
-        disData = disDataRaw["data"][randNo];
 
         global allSucc = findSuccAll(pData);
         global distanceDict = Dict();

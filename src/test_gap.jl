@@ -74,7 +74,7 @@ for fileInd in 1:4
         pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl],20000/Ωsize[Ωl]);
         dDict[fileInd][Ωsize[Ωl]] = [];
         n = 1;
-        while n <= 100
+        while n <= 20000/Ωsize[Ωl]
             # try
             global disData = disDataSet[n];
 
