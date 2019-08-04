@@ -37,9 +37,8 @@ for fileInd in 1:4
     dDict[fileInd] = Dict();
     ubDict[fileInd] = Dict();
     pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,1);
-    global pData = pData;
-    global allSucc = findSuccAll(pData);
-    global distanceDict = Dict();
+    allSucc = findSuccAll(pData);
+    distanceDict = Dict();
     for i in pData.II
         for j in allSucc[i]
             distanceDict[i,j] = detCal(pData,i,j);
@@ -47,9 +46,9 @@ for fileInd in 1:4
     end
 
     for Ωl in 1:length(Ωsize)
-        global Ω = 1:Ωsize[Ωl];
-        global sN = sNList[Ωl];
-        global MM = MMList[Ωl];
+        Ω = 1:Ωsize[Ωl];
+        sN = sNList[Ωl];
+        MM = MMList[Ωl];
         disData1 = data5000Raw["data"][1];
         Ω1 = 1:length(disData1);
         # generate a candidate solution by SAA
@@ -76,7 +75,7 @@ for fileInd in 1:4
         n = 1;
         while n <= 20000/Ωsize[Ωl]
             # try
-            global disData = disDataSet[n];
+            disData = disDataSet[n];
 
             # our decomposition method
             if Ωl <= 4
@@ -84,8 +83,6 @@ for fileInd in 1:4
                 lbFull = getobjectivebound(mFull);
                 gapdecomp = (ubFull - lbFull)/ubFull;
             else
-                global sN = sNList[Ωl];
-                global MM = MMList[Ωl];
                 tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,ϵ,5,10800);
                 gapdecomp = (ubFull - lbFull)/ubFull;
             end
