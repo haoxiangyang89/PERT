@@ -73,7 +73,7 @@ for fileInd in 1:4
         pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl],20000/Ωsize[Ωl]);
         dDict[fileInd][Ωsize[Ωl]] = [];
         n = 1;
-        while n <= 20000/Ωsize[Ωl]
+        while n <= 20
             # try
             disData = disDataSet[n];
 
@@ -100,4 +100,4 @@ for fileInd in 1:4
 end
 
 ###############
-mean([dDict[fileInd][Ωsize[Ωl]][i][5] - dDict[fileInd][Ωsize[Ωl]][i][3] for i in 1:20])/(mean(ubDict[fileInd][Ωsize[Ωl]][3]))
+mean([datagap["lbDict"][fileInd][Ωsize[Ωl]][i][5] - datagap["lbDict"][fileInd][Ωsize[Ωl]][i][3] for i in 1:20])/(mean(ubDict[fileInd][Ωsize[Ωl]][3]))

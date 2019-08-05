@@ -102,3 +102,23 @@ for randNo in 1:20
         end
     end
 end
+
+#######################################
+for i in 1:4
+    for j in 1:20
+        if j in keys(dataalt1["data"][i])
+            dataalt[i][j] = dataalt1["data"][i][j];
+        elseif j in keys(dataalt2["data"][i])
+            dataalt[i][j] = dataalt2["data"][i][j];
+        elseif j in keys(dataalt3["data"][i])
+            dataalt[i][j] = dataalt3["data"][i][j];
+        elseif j in keys(dataalt4["data"][i])
+            dataalt[i][j] = dataalt4["data"][i][j];
+        elseif j in keys(dataalt5["data"][i])
+            dataalt[i][j] = dataalt5["data"][i][j];
+        end
+    end
+end
+
+
+[dataalt[fileInd][i][1][5] for i in 1:20]
