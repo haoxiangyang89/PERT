@@ -58,6 +58,8 @@ for fileInd in 1:4
     outputData[fileInd] = Dict();
 
     for Ωl in 1:length(Ωsize)
+        pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl]);
+
         tCanBest = bestSol[fileInd][Ωsize[Ωl]][1];
         xCanBest = bestSol[fileInd][Ωsize[Ωl]][2];
         # obtain U5000
@@ -75,7 +77,7 @@ for fileInd in 1:4
         gapub = gapmean + 1.729*gapsigma/sqrt(20);
         ubmean = mean(ubList);
         gapratio = gapub/ubmean*100;
-        outputData[fileInd][Ωsize[Ωl]] = [gapmean,gapub,gapratio];
+        outputData[fileInd][Ωsize[Ωl]] = [gapmean,gapub,gapratio,gapsigma,ubList];
     end
 end
 save("test_gap_out.jld","data",outputData);

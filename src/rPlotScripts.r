@@ -127,10 +127,10 @@ for (j in 1:4){
 }
 
 outString <- "/Users/haoxiangyang/Desktop/Git/PERT/Writeup/graphBudgets.png"
-png(file = outString, width= 20,height=12,units = 'in',res = 300);
+png(file = outString, width= 22,height=14,units = 'in',res = 300);
 par(mfrow=c(2,2));
 for (j in 1:4){
-  par(mar = c(5,4,2,2));
+  par(mar = c(5,5,2.5,2.5));
   ubmeanS <- c();
   ubuS <- c();
   ublS <- c();
