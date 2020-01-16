@@ -5,7 +5,7 @@ include("header.jl");
 
 # initiate the data
 filePath = "/Users/haoxiangyang/Desktop/PERT_tests/current/11";
-hMax = 10000;
+hMax = 100000;
 Ωsize = 1;
 pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize,hMax);
 nStage = 3;
@@ -34,7 +34,7 @@ model = SDDP.LinearPolicyGraph(
         create_first_stage(subproblem, pData)
     else
         # create later stages
-        create_n_stage(subproblem, stage, pData, disData[stage],10000)
+        create_n_stage(subproblem, stage, pData, disData[stage], 100000)
     end
 end
 
