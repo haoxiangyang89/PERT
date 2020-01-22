@@ -1,11 +1,4 @@
 # extensive formulation of the multi-disruption PERT problem
-global mExt = Model(with_optimizer(Gurobi.Optimizer));
-global Ω = 1:3;
-global HList = [10,40,70];
-disData,Ωlocal = autoUGen(nameH, Hparams, nameD, dparams, 3, 1);
-global dList = [disData[ω].d for ω in Ω];
-global prList = [1/3, 1/3, 1/3];
-
 function extForm(currenth, inheritData, pData, H, d, prDis, td, ωd, M = 100000, TD = 5)
     # extensive formulation could not have variable/constraint names
     # inheritData: t, x

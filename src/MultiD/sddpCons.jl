@@ -7,15 +7,36 @@ include("header.jl");
 filePath = "/Users/haoxiangyang/Desktop/PERT_tests/current/11";
 hMax = 100000;
 Ωsize = 1;
-pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize,hMax);
 nStage = 3;
+
+pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize,hMax);
+include("extForm.jl");
+
+disDataOri,Ωlocal = autoUGen(nameH, Hparams, nameD, dparams, 3, 1);
+save("disDataTest.jld","disData",disDataOri);
+disDataOriRaw = load("disDataTest.jld");
+disDataOri = disDataOriRaw["disData"];
+global HList = [10,40,70];
+global dList = [disDataOri[ω].d for ω in Ω];
+global prList = [1/3, 1/3, 1/3];
+
 integrality_handler = SDDP.ContinuousRelaxation();
 # integrality_handler = SDDP.SDDiP();
 # disData is a dictionary, keys are the stages
 disData = Dict();
-Ωn = 10;
+Ωn = 3;
 for n in 1:nStage
-    disData[n],Ω = autoUGen(nameH, Hparams, nameD, dparams, Ωn, 1);
+    #disData[n],Ω = autoUGen(nameH, Hparams, nameD, dparams, Ωn, 1);
+    disData[n] = [];
+    for ω in 1:Ωn
+        dparams = Dict();
+        for i in pData.II
+            if i != 0
+                dparams[i] = disDataOri[ω].d[i];
+            end
+        end
+        push!(disData[n],disInfo(HList[ω],dparams,prList[ω]))
+    end
 end
 
 model = SDDP.LinearPolicyGraph(
@@ -39,3 +60,6 @@ model = SDDP.LinearPolicyGraph(
 end
 
 SDDP.train(model; iteration_limit = 30);
+global mExt = Model(with_optimizer(Gurobi.Optimizer));
+mExt = extForm(0,[[],[]],pData,0,Dict(),1,0,0);
+optimize!(mExt);

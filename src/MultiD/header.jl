@@ -1,5 +1,5 @@
 # test sbb
-#include("piecewiseU.jl");
+include("piecewiseU.jl");
 include("def.jl");
 include("readIn.jl");
 include("createModels.jl");
@@ -10,7 +10,6 @@ include("createModels.jl");
 # include("iSolve.jl");
 # include("branchFunc.jl");
 # include("detForm.jl");
-include("extForm.jl");
 # include("expModel.jl");
 # include("ubCalFunc.jl");
 # include("tighten.jl");
