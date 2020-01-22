@@ -10,7 +10,7 @@ include("createModels.jl");
 # include("iSolve.jl");
 # include("branchFunc.jl");
 # include("detForm.jl");
-# include("extForm.jl");
+include("extForm.jl");
 # include("expModel.jl");
 # include("ubCalFunc.jl");
 # include("tighten.jl");

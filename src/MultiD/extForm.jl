@@ -1,5 +1,5 @@
 # extensive formulation of the multi-disruption PERT problem
-global mExt = Model(solver = GurobiSolver());
+global mExt = Model(with_optimizer(Gurobi.Optimizer));
 global Ω = 1:3;
 global HList = [10,40,70];
 disData,Ωlocal = autoUGen(nameH, Hparams, nameD, dparams, 3, 1);
@@ -17,9 +17,9 @@ function extForm(currenth, inheritData, pData, H, d, prDis, td, ωd, M = 100000,
         tDict = Dict();
         xDict = Dict();
         for i in pData.II
-            tDict[i] = @variable(mExt, lowerbound = 0, basename="t_$(td)_$(ωd)_$(i)");
+            tDict[i] = @variable(mExt, lower_bound = 0, base_name = "t_$(td)_$(ωd)_$(i)");
             for j in pData.Ji[i]
-                xDict[i,j] = @variable(mExt, lowerbound = 0, upperbound = 1, basename = "x_$(td)_$(ωd)_$(i)_$(j)");
+                xDict[i,j] = @variable(mExt, lower_bound = 0, upper_bound = 1, base_name = "x_$(td)_$(ωd)_$(i)_$(j)");
             end
         end
         @constraint(mExt, sum(sum(pData.b[i][j]*xDict[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
@@ -31,18 +31,19 @@ function extForm(currenth, inheritData, pData, H, d, prDis, td, ωd, M = 100000,
         end
         @objective(mExt, Min, pData.p0*tDict[0]);
         prDis = 1 - pData.p0;
+        h = currenth;
     else
         tDict = Dict();
         xDict = Dict();
         GDict = Dict();
         sDict = Dict();
         for i in pData.II
-            tDict[i] = @variable(mExt, lowerbound = 0, basename="t_$(td)_$(ωd)_$(i)");
+            tDict[i] = @variable(mExt, lower_bound = 0, base_name = "t_$(td)_$(ωd)_$(i)");
             for j in pData.Ji[i]
-                xDict[i,j] = @variable(mExt, lowerbound = 0, upperbound = 1, basename = "x_$(td)_$(ωd)_$(i)_$(j)");
-                sDict[i,j] = @variable(mExt, lowerbound = 0, upperbound = 1, basename = "s_$(td)_$(ωd)_$(i)_$(j)");
+                xDict[i,j] = @variable(mExt, lower_bound = 0, upper_bound = 1, base_name = "x_$(td)_$(ωd)_$(i)_$(j)");
+                sDict[i,j] = @variable(mExt, lower_bound = 0, upper_bound = 1, base_name = "s_$(td)_$(ωd)_$(i)_$(j)");
             end
-            GDict[i] = @variable(mExt, Bin, basename = "G_$(td)_$(ωd)_$(i)");
+            GDict[i] = @variable(mExt, base_name = "G_$(td)_$(ωd)_$(i)", binary=true);
         end
         h = currenth + H;
 
@@ -79,8 +80,8 @@ function extForm(currenth, inheritData, pData, H, d, prDis, td, ωd, M = 100000,
         end
 
         # update the objective
-        objExpr = getobjective(mExt);
-        objExpr += probhat*tDict[0];
+        objExpr = objective_function(mExt);
+        objExpr += prDis*tDict[0];
         @objective(mExt, Min, objExpr);
     end
 
