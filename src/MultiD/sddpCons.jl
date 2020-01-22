@@ -4,7 +4,7 @@ using Distributions,HDF5,JLD,DelimitedFiles;
 include("header.jl");
 
 # initiate the data
-filePath = "/Users/haoxiangyang/Desktop/PERT_tests/current/11";
+filePath = "/Users/haoxiangyan/Desktop/PERT_tests/current/14";
 hMax = 100000;
 Ωsize = 1;
 nStage = 3;
@@ -16,12 +16,11 @@ disDataOri,Ωlocal = autoUGen(nameH, Hparams, nameD, dparams, 3, 1);
 save("disDataTest.jld","disData",disDataOri);
 disDataOriRaw = load("disDataTest.jld");
 disDataOri = disDataOriRaw["disData"];
+global Ω = 1:3;
 global HList = [10,40,70];
 global dList = [disDataOri[ω].d for ω in Ω];
 global prList = [1/3, 1/3, 1/3];
 
-integrality_handler = SDDP.ContinuousRelaxation();
-# integrality_handler = SDDP.SDDiP();
 # disData is a dictionary, keys are the stages
 disData = Dict();
 Ωn = 3;
@@ -39,6 +38,8 @@ for n in 1:nStage
     end
 end
 
+integrality_handler = SDDP.ContinuousRelaxation();
+# integrality_handler = SDDP.SDDiP();
 model = SDDP.LinearPolicyGraph(
         stages = nStage,
         sense = :Min,
@@ -59,7 +60,15 @@ model = SDDP.LinearPolicyGraph(
     end
 end
 
-SDDP.train(model; iteration_limit = 30);
+SDDP.train(model; iteration_limit = 300);
+lpLb = SDDP.calculate_bound(model);
+
 global mExt = Model(with_optimizer(Gurobi.Optimizer));
 mExt = extForm(0,[[],[]],pData,0,Dict(),1,0,0);
 optimize!(mExt);
+trueObj = objective_value(mExt);
+
+global mExt1 = Model(with_optimizer(Gurobi.Optimizer));
+mExt1 = extForm_lin(0,[[],[]],pData,0,Dict(),1,0,0);
+optimize!(mExt1);
+lpObj = objective_value(mExt1);
