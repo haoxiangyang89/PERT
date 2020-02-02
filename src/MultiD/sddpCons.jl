@@ -4,7 +4,7 @@ using Distributions,HDF5,JLD,DelimitedFiles;
 include("header.jl");
 
 # initiate the data
-filePath = "/Users/haoxiangyan/Desktop/PERT_tests/current/14";
+filePath = "/Users/haoxiangyang/Desktop/PERT_tests/current/11";
 hMax = 100000;
 Ωsize = 1;
 nStage = 3;
@@ -60,9 +60,7 @@ model = SDDP.LinearPolicyGraph(
     end
 end
 
-SDDP.train(model; iteration_limit = 300);
-lpLb = SDDP.calculate_bound(model);
-
+SDDP.train(model; iteration_limit = 30);
 global mExt = Model(with_optimizer(Gurobi.Optimizer));
 mExt = extForm(0,[[],[]],pData,0,Dict(),1,0,0);
 optimize!(mExt);
