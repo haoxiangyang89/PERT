@@ -60,12 +60,26 @@ model = SDDP.LinearPolicyGraph(
     end
 end
 
-SDDP.train(model; iteration_limit = 30);
+SDDP.train(model; iteration_limit = 300);
+lpLb = SDDP.calculate_bound(model);
+
+# simulate the solution by SDDP
+simulations = SDDP.simulate(
+    model,
+    1,
+    custom_recorders = Dict{Symbol, Function}(
+        :price => (sp) -> JuMP.dual(sp[:demand_constraint])
+    )
+);
+
+# ============================================================================
+global branchNo = 0;
 global mExt = Model(with_optimizer(Gurobi.Optimizer));
 mExt = extForm(0,[[],[]],pData,0,Dict(),1,0,0);
 optimize!(mExt);
 trueObj = objective_value(mExt);
 
+global branchNo = 0;
 global mExt1 = Model(with_optimizer(Gurobi.Optimizer));
 mExt1 = extForm_lin(0,[[],[]],pData,0,Dict(),1,0,0);
 optimize!(mExt1);
