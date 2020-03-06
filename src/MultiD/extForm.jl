@@ -1,5 +1,4 @@
 # extensive formulation of the multi-disruption PERT problem
-global branchNo = 0;
 function extForm(currenth, inheritData, pData, H, d, prDis, td, ωd, M = 100000, TD = 3)
     # extensive formulation could not have variable/constraint names
     # inheritData: t, x
