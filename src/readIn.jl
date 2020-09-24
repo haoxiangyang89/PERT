@@ -158,10 +158,10 @@ function autoUGen(nameH, Hparams, nameD, dparams, Ωn, totalProb)
     end
 
     for ω in Ω
-        H = round(rand(distrH),4);
+        H = round(rand(distrH),digits = 4);
         d = Dict();
         for i in keys(dparams)
-            d[i] = round(rand(distrD[i]),4);
+            d[i] = round(rand(distrD[i]),digits = 4);
         end
         pω = totalProb/Ωn;
         disData[ω] = disInfo(H,d,pω);
@@ -183,12 +183,12 @@ function autoUGenStrata(nameH, Hparams, nameD, dparams, Ωt, Ωd, totalProb)
     ω = 0;
     Ω = 1:(Ωt*Ωd);
     for ωt in 1:Ωt
-        H = round(rand(distrH),4);
+        H = round(rand(distrH),digits = 4);
         for ωd in 1:Ωd
             ω += 1;
             d = Dict();
             for i in keys(dparams)
-                d[i] = round(rand(distrD[i]),4);
+                d[i] = round(rand(distrD[i]),digits = 4);
             end
             pω = totalProb/(Ωt*Ωd);
             disData[ω] = disInfo(H,d,pω);
@@ -214,12 +214,12 @@ function autoUGenStrata2(nameH, Hparams, nameD, dparams, Ωt, Ωd, totalProb)
     for ωd in 1:Ωd
         d = Dict();
         for i in keys(dparams)
-            d[i] = round(rand(distrD[i]),4);
+            d[i] = round(rand(distrD[i]),digits = 4);
         end
         dDict[ωd] = d;
     end
     for ωt in 1:Ωt
-        H = round(rand(distrH),4);
+        H = round(rand(distrH),digits = 4);
         for ωd in 1:Ωd
             ω += 1;
             pω = totalProb/(Ωt*Ωd);
