@@ -1,3 +1,4 @@
+using Distributed;
 addprocs(30);
 global noThreads = 30;
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;

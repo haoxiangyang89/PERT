@@ -1,9 +1,10 @@
 # script to test the alternative algorithms of decomposition
+using Distributed;
 addprocs(30);
 global noThreads = 30;
-@everywhere using JuMP,Gurobi,CPLEX,Ipopt;
+@everywhere using JuMP,Gurobi,Ipopt;
 @everywhere using Distributions,HDF5,JLD;
-@everywhere const GUROBI_ENV = Gurobi.Env()
+@everywhere const GUROBI_ENV = Gurobi.Env();
 
 # test sbb
 @everywhere include("header.jl");

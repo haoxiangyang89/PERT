@@ -1,5 +1,5 @@
 # test the gap, generate the lower bound then
-
+using Distributed;
 addprocs(30);
 global noThreads = 30;
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;

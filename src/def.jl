@@ -2,7 +2,7 @@
 # define the customized variable format
 
 # define the project information
-type pInfo
+struct pInfo
   II :: Array{Any,1}
   Ji :: Dict{Any,Any}
   D :: Dict{Any,Any}
@@ -17,20 +17,20 @@ type pInfo
 end
 
 # define the disruption information
-type disInfo
+struct disInfo
   H :: Float64
   d :: Dict{Any,Any}
   prDis :: Float64
 end
 
-# define the node type within the B&C tree
-type nodeType
+# define the node struct within the B&C tree
+struct nodeType
   lbCost :: Float64
   mp :: JuMP.Model
   brInfo :: Array{Any,2}
 end
 
-type nodeTypeP
+struct nodeTypeP
   lbCost :: Float64
   brInfo :: Array{Any,2}
   tmaxD :: Dict{Any,Any}
@@ -39,8 +39,8 @@ type nodeTypeP
   state :: Bool
 end
 
-# define the cut type for B&C
-type cutType
+# define the cut struct for B&C
+struct cutType
   # coefficients for t
   π :: Dict{Any,Any}
   # coefficients for t
@@ -50,12 +50,12 @@ type cutType
 end
 
 # define the partition type
-type partType
+struct partType
   startH :: Int64
   endH :: Int64
 end
 
-type treeNode
+struct treeNode
   nodeID :: Int64
   objV :: Float64
   sol :: Array{Any,1}

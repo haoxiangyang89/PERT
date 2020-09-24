@@ -1,4 +1,5 @@
 # test whether the box formed by solve small sample problem will contain the optimal solution
+using Distributed;
 addprocs(3);
 global noThreads = 4;
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;

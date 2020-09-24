@@ -1,4 +1,5 @@
 # test the extensive formulation with a preset lower bound
+using Distributed;
 addprocs(30);
 global noThreads = 30;
 @everywhere using JuMP,Gurobi,CPLEX,Ipopt;

@@ -1,4 +1,5 @@
 # test the discrete distribution with everything up to change, compare the results
+using Distributed;
 @everywhere using JuMP,Gurobi,CPLEX,Cbc,Clp;
 @everywhere using Distributions,HDF5,JLD;
 

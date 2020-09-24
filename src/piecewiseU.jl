@@ -1,4 +1,4 @@
-import Base.Random.rand,Base.mean
+import Random.rand,Statistics.mean
 
 struct piecewiseUniformSampler <: Sampleable{Univariate,Continuous}
     endPoints::Vector{Float64}
