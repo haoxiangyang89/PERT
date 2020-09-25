@@ -18,7 +18,6 @@ include("partition_LR.jl");
 include("part_tight.jl");
 include("partitionSolve.jl");
 include("convexify.jl");
-include("cutSelection.jl");
 include("instanceMaker.jl");
 
 include("recover_share.jl");

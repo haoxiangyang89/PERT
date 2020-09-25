@@ -256,7 +256,7 @@ function findSuccAll(pData)
         while succList != []
             currentSucc = succList[1];
             push!(succAll,currentSucc);
-            shift!(succList);
+            popfirst!(succList);
             for j in pData.Succ[currentSucc]
                 if !((j in succAll) | (j in succList))
                     push!(succList,j);
