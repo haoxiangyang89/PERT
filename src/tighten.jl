@@ -541,7 +541,7 @@ function longestPath(pData,pInfo = Dict(),outLink = false)
             end
         end
         push!(finishedList,maxInd);
-        deleteat!(activeList,findfirst(activeList,maxInd));
+        deleteat!(activeList,findfirst(x -> x==maxInd, activeList));
     end
     if outLink
         return lDict,linkDict;
