@@ -454,8 +454,8 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     divSet = Dict();
     divDet = Dict();
     for i in pData.II
-        set1 = [h for h in HΩ if brInfo[findfirst(pData.II,i),h] == 1];
-        setn1 = [h for h in HΩ if brInfo[findfirst(pData.II,i),h] == -1];
+        set1 = [h for h in HΩ if brInfo[findfirst(x -> x==i, pData.II),h] == 1];
+        setn1 = [h for h in HΩ if brInfo[findfirst(x -> x==i, pData.II),h] == -1];
 
         if set1 != []
             set1t = partType(0,maximum(set1));

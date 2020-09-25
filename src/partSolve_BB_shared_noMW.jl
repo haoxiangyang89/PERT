@@ -103,9 +103,9 @@ function solveMP_para_Share_noMW(data)
                 for i in pData.II
                     vSet[ωi] -= dataList[ω][1][i]*that[i];
                     if abs(dataList[ω][1][i]) >= 1e-7
-                        πSet[findfirst(pData.II,i),ωi] = dataList[ω][1][i];
+                        πSet[findfirst(x -> x==i, pData.II),ωi] = dataList[ω][1][i];
                     else
-                        πSet[findfirst(pData.II,i),ωi] = 0;
+                        πSet[findfirst(x -> x==i, pData.II),ωi] = 0;
                         if dataList[ω][1][i] < 0
                             vSet[ωi] += dataList[ω][1][i];
                         end
@@ -133,7 +133,7 @@ function solveMP_para_Share_noMW(data)
                         end
                     end
                 end
-                @lazyconstraint(cb, θ[ω] >= vSet[ωi] + sum(πSet[findfirst(pData.II,i),ωi]*t[i] for i in pData.II) +
+                @lazyconstraint(cb, θ[ω] >= vSet[ωi] + sum(πSet[findfirst(x -> x==i, pData.II),ωi]*t[i] for i in pData.II) +
                     sum(sum(λSet[findfirst(IJPair,(i,j)),ωi]*x[i,j] for j in pData.Ji[i]) for i in pData.II) +
                     sum(sum(γSet[findfirst(IPPair,(i,par)),ωi]*y[i,par] for par in 1:length(divSet[i])) for i in pData.II));
             end
@@ -200,7 +200,7 @@ function solveMP_para_Share_noMW(data)
                 πk = cutSet[nc][npoint][2][:,ωi];
                 λk = cutSet[nc][npoint][3][:,ωi];
                 γk = cutSet[nc][npoint][4][:,ωi];
-                @constraint(mp, θ[ω] >= vk + sum(πk[findfirst(pData.II,i)]*mp[:t][i] +
+                @constraint(mp, θ[ω] >= vk + sum(πk[findfirst(x -> x==i, pData.II)]*mp[:t][i] +
                     sum(λk[findfirst(IJPair,(i,j))]*mp[:x][i,j] for j in pData.Ji[i]) +
                     sum(γk[findfirst(IPPairPrev,(i,par))]*(sum(mp[:y][i,parNew] for parNew in revDict[i][par]))
                     for par in 1:length(divSetPrev[i])) for i in pData.II));
@@ -609,8 +609,8 @@ function partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,no
     divSet = Dict();
     divDet = Dict();
     for i in pData.II
-        set1 = [h for h in HΩ if brInfo[findfirst(pData.II,i),h] == 1];
-        setn1 = [h for h in HΩ if brInfo[findfirst(pData.II,i),h] == -1];
+        set1 = [h for h in HΩ if brInfo[findfirst(x -> x==i, pData.II),h] == 1];
+        setn1 = [h for h in HΩ if brInfo[findfirst(x -> x==i, pData.II),h] == -1];
 
         if set1 != []
             set1t = partType(0,maximum(set1));
