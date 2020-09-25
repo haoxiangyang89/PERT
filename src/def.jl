@@ -17,7 +17,7 @@ struct pInfo
 end
 
 # define the disruption information
-struct disInfo
+mutable struct disInfo
   H :: Float64
   d :: Dict{Any,Any}
   prDis :: Float64
