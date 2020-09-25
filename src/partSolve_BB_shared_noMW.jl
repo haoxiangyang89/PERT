@@ -124,9 +124,9 @@ function solveMP_para_Share_noMW(data)
                     for par in 1:length(divSet[i])
                         vSet[ωi] -= dataList[ω][3][i,par]*yhat[i,par];
                         if abs(dataList[ω][3][i,par]) >= 1e-5
-                            γSet[findfirst(IPPair,(i,par)),ωi] = dataList[ω][3][i,par];
+                            γSet[findfirst(x -> x == (i,par), IPPair),ωi] = dataList[ω][3][i,par];
                         else
-                            γSet[findfirst(IPPair,(i,par)),ωi] = 0;
+                            γSet[findfirst(x -> x == (i,par), IPPair),ωi] = 0;
                             if dataList[ω][3][i,par] < 0
                                 vSet[ωi] += dataList[ω][3][i,par];
                             end
@@ -135,7 +135,7 @@ function solveMP_para_Share_noMW(data)
                 end
                 @lazyconstraint(cb, θ[ω] >= vSet[ωi] + sum(πSet[findfirst(x -> x==i, pData.II),ωi]*t[i] for i in pData.II) +
                     sum(sum(λSet[findfirst(x -> x == (i,j), IJPair),ωi]*x[i,j] for j in pData.Ji[i]) for i in pData.II) +
-                    sum(sum(γSet[findfirst(IPPair,(i,par)),ωi]*y[i,par] for par in 1:length(divSet[i])) for i in pData.II));
+                    sum(sum(γSet[findfirst(x -> x == (i,par), IPPair),ωi]*y[i,par] for par in 1:length(divSet[i])) for i in pData.II));
             end
             newCuts = [cutScen,πSet,λSet,γSet,vSet];
             push!(cutSetNew,newCuts);
@@ -202,7 +202,7 @@ function solveMP_para_Share_noMW(data)
                 γk = cutSet[nc][npoint][4][:,ωi];
                 @constraint(mp, θ[ω] >= vk + sum(πk[findfirst(x -> x==i, pData.II)]*mp[:t][i] +
                     sum(λk[findfirst(x -> x == (i,j), IJPair)]*mp[:x][i,j] for j in pData.Ji[i]) +
-                    sum(γk[findfirst(IPPairPrev,(i,par))]*(sum(mp[:y][i,parNew] for parNew in revDict[i][par]))
+                    sum(γk[findfirst(x -> x == (i,par), IPPairPrev)]*(sum(mp[:y][i,parNew] for parNew in revDict[i][par]))
                     for par in 1:length(divSetPrev[i])) for i in pData.II));
             end
         end
@@ -536,7 +536,7 @@ function partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,no
     iNo = 0;
     for i in pData.II
         for j in allSucc[i]
-            iNo += 1;
+            global iNo += 1;
             distanceShare[iNo,1] = i;
             distanceShare[iNo,2] = j;
             distanceShare[iNo,3] = detCal(pData,i,j);
