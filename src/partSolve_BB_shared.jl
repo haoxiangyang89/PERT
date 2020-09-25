@@ -1,12 +1,12 @@
 # B&B process with both MW and UB
 
 function subPara1(pData,disData,Ω,tbest,xbest,ybest,divSet,H,lDict,wp = CachingPool(workers()))
-    θList = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict),Ω);
+    θList = pmap(ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict),wp,Ω);
     return θList;
 end
 
 function subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp = CachingPool(workers()))
-    dataList = pmap(wp,ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), Ω);
+    dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), wp, Ω);
     return dataList;
 end
 
@@ -375,7 +375,7 @@ function solveMP_para_Share(data)
                 yCurrent[i,par] = getvalue(mp[:y][i,par]);
             end
         end
-        subInfo = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),Ω);
+        subInfo = pmap(ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),wp,Ω);
         GCurrent = [subInfo[ω][2] for ω in Ω];
         θCurrent = [subInfo[ω][1] for ω in Ω];
         ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
@@ -452,7 +452,7 @@ function solveMP_para_Share(data)
                     yCurrent[i,par] = getvalue(mp[:y][i,par]);
                 end
             end
-            subInfo = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),Ω);
+            subInfo = pmap(ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),wp,Ω);
             GCurrent = [subInfo[ω][2] for ω in Ω];
             θCurrent = [subInfo[ω][1] for ω in Ω];
             ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);

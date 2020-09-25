@@ -1,7 +1,7 @@
 # generate regular Benders cuts
 
 function subPara1_noMW(pData,disData,Ω,tbest,xbest,ybest,divSet,H,lDict,wp = CachingPool(workers()))
-    θList = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict,1),Ω);
+    θList = pmap(ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict,1),wp,Ω);
     return θList;
 end
 
@@ -238,7 +238,7 @@ function solveMP_para_Share_noMW(data)
                 yCurrent[i,par] = getvalue(mp[:y][i,par]);
             end
         end
-        subInfo = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),Ω);
+        subInfo = pmap(ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),wp,Ω);
         GCurrent = [subInfo[ω][2] for ω in Ω];
         θCurrent = [subInfo[ω][1] for ω in Ω];
         ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
@@ -303,7 +303,7 @@ function solveMP_para_Share_noMW(data)
                     yCurrent[i,par] = getvalue(mp[:y][i,par]);
                 end
             end
-            subInfo = pmap(wp,ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),Ω);
+            subInfo = pmap(ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),wp,Ω);
             GCurrent = [subInfo[ω][2] for ω in Ω];
             θCurrent = [subInfo[ω][1] for ω in Ω];
             ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
