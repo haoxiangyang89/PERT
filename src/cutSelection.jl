@@ -78,12 +78,12 @@ function examineCuts_count_3(pData,disData,Ω,cutSet,divSet,that,xhat,θhat,yhat
             ω = cutSet[nc][1][l];
             cutV = cutSet[nc][5][l];
             for i in pData.II
-                cutV += cutSet[nc][2][findfirst(pData.II,i),l]*that[i];
+                cutV += cutSet[nc][2][findfirst(x -> x == i, pData.II),l]*that[i];
                 for j in pData.Ji[i]
-                    cutV += cutSet[nc][3][findfirst(IJPair,(i,j)),l]*xhat[i,j];
+                    cutV += cutSet[nc][3][findfirst(x -> x == (i,j), IJPair),l]*xhat[i,j];
                 end
                 for par in 1:length(divSet[i])
-                    cutV += cutSet[nc][4][findfirst(IPPair,(i,par)),l]*yhat[i,par];
+                    cutV += cutSet[nc][4][findfirst(x -> x == (i,par), IPPair),l]*yhat[i,par];
                 end
             end
             if abs(θhat[ω] - cutV)/θhat[ω] <= 1e-4
