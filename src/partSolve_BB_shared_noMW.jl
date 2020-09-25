@@ -81,7 +81,7 @@ function solveMP_para_Share_noMW(data)
                     push!(ErrorωList,ω);
                     errorInd = true;
                 else
-                    if (dataList[ω][4] - θhat[findfirst(Ω,ω)] > 1e-4*θhat[findfirst(Ω,ω)])
+                    if (dataList[ω][4] - θhat[findfirst(x -> x==ω,Ω)] > 1e-4*θhat[findfirst(x -> x==ω,Ω)])
                         push!(cutScen,ω);
                     end
                 end
@@ -113,9 +113,9 @@ function solveMP_para_Share_noMW(data)
                     for j in pData.Ji[i]
                         vSet[ωi] -= dataList[ω][2][i,j]*xhat[i,j];
                         if abs(dataList[ω][2][i,j]) >= 1e-5
-                            λSet[findfirst(IJPair,(i,j)),ωi] = dataList[ω][2][i,j];
+                            λSet[findfirst(x -> x == (i,j), IJPair),ωi] = dataList[ω][2][i,j];
                         else
-                            λSet[findfirst(IJPair,(i,j)),ωi] = 0;
+                            λSet[findfirst(x -> x == (i,j), IJPair),ωi] = 0;
                             if dataList[ω][2][i,j] < 0
                                 vSet[ωi] += dataList[ω][2][i,j];
                             end
@@ -134,7 +134,7 @@ function solveMP_para_Share_noMW(data)
                     end
                 end
                 @lazyconstraint(cb, θ[ω] >= vSet[ωi] + sum(πSet[findfirst(x -> x==i, pData.II),ωi]*t[i] for i in pData.II) +
-                    sum(sum(λSet[findfirst(IJPair,(i,j)),ωi]*x[i,j] for j in pData.Ji[i]) for i in pData.II) +
+                    sum(sum(λSet[findfirst(x -> x == (i,j), IJPair),ωi]*x[i,j] for j in pData.Ji[i]) for i in pData.II) +
                     sum(sum(γSet[findfirst(IPPair,(i,par)),ωi]*y[i,par] for par in 1:length(divSet[i])) for i in pData.II));
             end
             newCuts = [cutScen,πSet,λSet,γSet,vSet];
@@ -201,7 +201,7 @@ function solveMP_para_Share_noMW(data)
                 λk = cutSet[nc][npoint][3][:,ωi];
                 γk = cutSet[nc][npoint][4][:,ωi];
                 @constraint(mp, θ[ω] >= vk + sum(πk[findfirst(x -> x==i, pData.II)]*mp[:t][i] +
-                    sum(λk[findfirst(IJPair,(i,j))]*mp[:x][i,j] for j in pData.Ji[i]) +
+                    sum(λk[findfirst(x -> x == (i,j), IJPair)]*mp[:x][i,j] for j in pData.Ji[i]) +
                     sum(γk[findfirst(IPPairPrev,(i,par))]*(sum(mp[:y][i,parNew] for parNew in revDict[i][par]))
                     for par in 1:length(divSetPrev[i])) for i in pData.II));
             end
