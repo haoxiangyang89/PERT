@@ -2,8 +2,8 @@
 using Distributed;
 addprocs(3);
 global noThreads = 4;
-@everywhere using JuMP,Gurobi,CPLEX,Ipopt;
-@everywhere using Distributions,HDF5,JLD;
+@everywhere using JuMP,Gurobi,Ipopt;
+@everywhere using Distributions,HDF5,JLD,DelimitedFiles,Statistics,SharedArrays;
 # test sbb
 @everywhere include("header.jl");
 
