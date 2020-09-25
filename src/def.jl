@@ -24,13 +24,13 @@ mutable struct disInfo
 end
 
 # define the node struct within the B&C tree
-struct nodeType
+mutable struct nodeType
   lbCost :: Float64
   mp :: JuMP.Model
   brInfo :: Array{Any,2}
 end
 
-struct nodeTypeP
+mutable struct nodeTypeP
   lbCost :: Float64
   brInfo :: Array{Any,2}
   tmaxD :: Dict{Any,Any}
@@ -40,7 +40,7 @@ struct nodeTypeP
 end
 
 # define the cut struct for B&C
-struct cutType
+mutable struct cutType
   # coefficients for t
   π :: Dict{Any,Any}
   # coefficients for t
@@ -50,12 +50,12 @@ struct cutType
 end
 
 # define the partition type
-struct partType
+mutable struct partType
   startH :: Int64
   endH :: Int64
 end
 
-struct treeNode
+mutable struct treeNode
   nodeID :: Int64
   objV :: Float64
   sol :: Array{Any,1}
