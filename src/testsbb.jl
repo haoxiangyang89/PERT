@@ -91,7 +91,7 @@ tbest = Dict();
 ubCost = ubdet;
 lbCost = -Inf;
 
-tic();
+tempTimer = time();
 while (ubCost - lbCost)/ubCost > 0.01
     keepIter = true;
     tlb = Dict();
@@ -204,4 +204,4 @@ while (ubCost - lbCost)/ubCost > 0.01
     end
     divSet,divDet = splitPar(divSet,divDet,newPartition);
 end
-tClock = toc();
+tClock = time() - tempTimer;

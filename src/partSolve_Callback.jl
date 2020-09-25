@@ -392,9 +392,9 @@ while keepIter
     # addlazycallback(mp, partBenders_diag);
     #addinfocallback(mp, paraInfo, when = :MIPNode);
     #addinfocallback(mp, paraInfo1, when = :MIPSol);
-    tic();
+    tempTimer = time();
     solve(mp);
-    tIter = toc();
+    tIter = time() - tempTimer;
     push!(timeHist,tIter);
     lbCost = getobjectivevalue(mp);
     push!(lbHist,lbCost);

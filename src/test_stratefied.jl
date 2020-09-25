@@ -29,9 +29,9 @@ for fileInd in 1:length(pathList)
             global pData = pData;
             global disData = disDataSet[1];
             Ω = 1:(strataList[j]*sampleList[j]);
-            tic();
+            tempTimer = time();
             text,xext,fext,gext,mext = extForm_cheat_new(pData,disData,Ω,1e-2,999999);
-            timeext = toc();
+            timeext = time() - tempTimer;
             ubmp = mext.objVal;
             lbmp = mext.objBound;
             gapext = (mext.objVal - mext.objBound)/mext.objVal;

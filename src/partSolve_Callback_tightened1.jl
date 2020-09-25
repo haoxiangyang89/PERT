@@ -252,9 +252,9 @@ while keepIter
     mp1 = deepcopy(mp);
 
     addlazycallback(mp, partBenders);
-    tic();
+    tempTimer = time();
     solve(mp);
-    tIter = toc();
+    tIter = time() - tempTimer;
     push!(timeHist,tIter);
     lbCost = getobjectivevalue(mp);
     push!(lbHist,lbCost);

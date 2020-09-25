@@ -365,7 +365,7 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
                 end
             end
         end
-        tic();
+        tempTimer = time();
         while keepIter
             mp.solver = CplexSolver();
             solve(mp);
@@ -530,7 +530,7 @@ function partitionSolve_yLim(pData,disData,distanceDict,allSucc,ϵ = 0.01,tighte
                 mp = createMaster_Div(pData,disData,Ω,divSet,divDet,cutSet,Tmax,distanceDict,allSucc,1,yLim,0,cutyn);
             end
         end
-        tIter = toc();
+        tIter = time() - tempTimer;
 
         # need to come up with a rule to partition: gradient descent like binary search
         # check θInt vs. θhat: why the lower bound and the upper bound do not converge quickly --->

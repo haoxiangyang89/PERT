@@ -693,7 +693,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     #     end
     #
     #     noTh = div(noThreads,length(divSetList));
-    #     tic();
+    #     tempTimer = time();
     #     #mpStatus = solve(mp);
     #     # mpSolveList = asyncmap(ib -> solveMP_para(pData,disData,H,Ω,lDict,allSucc,distanceDict,
     #     #     divSetList[ib],divDetList[ib],cutSetList[ib],tcoreList,xcoreList,ycoreList,
@@ -701,7 +701,7 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,ϵ = 1e-2)
     #     mpSolveList = pmap(ib -> solveMP_para(pData,disData,H,Ω,lDict,allSucc,distanceDict,
     #         divSetList[ib],divDetList[ib],cutSetList[ib],tcoreList,xcoreList,ycoreList,
     #         ubCost,tbest,xbest,noTh),1:length(divSetList)); # some of the function is not run with full number of cores
-    #     tIter = toc();
+    #     tIter = time() - tempTimer;
     #     push!(timeHist,tIter);
     #     for ib in 1:length(divSetList)
     #         if mpSolveList[ib][6] < ubCost

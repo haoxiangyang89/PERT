@@ -574,10 +574,10 @@ function runPara_Share_noUB(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCo
                             treeList[selectNode][3] = 0;
                             cutData = cutList[treeList[selectNode][2]];
                             divData = [treeList[id][4] for id in treeList[selectNode][2]];
-                            tic();
+                            tempTimer = time();
                             mpSolveInfo = remotecall_fetch(solveMP_para_Share_noUB,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
                                 tbest,xbest,noTh,wpDict[p],nSplit,treeList[selectNode][5],cutSelOpt]);
-                            timeDict[selectNode] = toc();
+                            timeDict[selectNode] = time() - tempTimer;
                             # update the cutList with the added cuts and two new nodes
                             # update the cutSet
                             # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
@@ -780,10 +780,10 @@ function partSolve_BB_para_noUB(pData,disData,Ω,noThreads,batchNo,noTh,noPa,ϵ 
     tbest = Dict();
     xbest = Dict();
     # transfer the data back to everywhere
-    tic();
+    decompStart = time();
     tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share_noUB(treeList,cutList,tcoreList,xcoreList,
         ubcoreList,ubCost,tbest,xbest,batchNo,noTh,ϵ,nSplit,noPa,cutSelOpt);
-    decompTime = toc();
+    decompTime = time() - decompStart;
 
     # need a cut selection process within the callback
     return tbest,xbest,ubCost,lbOverAll,timeIter,treeList,decompTime;

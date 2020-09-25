@@ -51,10 +51,10 @@ for fileInd in 1:4
     global sN = sNList[Ωl];
     global MM = MMList[Ωl];
     if extBool
-        tic();
+        tempTimer = time();
         #tFull,xFull,ubFull,gFull,mFull = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
         tFull,xFull,ubFull,gFull,mFull = extForm_cheat_new(pData,disData,Ω,sN,MM,1e-2,999999,noThreads);
-        timedecomp = toc();
+        timedecomp = time() - tempTimer;
         lbFull = getobjectivebound(mFull);
         gapdecomp = (ubFull - lbFull)/ubFull;
     else

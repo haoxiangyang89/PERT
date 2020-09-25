@@ -51,9 +51,9 @@ for fileInd in 1:4
         dataList = [];
         for randNo in 1:20
             disData = disDataRaw["data"][randNo];
-            tic();
+            tempTimer = time();
             ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
-            tub = toc();
+            tub = time() - tempTimer;
             push!(dataList,(ubInc,tub));
         end
         data[fileInd][Ωsize[Ωl]] = dataList;

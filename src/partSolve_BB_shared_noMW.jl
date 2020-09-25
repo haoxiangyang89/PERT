@@ -440,10 +440,10 @@ function runPara_Share_noMW(treeList,cutList,ubCost,tbest,xbest,batchNo,noTh,noP
                             treeList[selectNode][3] = 0;
                             cutData = cutList[treeList[selectNode][2]];
                             divData = [treeList[id][4] for id in treeList[selectNode][2]];
-                            tic();
+                            tempTimer = time();
                             mpSolveInfo = remotecall_fetch(solveMP_para_Share_noMW,p,[cutData,divData,treeList[selectNode][4],ubCost,
                                 noTh,wpDict[p],nSplit,treeList[selectNode][5],cutSelOpt]);
-                            timeDict[selectNode] = toc();
+                            timeDict[selectNode] = time() - tempTimer;
                             # update the cutList with the added cuts and two new nodes
                             # update the cutSet
                             treeList[selectNode][3] = 1;
@@ -645,9 +645,9 @@ function partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,no
 
     global lbOverAll = 0;
     # transfer the data back to everywhere
-    tic();
+    decompStart = time();
     tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share_noMW(treeList,cutList,ubCost,tbest,xbest,batchNo,noTh,noPa,ϵ,nSplit,cutSelOpt);
-    decompTime = toc();
+    decompTime = time() - decompStart;
 
     # need a cut selection process within the callback
     return tbest,xbest,ubCost,lbOverAll,timeIter,treeList,decompTime;

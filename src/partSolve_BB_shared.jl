@@ -593,12 +593,12 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                             treeList[selectNode][3] = 0;
                             cutData = cutList[treeList[selectNode][2]];
                             divData = [treeList[id][4] for id in treeList[selectNode][2]];
-                            tic();
+                            tempTimer = time();
                             # mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
                             #     tbest,xbest,noTh,wpDict[p],nSplit,pData,disData,lDict,H,allSucc,distanceDict]);
                             mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
                                 tbest,xbest,noTh,wpDict[p],nSplit,treeList[selectNode][5],cutSelOpt,BTOpt]);
-                            timeDict[selectNode] = toc();
+                            timeDict[selectNode] = time() - tempTimer;
                             # update the cutList with the added cuts and two new nodes
                             # update the cutSet
                             # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)
@@ -867,9 +867,9 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,n
 
     lbOverAll = -Inf;
     # transfer the data back to everywhere
-    tic();
+    decompStart = time();
     tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,ϵ,nSplit,noPa,cutSelOpt,BTOpt);
-    decompTime = toc();
+    decompTime = time() - decompStart;
 
     # need a cut selection process within the callback
     return tbest,xbest,ubCost,lbOverAll,timeIter,treeList,decompTime;

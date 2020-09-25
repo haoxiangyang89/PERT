@@ -43,9 +43,9 @@ ubexp = ubCalP(pData,disData,Ω,xexp,texp,999999);
 # our decomposition method
 global sN = 20;
 global MM = 25;
-tic();
+tempTimer = time();
 include("partSolve_Callback_tightened_sol.jl");
-timedecomp = toc();
+timedecomp = time() - tempTimer;
 gapdecomp = (ubCost - lbCost)/ubCost;
 ubFull = ubCost;
 lbFull = lbCost;
@@ -53,9 +53,9 @@ xFull = deepcopy(xbest);
 tFull = deepcopy(tbest);
 
 # extensive formulation
-tic();
+tempTimer = time();
 text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-4,999999);
-timeext = toc();
+timeext = time() - tempTimer;
 θext = Dict();
 for ω in Ω
     θext[ω] = getvalue(mext[:t][0,ω]);

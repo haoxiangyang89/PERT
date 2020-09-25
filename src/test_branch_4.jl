@@ -37,9 +37,9 @@ global nSplit = 5;
 data = [];
 
 global bAlt = 4;
-tic();
+tempTimer = time();
 include("partSolve_Callback_tightened_sol.jl");
-timeFull = toc();
+timeFull = time() - tempTimer;
 gapFull = (ubCost - lbCost)/ubCost;
 ubFull = ubCost;
 lbFull = lbCost;

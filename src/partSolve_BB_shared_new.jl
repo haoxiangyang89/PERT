@@ -657,10 +657,10 @@ function partSolve_BB_para(pData,disData,Ω,sN,MM,noThreads,batchNo = 5,ϵ = 1e-
                             treeList[selectNode][3] = 0;
                             cutData = cutList[treeList[selectNode][2]];
                             divData = [treeList[id][4] for id in treeList[selectNode][2]];
-                            tic();
+                            tempTimer = time();
                             mpSolveInfo = remotecall_fetch(solveMP_para,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
                                 tbest,xbest,noTh,wpDict[p],nSplit,pData,disData,lDict,H,allSucc,distanceDict]);
-                            timeDict[selectNode] = toc();
+                            timeDict[selectNode] = time() - tempTimer;
                             # update the cutList with the added cuts and two new nodes
                             # update the cutSet
                             # return returnNo,cutSet,returnSet,tbest,xbest,minimum(ubCostList)

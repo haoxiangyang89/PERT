@@ -22,9 +22,9 @@ for fileInd in 1:length(pathList)
         pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl]);
         global disData = disDataSet[1];
         # extensive formulation
-        tic();
+        tempTimer = time();
         text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,ϵ,999999);
-        timeext = toc();
+        timeext = time() - tempTimer;
         ubmp = mext.objVal;
         lbmp = mext.objBound;
         gapext = (mext.objVal - mext.objBound)/mext.objVal;

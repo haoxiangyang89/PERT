@@ -50,9 +50,9 @@ for fileInd in 1:length(pathList)
     end
 
     # deterministic solution
-    tic();
+    tempTimer = time();
     tdet,xdet,fdet = detBuild(pData);
-    timedet = toc();
+    timedet = time() - tempTimer;
     ubdet = ubCalP(pData,disData,Ω,xdet,tdet,999999);
     push!(dDict[fileInd],[tdet,xdet,fdet,ubdet,timedet]);
     save("test_Ext_value.jld","dDict",dDict,"ubDict",ubDict);
@@ -67,9 +67,9 @@ for fileInd in 1:length(pathList)
             ed[i] = mean(buildDistrn(nameD,dparams[i]));
         end
     end
-    tic();
+    tempTimer = time();
     texp,xexp,fexp,Gexp,mexp = expModel(pData,eH,ed);
-    timeexp = toc();
+    timeexp = time() - tempTimer;
     ubexp = ubCalP(pData,disData,Ω,xexp,texp,999999);
     push!(dDict[fileInd],[texp,xexp,fexp,ubexp,timeexp]);
     save("test_Ext_value.jld","dDict",dDict,"ubDict",ubDict);
@@ -80,9 +80,9 @@ for fileInd in 1:length(pathList)
     for ω in Ω
         disData[ω].H = mean(buildDistrn(nameH,Hparams));
     end
-    tic();
+    tempTimer = time();
     tdOnly,xdOnly,fdOnly,gdOnly,mdOnly = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
-    timedOnly = toc();
+    timedOnly = time() - tempTimer;
     disData = deepcopy(disData1);
     ubdOnly = ubCalP(pData,disData,Ω,xdOnly,tdOnly,999999);
     push!(dDict[fileInd],[tdOnly,xdOnly,fdOnly,ubdOnly,timedOnly]);

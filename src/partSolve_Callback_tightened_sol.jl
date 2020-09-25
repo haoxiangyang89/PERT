@@ -267,7 +267,7 @@ function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,nSplit 
       y[i in pData.II, par in 1:length(divSet[i])], Bin
     end);
 
-    tic();
+    tempTimer = time();
     while keepIter
         # correct all ycoreList
         for ll in 1:length(ycoreList)
@@ -367,9 +367,9 @@ function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,nSplit 
         end
 
         addlazycallback(mp, partBenders);
-        tic();
+        tempTimerI = time();
         solve(mp);
-        tIter = toc();
+        tIter = time() - tempTimerI;
         push!(timeHist,tIter);
 
         lbCost = getobjectivevalue(mp);
@@ -417,6 +417,6 @@ function partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,bAlt,nSplit 
             # cutSet = deepcopy(cutSetNew);
         end
     end
-    timedecomp = toc();
+    timedecomp = time() - tempTimer;
     return tbest,xbest,ubCost,lbCost,timeHist,timedecomp;
 end

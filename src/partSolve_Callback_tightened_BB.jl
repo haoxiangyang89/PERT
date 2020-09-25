@@ -303,9 +303,9 @@ while keepIter
     end
 
     addlazycallback(mp, partBenders);
-    tic();
+    tempTimer = time();
     mpStatus = solve(mp);
-    tIter = toc();
+    tIter = time() - tempTimer;
     push!(timeHist,tIter);
     if mpStatus == :Optimal
         lbCost = getobjectivevalue(mp);

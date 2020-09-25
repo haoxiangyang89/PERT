@@ -46,9 +46,9 @@ global sN = 25;
 global MM = 20;
 global ubCost = Inf;
 @everywhere const gEnv = Gurobi.Env();
-tic();
+lastStart = time();
 datas = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,1,1e-2,6);
-timeLasts = toc();
+timeLasts = time() - lastStart;
 save("testBB_data_share_bn3.jld","data",datas,"timeLast",timeLasts);
 
 # tic();

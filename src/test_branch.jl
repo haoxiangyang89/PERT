@@ -35,9 +35,9 @@ end
 
 data = [];
 
-tic();
+tempTimer = time();
 text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,1e-4,999999,noThreads);
-timeext = toc();
+timeext = time() - tempTimer;
 push!(data,[fext,text,xext,timeext]);
 save("14_test1_Results.jld","data",data);
 
@@ -45,9 +45,9 @@ global sN = 25;
 global MM = 20;
 
 global bAlt = 1;
-tic();
+tempTimer = time();
 include("partSolve_Callback_tightened_sol.jl");
-timeFull = toc();
+timeFull = time() - tempTimer;
 gapFull = (ubCost - lbCost)/ubCost;
 ubFull = ubCost;
 lbFull = lbCost;
@@ -57,9 +57,9 @@ push!(data,[ubFull,tFull,xFull,lbFull,timeFull]);
 save("14_test1_Results_1.jld","data",data);
 
 global bAlt = 2;
-tic();
+tempTimer = time();
 include("partSolve_Callback_tightened_sol.jl");
-timeFull = toc();
+timeFull = time() - tempTimer;
 gapFull = (ubCost - lbCost)/ubCost;
 ubFull = ubCost;
 lbFull = lbCost;
@@ -69,9 +69,9 @@ push!(data,[ubFull,tFull,xFull,lbFull,timeFull]);
 save("14_test1_Results.jld","data",data);
 
 global bAlt = 3;
-tic();
+tempTimer = time();
 include("partSolve_Callback_tightened_sol.jl");
-timeFull = toc();
+timeFull = time() - tempTimer;
 gapFull = (ubCost - lbCost)/ubCost;
 ubFull = ubCost;
 lbFull = lbCost;
@@ -81,9 +81,9 @@ push!(data,[ubFull,tFull,xFull,lbFull,timeFull]);
 save("14_test1_Results.jld","data",data);
 
 global bAlt = 4;
-tic();
+tempTimer = time();
 include("partSolve_Callback_tightened_sol.jl");
-timeFull = toc();
+timeFull = time() - tempTimer;
 gapFull = (ubCost - lbCost)/ubCost;
 ubFull = ubCost;
 lbFull = lbCost;
