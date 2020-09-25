@@ -536,7 +536,7 @@ function partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,no
     iNo = 0;
     for i in pData.II
         for j in allSucc[i]
-            global iNo += 1;
+            iNo += 1;
             distanceShare[iNo,1] = i;
             distanceShare[iNo,2] = j;
             distanceShare[iNo,3] = detCal(pData,i,j);
