@@ -1,7 +1,7 @@
 # solve the longest path for the deterministic problem
 function longestP(pData)
     that = Dict();
-    mp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0, CPX_PARAM_SIMDISPLAY = 0,CPX_PARAM_MIPDISPLAY = 0));
+    mp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
     @variable(mp, t[i in pData.II] >= 0);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]);
     @objective(mp, Min, t[0]);
@@ -12,7 +12,7 @@ end
 
 # build the LP to obtain the longest path to each activity without crashing
 function lpSolve(pData,iTarget)
-    mp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0, CPX_PARAM_SIMDISPLAY = 0,CPX_PARAM_MIPDISPLAY = 0));
+    mp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
     @variable(mp, t[i in pData.II] >= 0);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]);
     @objective(mp, Min, t[iTarget]);
@@ -23,7 +23,7 @@ end
 
 # build the LP to obtain the longest path to each activity without crashing after the disruption
 function lpSolveO(pData,dDω,iTarget)
-    mp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0, CPX_PARAM_SIMDISPLAY = 0,CPX_PARAM_MIPDISPLAY = 0));
+    mp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
     @variable(mp, t[i in pData.II] >= 0);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]] + dDω.d[k[1]]);
     @objective(mp, Min, t[iTarget]);
@@ -34,7 +34,7 @@ end
 
 # bound tightening procedure
 function buildTighten(pData,disData,Ω,cutSet,ub)
-    bp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0, CPX_PARAM_SIMDISPLAY = 0,CPX_PARAM_MIPDISPLAY = 0));
+    bp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
     @variable(bp, t[i in pData.II] >= 0);
     @variable(bp, 0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);
     @variable(bp, 0 <= F[i in pData.II, ω in Ω] <= 1);
@@ -75,8 +75,8 @@ function pullDecomp(pData,disData,Ω,ϵ = 1e-6)
     end
 
     # build the master problem
-    #mp = Model(solver = GurobiSolver(Method = 0, OutputFlag = 0, IntFeasTol = 1e-9));
-    mp = Model(solver = CplexSolver(CPX_PARAM_EPAGAP = 1e-6,CPX_PARAM_EPRHS = 1e-9, CPX_PARAM_EPINT = 1e-9));
+    mp = Model(solver = GurobiSolver(Method = 0, OutputFlag = 0, IntFeasTol = 1e-9));
+    #mp = Model(solver = CplexSolver(CPX_PARAM_EPAGAP = 1e-6,CPX_PARAM_EPRHS = 1e-9, CPX_PARAM_EPINT = 1e-9));
     @variable(mp, t[i in pData.II] >= 0);
     @variable(mp, 0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);
     @variable(mp, G[i in pData.II, ω in Ω], Bin);
@@ -86,7 +86,7 @@ function pullDecomp(pData,disData,Ω,ϵ = 1e-6)
 
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1 - sum(pData.eff[k[1]][j]*x[k[1],j]
         for j in pData.Ji[k[1]])));
-    @constraint(mp, GFixed[i in pData.II,ω in Ω; brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 1],G[i,ω] == 1);
+    @constraint(mp, GFixed[i in pData.II,ω in Ω; brInfo[findfirst(x -> x == i, pData.II),findfirst(x -> x == ω, Ω)] == 1],G[i,ω] == 1);
     @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
     @constraint(mp, budgetConstr, sum(sum(x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
 #    @constraint(mp, tGnAnt[i in pData.II, ω in Ω], t[i] <= (disData[ω].H - ϵ) + G[i,ω]*M);
