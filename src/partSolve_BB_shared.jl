@@ -552,7 +552,7 @@ function solveMP_para_Share(data)
 end
 
 
-function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noTh,ϵ = 1e-2,nSplit = 5,noPa = 1,cutSelOpt = true,BTOpt = true)
+function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noTh,timeStart,ϵ = 1e-2,nSplit = 5,noPa = 1,cutSelOpt = true,BTOpt = true)
     # separate the workers to main processors and workers
     npList = workers()[1:batchNo];
     noMo = div(noThreads,batchNo);
@@ -565,6 +565,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
     timeDict = Dict();
     lbDict = Dict();
     lbDict[1] = -Inf;
+    recordList = [];
 
     @sync begin
         for ip in 1:length(npList)
@@ -640,6 +641,8 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                             end
                         end
                         treeList[selectNode][3] = 1;
+                        timeUpdate = time() - timeStart;
+                        push!(recordList, [ubCost, lbOverAll, timeUpdate]);
                     else
                         println("**************Worker $(p) waiting for open nodes.**************");
                         remotecall_fetch(sleep, p, 10);
@@ -668,7 +671,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
         end
     end
 
-    return tbest,xbest,ubCost,minLB,timeDict,treeList;
+    return tbest,xbest,ubCost,minLB,timeDict,treeList,recordList;
 end
 
 function runPara_Series_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,noTh,nSplit = 5)
@@ -806,6 +809,7 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,n
     # start with an upper bound based on the smaller stochastic solution
     # data141 = load("14_test1_ubData.jld");
     # ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = data141["data"];
+    timeStart = time();
     ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
     lbCost = -Inf;
     lbCostList = [];
@@ -868,9 +872,10 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,n
     lbOverAll = -Inf;
     # transfer the data back to everywhere
     decompStart = time();
-    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,ϵ,nSplit,noPa,cutSelOpt,BTOpt);
+    tbest,xbest,ubCost,lbOverAll,timeIter,treeList,recordList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,timeStart,ϵ,nSplit,noPa,cutSelOpt,BTOpt);
     decompTime = time() - decompStart;
+    pushfirst!(recordList,[ubInc,0,decompStart - timeStart]);
 
     # need a cut selection process within the callback
-    return tbest,xbest,ubCost,lbOverAll,timeIter,treeList,decompTime;
+    return tbest,xbest,ubCost,lbOverAll,timeIter,treeList,decompTime,recordList;
 end
