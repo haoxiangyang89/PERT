@@ -30,6 +30,7 @@ function pullDecomp(pData,disData,Ω,ϵ = 1e-6,bigM = 999999)
     # if the bigM is scenario generic, make it scenario specific
     if length(bigM) == 1
         bigMTemp = bigM;
+        bigM = Dict();
         for i in pData.II
             for ω in Ω
                 bigM[i,ω] = bigMTemp;

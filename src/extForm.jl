@@ -73,6 +73,7 @@ function extForm_cheat(pData,disData,Ω,prec = 1e-4,TL = Inf,noTh = 30,LogAdd = 
     # if the bigM is scenario generic, make it scenario specific
     if length(bigM) == 1
         bigMTemp = bigM;
+        bigM = Dict();
         for i in pData.II
             for ω in Ω
                 bigM[i,ω] = bigMTemp;

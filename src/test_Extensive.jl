@@ -7,9 +7,19 @@ global noThreads = 30;
 @everywhere include("header.jl");
 
 #filePath = "/Users/haoxiangyang/Desktop/PERT_tests/75_Lognormal_Exponential/"
-pathList = ["/home/haoxiang/PERT_tests/11_Lognormal_Exponential/",
-            "/home/haoxiang/PERT_tests/14_Lognormal_Exponential/",
-            "/home/haoxiang/PERT_tests/19_Lognormal_Exponential/"];
+pathList = ["/home/haoxiang/scratch/PERT_tests/current/11/",
+            "/home/haoxiang/scratch/PERT_tests/current/14/",
+            "/home/haoxiang/scratch/PERT_tests/current/19/",
+            "/home/haoxiang/scratch/PERT_tests/current/35/",
+            "/home/haoxiang/scratch/PERT_tests/current/55/",
+            "/home/haoxiang/scratch/PERT_tests/current/75/"];
+# pathList = ["/scratch/haoxiang/current/11/",
+#                "/scratch/haoxiang/current/14/",
+#                "/scratch/haoxiang/current/19/",
+#                "/scratch/haoxiang/current/35/",
+#                "/scratch/haoxiang/current/55/",
+#                "/scratch/haoxiang/current/75/"];
+
 Ωsize = [100,200,300,400,500,750,1000];
 dDict = Dict();
 for fileInd in 1:length(pathList)
