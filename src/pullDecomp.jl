@@ -33,7 +33,7 @@ function lpSolveO(pData,dDω,iTarget)
 end
 
 # bound tightening procedure
-function buildTighten(pData,disData,Ω,cutSet,ub)
+function buildTighten(pData,disData,Ω,cutSet,ub,bigM = 999999)
     bp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
     @variable(bp, t[i in pData.II] >= 0);
     @variable(bp, 0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);
@@ -44,10 +44,10 @@ function buildTighten(pData,disData,Ω,cutSet,ub)
     @constraint(bp, upperbound, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω) <= ub);
     @constraint(bp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1 - sum(pData.eff[k[1]][j]*x[k[1],j]
         for j in pData.Ji[k[1]])));
-    @constraint(bp, GFixed[i in pData.II,ω in Ω; brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 1],G[i,ω] == 1);
+    @constraint(bp, GFixed[i in pData.II,ω in Ω; brInfo[findfirst(x -> x == i, pData.II),findfirst(x -> x == ω, Ω)] == 1],G[i,ω] == 1);
     @constraint(bp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
     @constraint(bp, budgetConstr, sum(sum(x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
-    @constraint(bp, tGnAnt[i in pData.II, ω in Ω], t[i] <= disData[ω].H + G[i,ω]*M[i]);
+    @constraint(bp, tGnAnt[i in pData.II, ω in Ω], t[i] <= disData[ω].H + G[i,ω]*bigM);
     @constraint(bp, tFnAnt[i in pData.II, ω in Ω], t[i] >= disData[ω].H - F[i,ω]*disData[ω].H);
     @constraint(bp, FGnAnt[i in pData.II, ω in Ω], F[i,ω] + G[i,ω] == 1);
     # (πr,λr,γr,that,xhat,Ghat,vω)
@@ -57,7 +57,7 @@ function buildTighten(pData,disData,Ω,cutSet,ub)
 end
 
 # pull the binary variables to the first stage
-function pullDecomp(pData,disData,Ω,ϵ = 1e-6)
+function pullDecomp(pData,disData,Ω,ϵ = 1e-6,bigM = 999999)
     # initialization
     M = Dict();
     for i in pData.II
@@ -75,7 +75,7 @@ function pullDecomp(pData,disData,Ω,ϵ = 1e-6)
     end
 
     # build the master problem
-    mp = Model(solver = GurobiSolver(Method = 0, OutputFlag = 0, IntFeasTol = 1e-9));
+    mp = Model(solver = GurobiSolver(Method = 0, IntFeasTol = 1e-9));
     #mp = Model(solver = CplexSolver(CPX_PARAM_EPAGAP = 1e-6,CPX_PARAM_EPRHS = 1e-9, CPX_PARAM_EPINT = 1e-9));
     @variable(mp, t[i in pData.II] >= 0);
     @variable(mp, 0 <= x[i in pData.II, j in pData.Ji[i]] <= 1);
@@ -90,8 +90,8 @@ function pullDecomp(pData,disData,Ω,ϵ = 1e-6)
     @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
     @constraint(mp, budgetConstr, sum(sum(x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
 #    @constraint(mp, tGnAnt[i in pData.II, ω in Ω], t[i] <= (disData[ω].H - ϵ) + G[i,ω]*M);
-    @constraint(mp, tGnAnt[i in pData.II, ω in Ω], t[i] <= disData[ω].H + G[i,ω]*M[i]);
-    @constraint(mp, tFnAnt[i in pData.II, ω in Ω], t[i] >= disData[ω].H - (1-G[i,ω])*M[i]);
+    @constraint(mp, tGnAnt[i in pData.II, ω in Ω], t[i] <= disData[ω].H + G[i,ω]*bigM);
+    @constraint(mp, tFnAnt[i in pData.II, ω in Ω], t[i] >= disData[ω].H - (1-G[i,ω])*bigM);
     LB = -Inf;
     UB = Inf;
 
@@ -102,7 +102,7 @@ function pullDecomp(pData,disData,Ω,ϵ = 1e-6)
     cutSet = [];
     UBList = [];
 
-    function innerCut(cb)
+    @everywhere function innerCut(cb)
         # callback function
         TOL = 1e-6;
 
@@ -113,14 +113,14 @@ function pullDecomp(pData,disData,Ω,ϵ = 1e-6)
         xhat = getvalue(x);
         that = getvalue(t);
         Ghat = getvalue(G);
-        ubTemp = ubCal(pData,disData,Ω,xhat,that);
+        ubTemp = ubCalP(pData,disData,Ω,xhat,that,bigM);
         lbTemp = that[0]*pData.p0+sum(getvalue(θ[ω])*disData[ω].prDis for ω in Ω);
         push!(ubList,ubTemp);
-        #UB = minimum(ubList);
-        #if ubTemp < UB
-        #    UB = ubTemp;
-        #end
-        UB = MathProgBase.cbgetobj(cb);
+        UB = minimum(ubList);
+        if ubTemp < UB
+           UB = ubTemp;
+        end
+        #UB = MathProgBase.cbgetobj(cb);
         push!(UBList,UB);
         println("--------------------------------------------------")
         println(statusCb," ",LB," ",UB," ",lbTemp," ",ubTemp);
@@ -136,23 +136,24 @@ function pullDecomp(pData,disData,Ω,ϵ = 1e-6)
             vr = Dict();
 
             for ω in Ω
-                sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0, CPX_PARAM_SIMDISPLAY = 0,CPX_PARAM_MIPDISPLAY = 0,CPX_PARAM_LPMETHOD = 1));
+                #sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0, CPX_PARAM_SIMDISPLAY = 0,CPX_PARAM_MIPDISPLAY = 0,CPX_PARAM_LPMETHOD = 1));
+                sp = Model(solver = GurobiSolver(OutputFlag = 0));
                 @variable(sp, tω[i in pData.II] >= 0);
                 @variable(sp, 0 <= xω[i in pData.II, j in pData.Ji[i]] <= 1);
                 @variable(sp, 0 <= sω[i in pData.II, j in pData.Ji[i]] <= 1);
 
                 @constraint(sp, durationConstr[k in pData.K], tω[k[2]] - tω[k[1]] + sum(pData.D[k[1]]*pData.eff[k[1]][j]*xω[k[1],j] for j in pData.Ji[k[1]])
                     + sum(disData[ω].d[k[1]]*pData.eff[k[1]][j]*sω[k[1],j] for j in pData.Ji[k[1]])>= pData.D[k[1]] + disData[ω].d[k[1]]*getvalue(G[k[1],ω]));
-                @constraint(sp, tGbound[i in pData.II], tω[i] >= disData[ω].H*getvalue(G[i,ω]));
+                @constraint(sp, tGbound[i in pData.II], tω[i] >= disData[ω].H*Ghat[i,ω]);
                 @constraint(sp, xConstr[i in pData.II], sum(xω[i,j] for j in pData.Ji[i]) <= 1);
                 @constraint(sp, budgetConstr, sum(sum(xω[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
-                @constraint(sp, tGnAnt1[i in pData.II], tω[i] <= getvalue(t[i]) + getvalue(G[i,ω])*Mω[i,ω]);
-                @constraint(sp, tGnAnt2[i in pData.II], tω[i] >= getvalue(t[i]) - getvalue(G[i,ω])*M[i]);
-                @constraint(sp, xGnAnt1[i in pData.II, j in pData.Ji[i]], xω[i,j] <= getvalue(x[i,j]) + getvalue(G[i,ω]));
-                @constraint(sp, xGnAnt2[i in pData.II, j in pData.Ji[i]], xω[i,j] >= getvalue(x[i,j]) - getvalue(G[i,ω]));
+                @constraint(sp, tGnAnt1[i in pData.II], tω[i] <= that[i] + Ghat[i,ω]*bigM);
+                @constraint(sp, tGnAnt2[i in pData.II], tω[i] >= that[i] - Ghat[i,ω]*bigM);
+                @constraint(sp, xGnAnt1[i in pData.II, j in pData.Ji[i]], xω[i,j] <= xhat[i,j] + Ghat[i,ω]);
+                @constraint(sp, xGnAnt2[i in pData.II, j in pData.Ji[i]], xω[i,j] >= xhat[i,j] - Ghat[i,ω]);
                 @constraint(sp, sConstr1[i in pData.II, j in pData.Ji[i]], sω[i,j] - xω[i,j] <= 0);
-                @constraint(sp, sConstr2[i in pData.II, j in pData.Ji[i]], sω[i,j] <= getvalue(G[i,ω]));
-                @constraint(sp, sConstr3[i in pData.II, j in pData.Ji[i]], sω[i,j] - xω[i,j] + 1 >= getvalue(G[i,ω]));
+                @constraint(sp, sConstr2[i in pData.II, j in pData.Ji[i]], sω[i,j] <= Ghat[i,ω]);
+                @constraint(sp, sConstr3[i in pData.II, j in pData.Ji[i]], sω[i,j] - xω[i,j] + 1 >= Ghat[i,ω]);
 
                 @objective(sp, Min, tω[0]);
                 spStatus = solve(sp);
@@ -173,43 +174,41 @@ function pullDecomp(pData,disData,Ω,ϵ = 1e-6)
                     # obtain γ's (for G)
                     if i != 0
                         γr[ω][i] = sum(disData[ω].d[i]*getdual(durationConstr)[k] for k in pData.K if k[1] == i) +
-                            disData[ω].H*getdual(tGbound)[i] + Mω[i,ω]*(getdual(tGnAnt1)[i]) - M[i]*(getdual(tGnAnt2)[i]) +
+                            disData[ω].H*getdual(tGbound)[i] + bigM*(getdual(tGnAnt1)[i]) - bigM*(getdual(tGnAnt2)[i]) +
                             sum(getdual(xGnAnt1)[i,j] - getdual(xGnAnt2)[i,j] + getdual(sConstr2)[i,j] + getdual(sConstr3)[i,j] for j in pData.Ji[i]);
                     else
-                        γr[ω][i] = disData[ω].H*getdual(tGbound)[i] + Mω[i,ω]*(getdual(tGnAnt1)[i]) - M[i]*(getdual(tGnAnt2)[i]);
+                        γr[ω][i] = disData[ω].H*getdual(tGbound)[i] + bigM*(getdual(tGnAnt1)[i]) - bigM*(getdual(tGnAnt2)[i]);
                     end
                 end
-                # @lazyconstraint(cb, θ[ω] >= vω + sum(πr[ω][i]*(t[i] - getvalue(t[i])) + γr[ω][i]*(G[i,ω] - getvalue(G[i,ω])) +
-                #     sum(λr[ω][i,j]*(x[i,j] - getvalue(x[i,j])) for j in pData.Ji[i]) for i in pData.II),localcut=true);
-                @lazyconstraint(cb, θ[ω] >= vω + sum(πr[ω][i]*(t[i] - getvalue(t[i])) + γr[ω][i]*(G[i,ω] - getvalue(G[i,ω])) +
-                    sum(λr[ω][i,j]*(x[i,j] - getvalue(x[i,j])) for j in pData.Ji[i]) for i in pData.II));
+                # @lazyconstraint(cb, θ[ω] >= vω + sum(πr[ω][i]*(t[i] - that[i]) + γr[ω][i]*(G[i,ω] - Ghat[i,ω]) +
+                #     sum(λr[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II),localcut=true);
+                @lazyconstraint(cb, θ[ω] >= vω + sum(πr[ω][i]*(t[i] - that[i]) + γr[ω][i]*(G[i,ω] - Ghat[i,ω]) +
+                    sum(λr[ω][i,j]*(x[i,j] - xhat[i,j]) for j in pData.Ji[i]) for i in pData.II));
             end
             push!(cutSet,(πr,λr,γr,that,xhat,Ghat,vr));
             # set simple bounds on t and G
-            if abs(UBList[length(UBList)] - UBList[length(UBList) - 1])
-                bp = buildTighten(pData,disData,Ω,cutSet,UB);
-                maxt = Dict();
-                mint = Dict();
-                for i in pData.II
-                    # change the objective function value
-                    @objective(bp, Max, bp[:t][i]);
-                    solve(bp);
-                    maxt[i] = getobjectivevalue(bp);
-                    @objective(bp, Min, bp[:t][i]);
-                    solve(bp);
-                    mint[i] = getobjectivevalue(bp);
-                    for ω in Ω
-                        if maxt[i] < disData[ω].H
-                            if brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 0
-                                brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] = -1;
-                                @lazyconstraint(cb, G[i,ω] == 0);
-                            end
+            bp = buildTighten(pData,disData,Ω,cutSet,UB);
+            maxt = Dict();
+            mint = Dict();
+            for i in pData.II
+                # change the objective function value
+                @objective(bp, Max, bp[:t][i]);
+                solve(bp);
+                maxt[i] = getobjectivevalue(bp);
+                @objective(bp, Min, bp[:t][i]);
+                solve(bp);
+                mint[i] = getobjectivevalue(bp);
+                for ω in Ω
+                    if maxt[i] < disData[ω].H
+                        if brInfo[findfirst(x -> x == i, pData.II),findfirst(x -> x == ω, Ω)] == 0
+                            brInfo[findfirst(x -> x == i, pData.II),findfirst(x -> x == ω, Ω)] = -1;
+                            @lazyconstraint(cb, G[i,ω] == 0);
                         end
-                        if mint[i] >= disData[ω].H
-                            if brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] == 0
-                                brInfo[findin(pData.II,i)[1],findin(Ω,ω)[1]] = 1;
-                                @lazyconstraint(cb, G[i,ω] == 1);
-                            end
+                    end
+                    if mint[i] >= disData[ω].H
+                        if brInfo[findfirst(x -> x == i, pData.II),findfirst(x -> x == ω, Ω)] == 0
+                            brInfo[findfirst(x -> x == i, pData.II),findfirst(x -> x == ω, Ω)] = 1;
+                            @lazyconstraint(cb, G[i,ω] == 1);
                         end
                     end
                 end
@@ -217,7 +216,6 @@ function pullDecomp(pData,disData,Ω,ϵ = 1e-6)
         else
             return JuMP.StopTheSolver;
         end
-
     end #innerCut
 
     # solve the master problem with the callback
