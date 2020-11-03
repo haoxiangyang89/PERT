@@ -646,3 +646,50 @@ function genCritical(pData,lInfo)
     end
     return criticalList;
 end
+
+# solve the longest path for the deterministic problem
+function longestP(pData)
+    that = Dict();
+    mp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
+    @variable(mp, t[i in pData.II] >= 0);
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]);
+    @objective(mp, Min, t[0]);
+    solve(mp);
+    that0 = getvalue(mp[:t])[0];
+    return that0;
+end
+
+# build the LP to obtain the longest path to each activity without crashing
+function lpSolve(pData,iTarget)
+    mp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
+    @variable(mp, t[i in pData.II] >= 0);
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]);
+    @objective(mp, Min, t[iTarget]);
+    solve(mp);
+
+    return getobjectivevalue(mp);
+end
+
+# build the LP to obtain the longest path to each activity without crashing after the disruption
+function lpSolveO(pData,dDω,iTarget)
+    mp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
+    @variable(mp, t[i in pData.II] >= 0);
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]] + max(dDω.d[k[1]],0));
+    @objective(mp, Min, t[iTarget]);
+    solve(mp);
+
+    return getobjectivevalue(mp);
+end
+
+function getMomega(pData,disData)
+    # output the scenario specific big-M
+    Mω = Dict();
+    for ω in Ω
+        # Mω[ω] = 10*M;
+        dDω = disData[ω];
+        for i in pData.II
+            Mω[i,ω] = lpSolveO(pData,dDω,i) + disData[ω];
+        end
+    end
+    return Mω;
+end

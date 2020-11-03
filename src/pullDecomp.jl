@@ -1,37 +1,3 @@
-# solve the longest path for the deterministic problem
-function longestP(pData)
-    that = Dict();
-    mp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
-    @variable(mp, t[i in pData.II] >= 0);
-    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]);
-    @objective(mp, Min, t[0]);
-    solve(mp);
-    that0 = getvalue(mp[:t])[0];
-    return that0;
-end
-
-# build the LP to obtain the longest path to each activity without crashing
-function lpSolve(pData,iTarget)
-    mp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
-    @variable(mp, t[i in pData.II] >= 0);
-    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]);
-    @objective(mp, Min, t[iTarget]);
-    solve(mp);
-
-    return getobjectivevalue(mp);
-end
-
-# build the LP to obtain the longest path to each activity without crashing after the disruption
-function lpSolveO(pData,dDω,iTarget)
-    mp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
-    @variable(mp, t[i in pData.II] >= 0);
-    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]] + dDω.d[k[1]]);
-    @objective(mp, Min, t[iTarget]);
-    solve(mp);
-
-    return getobjectivevalue(mp);
-end
-
 # bound tightening procedure
 function buildTighten(pData,disData,Ω,cutSet,ub,bigM = 999999)
     bp = Model(solver = GurobiSolver(OutputFlag = 0,Threads = 1));
@@ -58,19 +24,16 @@ end
 
 # pull the binary variables to the first stage
 function pullDecomp(pData,disData,Ω,ϵ = 1e-6,bigM = 999999)
-    # initialization
-    M = Dict();
-    for i in pData.II
-        M[i] = lpSolve(pData,i);
-    end
     # add feasibility constraint up front
     brInfo = precludeRel(pData,disData,Ω);
-    Mω = Dict();
-    for ω in Ω
-        # Mω[ω] = 10*M;
-        dDω = disData[ω];
+
+    # if the bigM is scenario generic, make it scenario specific
+    if length(bigM) == 1
+        bigMTemp = bigM;
         for i in pData.II
-            Mω[i,ω] = lpSolveO(pData,dDω,i);
+            for ω in Ω
+                bigM[i,ω] = bigMTemp;
+            end
         end
     end
 
