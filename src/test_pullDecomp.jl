@@ -22,12 +22,17 @@ pathList = ["/scratch/haoxiang/current/11/",
                "/scratch/haoxiang/current/55/",
                "/scratch/haoxiang/current/75/"];
 Ωsize = [200];
-Ωl = 5;
+Ωl = 1;
 global Ω = 1:Ωsize[Ωl];
 
 dDict = Dict();
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
+    pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,1);
+    global pData = pData;
+    disDataRaw = load(pathList[fileInd]*"solData_$(Ωsize[Ωl]).jld");
+    disData = disDataRaw["data"][1];
+
     bestObj,that,xhat = pullDecomp(pData,disData,Ω,1e-2);
     dDict[fileInd] = [bestObj,that,xhat];
     save("test_pullDecomp.jld","data",dDict);

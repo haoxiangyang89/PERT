@@ -688,7 +688,7 @@ function getMomega(pData,disData)
         # Mω[ω] = 10*M;
         dDω = disData[ω];
         for i in pData.II
-            Mω[i,ω] = lpSolveO(pData,dDω,i) + disData[ω];
+            Mω[i,ω] = lpSolveO(pData,dDω,i) + disData[ω].H;
         end
     end
     return Mω;
