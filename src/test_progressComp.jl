@@ -77,5 +77,5 @@ end
 global sN = sNList[Ωl];
 global MM = MMList[Ωl];
 tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp,recordList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,21600);
-text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω[1:5],ϵ,999999,30,"progress_Gurobi.log");
+text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,ϵ,999999,30,"progress_Gurobi.log");
 save("test_progressComp.jld","data",[tFull,xFull,ubFull,lbFull,timedecomp,recordList]);
