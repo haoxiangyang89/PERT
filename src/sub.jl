@@ -1512,3 +1512,113 @@ function sub_divTT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
         return that,xhat,yhat;
     end
 end
+
+function sub_divT_rev(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
+    # using the reviewer's suggestion without linearizing the bilinear term
+    #global GUROBI_ENV;
+    sp = Model(solver = GurobiSolver(GUROBI_ENV,IntFeasTol = 1e-8,OutputFlag = 0));
+    @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
+    @variable(sp, t[i in pData.II] >= 0);
+    # relax the logic binary variables
+    @variable(sp, 0 <= G[i in pData.II] <= 1);
+    @variable(sp, 0 <= s[i in pData.II,j in pData.Ji[i]] <= 1);
+
+    # add the basic sub problem constraints
+    # obtain the current par for each activity
+    currentPart = Dict();
+    for i in pData.II
+        for par in 1:length(divSet[i])
+            if (dDω.H < H[divSet[i][par].endH]) & (dDω.H >= H[divSet[i][par].startH])
+                currentPart[i] = par;
+            end
+        end
+    end
+    @constraint(sp, GCons1[i in pData.II], sum((H[divSet[i][par].endH] - dDω.H + H[divSet[i][currentPart[i]].endH])*yhat[i,par] for par in 1:(currentPart[i]-1)) +
+                                                    (dDω.H - H[divSet[i][currentPart[i]].endH])*(1 - G[i]) +
+                                                    sum(H[divSet[i][par].endH]*yhat[i,par] for par in currentPart[i]:length(divSet[i])) >= that[i]);
+    @constraint(sp, GCons2[i in pData.II],sum(H[divSet[i][par].startH]*yhat[i,par] for par in 1:currentPart[i]) +
+                                                    (dDω.H - H[divSet[i][currentPart[i]].startH])*G[i] +
+                                                    sum((H[divSet[i][par].startH] - dDω.H + H[divSet[i][currentPart[i]].startH])*yhat[i,par] for par in (currentPart[i]+1):length(divSet[i])) <= that[i]);
+    #@constraint(sp, GCons1[i in pData.II],dDω.H*G[i] - sum(H[divSet[i][par].endH]*Gy[i,par] for par in 1:length(divSet[i])) <= dDω.H - that[i]);
+    #@constraint(sp, GCons2[i in pData.II],sum(H[divSet[i][par].startH]*Gy[i,par] for par in 1:length(divSet[i])) - dDω.H*G[i] >= -that[i] + sum(yhat[i,par]*H[divSet[i][par].startH] for par in 1:length(divSet[i])));
+    @constraint(sp, GFixed0[i in pData.II],G[i] >= sum(yhat[i,par] for par in 1:length(divSet[i]) if dDω.H <= H[divSet[i][par].startH]));
+    @constraint(sp, GFixed1[i in pData.II],G[i] <= 1 - sum(yhat[i,par] for par in 1:length(divSet[i]) if dDω.H >= H[divSet[i][par].endH]));
+
+    # add the predecessors and the successors logic constraints
+    @constraint(sp, GSuccessors[i in pData.II, k in pData.Succ[i]], G[i] <= G[k]);
+
+    # add the basic sub problem constraints
+    @constraint(sp, tGbound[i in pData.II],t[i] >= dDω.H*G[i]);
+    @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*M[i] >= that[i]);
+    @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*M[i] <= that[i]);
+    @constraint(sp, xFnAnt1[i in pData.II, j in pData.Ji[i]],x[i,j] + G[i] >= xhat[i,j]);
+    @constraint(sp, xFnAnt2[i in pData.II, j in pData.Ji[i]],x[i,j] - G[i] <= xhat[i,j]);
+
+    # linearize the bilinear term of x[i,j]*G[i]
+    @constraint(sp, xGlin1[i in pData.II, j in pData.Ji[i]], s[i,j] <= G[i]);
+    @constraint(sp, xGlin2[i in pData.II, j in pData.Ji[i]], s[i,j] <= x[i,j]);
+    @constraint(sp, xGlin3[i in pData.II, j in pData.Ji[i]], s[i,j] >= x[i,j] - 1 + G[i]);
+
+    @constraint(sp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(sp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+    @constraint(sp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]] + dDω.d[k[1]]*G[k[1]]
+        - sum(pData.D[k[1]]*pData.eff[k[1]][j]*x[k[1],j] + dDω.d[k[1]]*pData.eff[k[1]][j]*s[k[1],j] for j in pData.Ji[k[1]]));
+
+    @objective(sp, Min, t[0]);
+
+    # obtain the dual variables for cuts
+    spStatus = solve(sp);
+    if returnOpt == 0
+        vk = getobjectivevalue(sp);
+        return vk;
+    elseif returnOpt == 1
+        # the cut generated is θ >= v - λ(x - xhat) - π(t - that)
+        if spStatus == :Optimal
+            vk = getobjectivevalue(sp);
+            λdict = Dict();             # dual for x
+            πdict = Dict();             # dual for t
+            γdict = Dict();             # dual for y
+            for i in pData.II
+                πdict[i] = getdual(sp[:GCons1][i]) + getdual(sp[:GCons2][i]) +
+                    (getdual(sp[:tFnAnt1][i]) + getdual(sp[:tFnAnt2][i]));
+                for j in pData.Ji[i]
+                    λdict[i,j] = (getdual(sp[:xFnAnt1][i,j]) + getdual(sp[:xFnAnt2][i,j]));
+                end
+                for par in 1:length(divSet[i])
+                    γdict[i,par] = 0;
+
+                    if par <= currentPart[i] - 1
+                        γdict[i,par] -= (H[divSet[i][par].endH] - dDω.H + H[divSet[i][currentPart[i]].endH])*getdual(sp[:GCons1][i]);
+                        γdict[i,par] -= H[divSet[i][par].startH]*getdual(sp[:GCons2][i]);
+                    elseif par == currentPart[i]
+                        γdict[i,par] -= H[divSet[i][par].endH]*getdual(sp[:GCons1][i]);
+                        γdict[i,par] -= H[divSet[i][par].startH]*getdual(sp[:GCons2][i]);
+                    else
+                        γdict[i,par] -= H[divSet[i][par].endH]*getdual(sp[:GCons1][i]);
+                        γdict[i,par] -= (H[divSet[i][par].startH] - dDω.H + H[divSet[i][currentPart[i]].startH])*getdual(sp[:GCons2][i]);
+                    end
+
+                    if dDω.H <= H[divSet[i][par].startH]
+                        γdict[i,par] += getdual(sp[:GFixed0][i]);
+                    elseif dDω.H >= H[divSet[i][par].endH]
+                        γdict[i,par] -= getdual(sp[:GFixed1][i]);
+                    end
+                end
+            end
+            Ghat = Dict();
+            for i in pData.II
+                Ghat[i] = getvalue(sp[:G][i]);
+            end
+            return πdict,λdict,γdict,vk,Ghat;
+        else
+            return that,xhat,yhat;
+        end
+    elseif returnOpt == 2
+        vk = getobjectivevalue(sp);
+        Ghat = Dict();
+        for i in pData.II
+            Ghat[i] = getvalue(sp[:G][i]);
+        end
+        return vk,Ghat;
+    end
+end
