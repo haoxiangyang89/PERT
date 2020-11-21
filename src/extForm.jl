@@ -333,9 +333,9 @@ function extForm_cheat_new(pData,disData,Ω,sN,MM,prec = 1e-4,TL = Inf,noTh = 30
         end
     end
 
-    tic();
+    startT = time();
     solve(mp);
-    extTime = toc();
+    extTime = time() - startT;
 
     text = Dict();
     xext = Dict();
@@ -432,7 +432,9 @@ function extForm_cheat_after(pData,disData,Ω,prec = 1e-4,TL = Inf,noTh = 30,Log
         push!(HList,HDiff[hIter][1]);
     end
 
+    startT = time();
     solve(mp);
+    extTime = time() - startT;
 
     text = Dict();
     xext = Dict();
@@ -447,5 +449,5 @@ function extForm_cheat_after(pData,disData,Ω,prec = 1e-4,TL = Inf,noTh = 30,Log
         end
     end
     fext = getobjectivevalue(mp);
-    return text,xext,fext,gext,mp;
+    return text,xext,fext,gext,mp,extTime;
 end
