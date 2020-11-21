@@ -111,6 +111,76 @@ function readInP(pInputAdd,kInputAdd)
     return pData;
 end
 
+function readInP_after(pInputAdd,kInputAdd)
+    pRaw = readdlm(pInputAdd,',',header = false);
+    kRaw = readdlm(kInputAdd,',',header = false);
+
+    np,mp = size(pRaw);
+    nk,tempk = size(kRaw);
+    # total budget
+    B = pRaw[1,1];
+    # nominal scenario probability
+    p0 = pRaw[1,2];
+
+    # 0 as the last activity
+    II = [0];
+    Ji = Dict();
+    D = Dict();
+    D[0] = 0;
+    Ji[0] = [];
+
+    b = Dict();
+    b[0] = Dict();
+    eff = Dict();
+    eff[0] = Dict();
+
+    # read in the activity information
+    for i in 2:np
+        lineID = Int64(pRaw[i,1]);
+        push!(II,lineID);
+        D[lineID] = pRaw[i,2];
+
+        jStart = 3;
+        Ji[lineID] = [];
+        b[lineID] = Dict();
+        eff[lineID] = Dict();
+        jCounter = 0;
+        while jStart <= mp
+            jCounter += 1;
+            push!(Ji[lineID],jCounter);
+            b[lineID][jCounter] = Float64(pRaw[i,1+2*jCounter]);
+            eff[lineID][jCounter] = Float64(pRaw[i,2+2*jCounter]);
+            jStart += 2;
+        end
+    end
+
+    # read in the activity precedence information
+    K = [];
+    Pre = Dict();
+    Pre[0] = [];
+    Succ = Dict();
+    Succ[0] = [];
+    for i in II
+        if i != 0
+            push!(K,(0,i));
+            push!(Succ[0],i);
+            Pre[i] = [0];
+            Succ[i] = [];
+        end
+    end
+
+    for k in 1:nk
+        fromI = Int64(kRaw[k,1]);
+        toI = Int64(kRaw[k,2]);
+        push!(K,(fromI,toI));
+        push!(Pre[toI],fromI);
+        push!(Succ[fromI],toI);
+    end
+
+    pData = pInfo(II,Ji,D,b,eff,B,p0,K,Pre,Succ);
+    return pData;
+end
+
 # read in the scenario information from file
 function readInDis(ΩInputAdd)
     ΩRaw = readdlm(ΩInputAdd,',',header = false);
@@ -250,14 +320,19 @@ function orderdisData(disData,Ω)
     return disDataNew;
 end
 
-function genData(filePath,Ωsize,dataSize = 1,pName = "test_P.csv",kName = "test_K.csv",ϕName = "test_Phi.csv",hName = "test_H.csv", dOnly = 0, hOnly = 0, saveOpt = 0)
+function genData(filePath,Ωsize,dataSize = 1,pName = "test_P.csv",kName = "test_K.csv",ϕName = "test_Phi.csv",hName = "test_H.csv",
+                dOnly = 0, hOnly = 0, saveOpt = 0, after_bool = false)
     # under the file path, look for test_P, test_K and test_Phi
     pInputAdd = joinpath(filePath,pName);
     kInputAdd = joinpath(filePath,kName);
     ϕInputAdd = joinpath(filePath,ϕName);
     hInputAdd = joinpath(filePath,hName);
 
-    pData = readInP(pInputAdd,kInputAdd);
+    if !(after_bool)
+        pData = readInP(pInputAdd,kInputAdd);
+    else
+        pData = readInP_after(pInputAdd,kInputAdd);
+    end
     nameD,dparams = readInUnc(ϕInputAdd);
     nameH,Hparams = readH(hInputAdd);
 
