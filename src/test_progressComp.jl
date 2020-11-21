@@ -9,18 +9,18 @@ global noThreads = 30;
 # test sbb
 @everywhere include("header.jl");
 
-# pathList = ["/home/haoxiang/scratch/PERT_tests/current/11/",
-#             "/home/haoxiang/scratch/PERT_tests/current/14/",
-#             "/home/haoxiang/scratch/PERT_tests/current/19/",
-#             "/home/haoxiang/scratch/PERT_tests/current/35/",
-#             "/home/haoxiang/scratch/PERT_tests/current/55/",
-#             "/home/haoxiang/scratch/PERT_tests/current/75/"];
-pathList = ["/scratch/haoxiang/current/11/",
-               "/scratch/haoxiang/current/14/",
-               "/scratch/haoxiang/current/19/",
-               "/scratch/haoxiang/current/35/",
-               "/scratch/haoxiang/current/55/",
-               "/scratch/haoxiang/current/75/"];
+pathList = ["/home/haoxiang/scratch/PERT_tests/current/11/",
+            "/home/haoxiang/scratch/PERT_tests/current/14/",
+            "/home/haoxiang/scratch/PERT_tests/current/19/",
+            "/home/haoxiang/scratch/PERT_tests/current/35/",
+            "/home/haoxiang/scratch/PERT_tests/current/55/",
+            "/home/haoxiang/scratch/PERT_tests/current/75/"];
+# pathList = ["/scratch/haoxiang/current/11/",
+#                "/scratch/haoxiang/current/14/",
+#                "/scratch/haoxiang/current/19/",
+#                "/scratch/haoxiang/current/35/",
+#                "/scratch/haoxiang/current/55/",
+#                "/scratch/haoxiang/current/75/"];
 
 altOpt = 1
 Ωsize = [10,20,50,100,200,500,1000,2000];
