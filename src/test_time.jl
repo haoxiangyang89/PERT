@@ -1,8 +1,8 @@
 using Distributed;
 addprocs(30);
 global noThreads = 30;
-@everywhere using JuMP,Gurobi,CPLEX,Ipopt;
-@everywhere using Distributions,HDF5,JLD;
+@everywhere using JuMP,Gurobi,Ipopt,MathProgBase;
+@everywhere using Distributions,HDF5,JLD,DelimitedFiles,Statistics,SharedArrays;
 @everywhere const GUROBI_ENV = Gurobi.Env()
 
 # test sbb
