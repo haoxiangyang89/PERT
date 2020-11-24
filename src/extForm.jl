@@ -403,7 +403,7 @@ function extForm_cheat_after(pData,disData,Ω,prec = 1e-4,TL = Inf,noTh = 30,Log
     @constraint(mp, Slinear3[i in pData.II, j in pData.Ji[i], ω in Ω], s[i,j,ω] >= x[i,j,ω] - 1 + G[i,ω]);
 
     @constraint(mp, tNConstr[i in pData.II; i != 0], tN >= t0[i]);
-    @constraint(mp, tNConstr[i in pData.II, ω in Ω; i != 0], tNω[ω] >= t[i,ω]);
+    @constraint(mp, tNConstrOmega[i in pData.II, ω in Ω; i != 0], tNω[ω] >= t[i,ω]);
 
     @objective(mp,Min,pData.p0*tN + sum(disData[ω].prDis*tNω[ω] for ω in Ω));
 
