@@ -70,6 +70,7 @@ function subIntC_after(pData,dDω,xhat,that,M = 999999,returnOpt = 0)
     @variable(sp, 0 <= s[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
     @variable(sp, G[i in pData.II], Bin);
+    @variable(sp, tN >= 0);
 
     # add the basic sub problem constraints
     @constraint(sp, FCons[i in pData.II],dDω.H - (1 - G[i])*M <= that[i]);
@@ -90,8 +91,9 @@ function subIntC_after(pData,dDω,xhat,that,M = 999999,returnOpt = 0)
 
     @constraint(sp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[2]] + dDω.d[k[2]]*G[k[2]]
         - sum(pData.D[k[2]]*pData.eff[k[2]][j]*x[k[2],j] + dDω.d[k[2]]*pData.eff[k[2]][j]*s[k[2],j] for j in pData.Ji[k[2]]));
+    @constraint(sp, tNConstr[i in pData.II], tN >= t[i]);
 
-    @objective(sp, Min, t[0]);
+    @objective(sp, Min, tN);
     if returnOpt == 0
         solve(sp);
         return getobjectivevalue(sp);
@@ -200,7 +202,7 @@ end
 
 function ubCalP_after(pData,disData,Ω,xhat,that,bigM,returnOpt = 0,wp = CachingPool(workers()))
     # parallel version of calculating the upper bound
-    ubCost = that[0]*pData.p0;
+    ubCost = maximum(values(that))*pData.p0;
     cωList = pmap(ω -> subIntC_after(pData,disData[ω],xhat,that,bigM), wp, Ω);
     ubCost += sum(cωList[i]*disData[Ω[i]].prDis for i in 1:length(Ω));
     if returnOpt == 0
