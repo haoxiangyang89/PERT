@@ -54,11 +54,13 @@ for fileInd in 1:4
              distanceDict[i,j] = detCal(pData,i,j);
          end
       end
-      text_a,xext_a,fext_a,gext_a,mext_a,timeext_a = extForm_cheat_after(pData,disData,Ω,ϵ,999999);
-      ubext_a = mext_a.objVal;
-      lbext_a = mext_a.objBound;
-      gapext_a = (ubext_a - lbext_a)/ubext_a;
-      dDict[fileInd][Ωsize[Ωl]] = [text_a,xext_a,lbext_a,ubext_a,gapext_a,timeext_a];
+      # text_a,xext_a,fext_a,gext_a,mext_a,timeext_a = extForm_cheat_after(pData,disData,Ω,ϵ,999999);
+      # ubext_a = mext_a.objVal;
+      # lbext_a = mext_a.objBound;
+      # gapext_a = (ubext_a - lbext_a)/ubext_a;
+      tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp = partSolve_BB_para_after(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,21600);
+      gapdecomp = (ubFull - lbFull)/ubFull;
+      dDict[fileInd][Ωsize[Ωl]] = [tFull,xFull,ubFull,lbFull,gapdecomp,timedecomp];
       save("test_Ext_after.jld","dDict",dDict);
    end
 end
