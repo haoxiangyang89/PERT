@@ -23,9 +23,11 @@ pathList = ["/home/haoxiang/scratch/PERT_tests/current/11/",
 #                "/scratch/haoxiang/current/55/",
 #                "/scratch/haoxiang/current/75/"];
 
-Ωsize = [10,20,50,100,200,500,1000,2000];
+Ωsize = [100,200,500,1000];
 dDict = Dict();
 ϵ = 1e-2;
+sNList = [10,20,25,25];
+MMList = [10,10,20,40];
 
 for fileInd in 1:4
    filePath = pathList[fileInd];

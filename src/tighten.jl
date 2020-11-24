@@ -550,6 +550,68 @@ function longestPath(pData,pInfo = Dict(),outLink = false)
     end
 end
 
+function longestPath_after(pData,pInfo = Dict(),outLink = false)
+    lDict = Dict();
+    finishedList = [];
+    activeList = [];
+    linkDict = Dict();
+    for i in pData.II
+        if pData.Pre[i] == []
+            lDict[i] = 0;
+        else
+            lDict[i] = -Inf;
+        end
+        linkDict[i] = -1;
+    end
+    if pInfo == Dict()
+        pd = pData.D;
+    else
+        pd = pInfo;
+    end
+    # Dijkstra with negative edge weight
+    while length(finishedList) < length(pData.II)
+        for i in pData.II
+            if !((i in activeList)|(i in finishedList))
+                enterBool = true;
+                for j in pData.Pre[i]
+                    if !(j in finishedList)
+                        enterBool = false;
+                    end
+                end
+                if enterBool
+                    push!(activeList,i);
+                end
+            end
+        end
+        # find the largest activity in activeList
+        maxVal = -Inf;
+        maxInd = -1;
+        for iInd in activeList
+            if maxVal < lDict[iInd]
+                maxVal = lDict[iInd];
+                maxInd = iInd;
+            end
+        end
+        # update the activities connected to maxInd
+        for j in pData.Succ[maxInd]
+            if lDict[j] < lDict[maxInd] + pd[maxInd]
+                lDict[j] = lDict[maxInd] + pd[maxInd];
+                linkDict[j] = maxInd;
+            end
+        end
+        push!(finishedList,maxInd);
+        deleteat!(activeList,findfirst(x -> x==maxInd, activeList));
+    end
+    for i in pData.II
+        lDict[i] += pd[i];
+    end
+    if outLink
+        return lDict,linkDict;
+    else
+        return lDict;
+    end
+end
+
 function obtainDet(pData,disData,Ω,mpTemp,ub,divSet,divDet)
     # predetermine some y's data
     @constraint(mpTemp,pData.p0*mpTemp[:t][0] + sum(disData[ω].prDis*mpTemp[:θ][ω] for ω in Ω) <= ub);
@@ -577,6 +639,22 @@ function detCal(pData,ii,jj)
     end);
     @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
+    @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+    @objective(mp, Min, t[jj] - t[ii]);
+    solve(mp);
+    disIJ = getobjectivevalue(mp);
+
+    return disIJ;
+end
+
+function detCal_after(pData,ii,jj)
+    mp = Model(solver = GurobiSolver(GUROBI_ENV,OutputFlag = 0));
+    @variables(mp, begin
+      0 <= x[i in pData.II,j in pData.Ji[i]] <= 1
+      t[i in pData.II] >= 0
+    end);
+    @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[2]]*(1-sum(pData.eff[k[2]][j]*x[k[2],j] for j in pData.Ji[k[2]])));
     @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
     @objective(mp, Min, t[jj] - t[ii]);
     solve(mp);

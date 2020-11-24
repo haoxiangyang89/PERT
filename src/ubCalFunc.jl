@@ -61,6 +61,45 @@ function subIntC(pData,dDω,xhat,that,M = 999999,returnOpt = 0)
     end
 end
 
+function subIntC_after(pData,dDω,xhat,that,M = 999999,returnOpt = 0)
+    # solve the MIP recourse problem
+    # sp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
+    global GUROBI_ENV;
+    sp = Model(solver = GurobiSolver(GUROBI_ENV,OutputFlag = 0,Threads = 1));
+    @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
+    @variable(sp, 0 <= s[i in pData.II,j in pData.Ji[i]] <= 1);
+    @variable(sp, t[i in pData.II] >= 0);
+    @variable(sp, G[i in pData.II], Bin);
+
+    # add the basic sub problem constraints
+    @constraint(sp, FCons[i in pData.II],dDω.H - (1 - G[i])*M <= that[i]);
+    @constraint(sp, GCons[i in pData.II],dDω.H + G[i]*M >= that[i]);
+
+    @constraint(sp, tGcons1[i in pData.II], t[i] <= that[i] + M*G[i]);
+    @constraint(sp, tGcons2[i in pData.II], t[i] >= that[i] - M*G[i]);
+    @constraint(sp, boundT[i in pData.II], t[i] >= dDω.H*G[i]);
+    @constraint(sp, xGcons1[i in pData.II,j in pData.Ji[i]], x[i,j] <= xhat[i,j] + G[i]);
+    @constraint(sp, xGcons2[i in pData.II,j in pData.Ji[i]], x[i,j] >= xhat[i,j] - G[i]);
+
+    @constraint(sp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
+    @constraint(sp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
+    # linearize the bilinear term of x[i,j]*G[i]
+    @constraint(sp, xGlin1[i in pData.II, j in pData.Ji[i]], s[i,j] <= G[i]);
+    @constraint(sp, xGlin2[i in pData.II, j in pData.Ji[i]], s[i,j] <= x[i,j]);
+    @constraint(sp, xGlin3[i in pData.II, j in pData.Ji[i]], s[i,j] >= x[i,j] - 1 + G[i]);
+
+    @constraint(sp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[2]] + dDω.d[k[2]]*G[k[2]]
+        - sum(pData.D[k[2]]*pData.eff[k[2]][j]*x[k[2],j] + dDω.d[k[2]]*pData.eff[k[2]][j]*s[k[2],j] for j in pData.Ji[k[2]]));
+
+    @objective(sp, Min, t[0]);
+    if returnOpt == 0
+        solve(sp);
+        return getobjectivevalue(sp);
+    else
+        return sp;
+    end
+end
+
 function subIntG(pData,dDω,xhat,that,Ghatω)
     # solve the MIP recourse problem
     M = sum(max(pData.D[i],pData.D[i]+dDω.d[i]) for i in pData.II if i != 0);
@@ -151,6 +190,18 @@ function ubCalP(pData,disData,Ω,xhat,that,bigM,returnOpt = 0,wp = CachingPool(w
     # parallel version of calculating the upper bound
     ubCost = that[0]*pData.p0;
     cωList = pmap(ω -> subIntC(pData,disData[ω],xhat,that,bigM), wp, Ω);
+    ubCost += sum(cωList[i]*disData[Ω[i]].prDis for i in 1:length(Ω));
+    if returnOpt == 0
+        return ubCost;
+    else
+        return ubCost,cωList;
+    end
+end
+
+function ubCalP_after(pData,disData,Ω,xhat,that,bigM,returnOpt = 0,wp = CachingPool(workers()))
+    # parallel version of calculating the upper bound
+    ubCost = that[0]*pData.p0;
+    cωList = pmap(ω -> subIntC_after(pData,disData[ω],xhat,that,bigM), wp, Ω);
     ubCost += sum(cωList[i]*disData[Ω[i]].prDis for i in 1:length(Ω));
     if returnOpt == 0
         return ubCost;

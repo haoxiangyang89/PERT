@@ -346,6 +346,84 @@ function iniPart(pData,disData,Ω,sN,MM,returnOpt = 0,noThreads = 30)
     end
 end
 
+function iniPart_after(pData,disData,Ω,sN,MM,returnOpt = 0,noThreads = 30)
+    Tmax = disData[length(Ω)].H + maximum(values(longestPath_after(pData)));
+    H = Dict();
+    H[0] = 0;
+    H[length(Ω)+1] = Tmax;
+    for ω in Ω
+        H[ω] = disData[ω].H;
+    end
+
+    # sample sN scenarios and solve the small extensive formulation
+    tList = Dict();
+    for i in pData.II
+        tList[i] = [];
+    end
+    ubList = [];
+    ubMin = Inf;
+    tBest = Dict();
+    xBest = Dict();
+    θBest = Dict();
+    textList = [];
+    xextList = [];
+    m = 1;
+    while m <= MM
+        try
+            #randList = rand(Ω,sN);
+            disData1 = Dict();
+            Ω1 = 1:sN;
+            randList = [(ω - 1)*MM + m for ω in Ω1];
+            for i in Ω1
+                disData1[i] = deepcopy(disData[randList[i]]);
+                disData1[i].prDis = (1 - pData.p0)/length(Ω1);
+            end
+            text,xext,fext,gext,mext = extForm_cheat_after(pData,disData1,Ω1,1e-4,999999,noThreads);
+            for i in pData.II
+                if abs(text[i]) <= 1e-5
+                    text[i] = 0.0;
+                end
+            end
+            push!(textList,text);
+            push!(xextList,xext);
+            ubext,cωList = ubCalP_after(pData,disData,Ω,xext,text,999999,1);
+            push!(ubList,ubext);
+            # record the best solution
+            if ubext < ubMin
+                ubMin = ubext;
+                for i in pData.II
+                    tBest[i] = text[i];
+                    for j in pData.Ji[i]
+                        xBest[i,j] = xext[i,j];
+                    end
+                end
+                for ω in Ω
+                    θBest[ω] = cωList[ω];
+                end
+            end
+            for i in pData.II
+                push!(tList[i],text[i]);
+            end
+            m += 1;
+        catch
+            sleep(30);
+        end
+    end
+
+    # return the min-max decomposition
+    tHList = [];
+    for i in pData.II
+        tHstart = maximum([ω for ω in keys(H) if H[ω] <= minimum(tList[i])]);
+        tHend = minimum([ω for ω in keys(H) if H[ω] >= maximum(tList[i])]);
+        push!(tHList,[i,tHstart,tHend]);
+    end
+    if returnOpt == 0
+        return ubList,tHList,ubMin,tBest,xBest,θBest;
+    else
+        return ubList,tHList,ubMin,tBest,xBest,θBest,textList,xextList;
+    end
+end
+
 function splitAny(PartSet,PartDet,Ω,breakPoints)
     # breakPoints is a dictionary with keys from pData.II
     newPartSet = deepcopy(PartSet);

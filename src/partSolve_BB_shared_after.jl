@@ -1,11 +1,11 @@
 # generate regular Benders cuts
 
-function subPara1_rev(pData,disData,Ω,tbest,xbest,ybest,divSet,H,lDict,wp = CachingPool(workers()))
-    θList = pmap(ω -> sub_divT_rev(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict,1),wp,Ω);
+function subPara1_after(pData,disData,Ω,tbest,xbest,ybest,divSet,H,lDict,wp = CachingPool(workers()))
+    θList = pmap(ω -> sub_divT_after(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict,1),wp,Ω);
     return θList;
 end
 
-function solveMP_para_Share_rev(data)
+function solveMP_para_Share_after(data)
     # input: [cutData,divData,treeList[selectNode][4],ubCost,noTh,wpDict[p],nSplit,treeList[selectNode][5]]
     divSet,divDet = data[3];
     divData = data[2];
@@ -70,7 +70,7 @@ function solveMP_para_Share_rev(data)
             push!(ubCostList,ubTemp);
 
             # here is the issue, pack it in a function prevent separating it
-            dataList = subPara1_rev(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,wp);
+            dataList = subPara1_after(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,wp);
             cutScen = [];
             errorInd = false;
             for ω in Ω
@@ -238,7 +238,7 @@ function solveMP_para_Share_rev(data)
                 yCurrent[i,par] = getvalue(mp[:y][i,par]);
             end
         end
-        subInfo = pmap(ω -> sub_divT_rev(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),wp,Ω);
+        subInfo = pmap(ω -> sub_divT_after(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),wp,Ω);
         GCurrent = [subInfo[ω][2] for ω in Ω];
         θCurrent = [subInfo[ω][1] for ω in Ω];
         ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
@@ -303,7 +303,7 @@ function solveMP_para_Share_rev(data)
                     yCurrent[i,par] = getvalue(mp[:y][i,par]);
                 end
             end
-            subInfo = pmap(ω -> sub_divT_rev(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),wp,Ω);
+            subInfo = pmap(ω -> sub_divT_after(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),wp,Ω);
             GCurrent = [subInfo[ω][2] for ω in Ω];
             θCurrent = [subInfo[ω][1] for ω in Ω];
             ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
@@ -400,7 +400,7 @@ function solveMP_para_Share_rev(data)
 end
 
 
-function runPara_Share_rev(treeList,cutList,ubCost,tbest,xbest,batchNo,noTh,noPa,ϵ = 1e-2,nSplit = 5,cutSelOpt = true)
+function runPara_Share_after(treeList,cutList,ubCost,tbest,xbest,batchNo,noTh,noPa,ϵ = 1e-2,nSplit = 5,cutSelOpt = true)
     # separate the workers to main processors and workers
     npList = workers()[1:batchNo];
     global noMo = div(noThreads,batchNo);
@@ -441,7 +441,7 @@ function runPara_Share_rev(treeList,cutList,ubCost,tbest,xbest,batchNo,noTh,noPa
                             cutData = cutList[treeList[selectNode][2]];
                             divData = [treeList[id][4] for id in treeList[selectNode][2]];
                             tempTimer = time();
-                            mpSolveInfo = remotecall_fetch(solveMP_para_Share_rev,p,[cutData,divData,treeList[selectNode][4],ubCost,
+                            mpSolveInfo = remotecall_fetch(solveMP_para_Share_after,p,[cutData,divData,treeList[selectNode][4],ubCost,
                                 noTh,wpDict[p],nSplit,treeList[selectNode][5],cutSelOpt]);
                             timeDict[selectNode] = time() - tempTimer;
                             # update the cutList with the added cuts and two new nodes
@@ -512,8 +512,8 @@ function runPara_Share_rev(treeList,cutList,ubCost,tbest,xbest,batchNo,noTh,noPa
     return tbest,xbest,ubCost,minLB,timeDict,treeList;
 end
 
-function partSolve_BB_para_rev(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,noPa,ϵ = 1e-2,nSplit = 5,roundLimit = 1000,ubGen = true,cutSelOpt = true)
-    Tmax = disData[length(Ω)].H + longestPath(pData)[0];
+function partSolve_BB_para_after(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,noPa,ϵ = 1e-2,nSplit = 5,roundLimit = 1000,ubGen = true,cutSelOpt = true)
+    Tmax = disData[length(Ω)].H + maximum(values(longestPath_after(pData)));
     pdData = deepcopy(pData);
     for i in pData.II
         if i != 0
@@ -522,13 +522,13 @@ function partSolve_BB_para_rev(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,noP
             pdData.D[i] = pData.D[i];
         end
     end
-    lDict = longestPath(pdData);
+    lDict = longestPath_after(pdData);
     lDictShare = SharedArray{Float64,1}((length(pData.II)));
     for i in 1:length(pData.II)
         lDict[pData.II[i]] += disData[length(Ω)].H;
         lDictShare[i] = lDict[pData.II[i]];
     end
-    Tmax1 = lDict[0];
+    Tmax1 = maximum(values(lDict));
 
     allSucc = findSuccAll(pData);
     # the first two indices are float, needs to be convert to integer when being used
@@ -536,10 +536,10 @@ function partSolve_BB_para_rev(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,noP
     iNo = 0;
     for i in pData.II
         for j in allSucc[i]
-            iNo += 1;
+            global iNo += 1;
             distanceShare[iNo,1] = i;
             distanceShare[iNo,2] = j;
-            distanceShare[iNo,3] = detCal(pData,i,j);
+            distanceShare[iNo,3] = detCal_after(pData,i,j);
         end
     end
 
@@ -594,7 +594,7 @@ function partSolve_BB_para_rev(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,noP
     lbCostList = [];
     global ubCost = 9999999.0;
     if ubGen
-        ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noThreads);
+        ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart_after(pData,disData,Ω,sN,MM,1,noThreads);
         global ubCost = ubInc;
     else
         tbest = Dict();
@@ -646,7 +646,7 @@ function partSolve_BB_para_rev(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,noP
     global lbOverAll = 0;
     # transfer the data back to everywhere
     decompStart = time();
-    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share_rev(treeList,cutList,ubCost,tbest,xbest,batchNo,noTh,noPa,ϵ,nSplit,cutSelOpt);
+    tbest,xbest,ubCost,lbOverAll,timeIter,treeList = runPara_Share_after(treeList,cutList,ubCost,tbest,xbest,batchNo,noTh,noPa,ϵ,nSplit,cutSelOpt);
     decompTime = time() - decompStart;
 
     # need a cut selection process within the callback

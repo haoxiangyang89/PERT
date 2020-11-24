@@ -30,7 +30,7 @@ MMList = [1,0,0,0,10,20,40,50];
 fileInd = 1;
 filePath = pathList[fileInd];
 # compile the functions
-Ωl = 1;
+Ωl = 5;
 global Ω = 1:Ωsize[Ωl];
 randNo = 1;
 extBool = true;
@@ -53,14 +53,15 @@ global sN = sNList[Ωl];
 global MM = MMList[Ωl];
 
 # prerun to compile the codes
+tFull1w,xFull1w,ubFull1w,lbFull1w,timeIter1w,timedecomp1w = partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,3,5,1e-2,true);
 tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp,recordList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800);
 text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,ϵ,999999);
 
 #######################################################################################################
 # run the full-scale experiments
-fileInd = 2;
+fileInd = 3;
 filePath = pathList[fileInd];
-Ωl = 7;
+Ωl = 6;
 global Ω = 1:Ωsize[Ωl];
 
 pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,1);
@@ -77,6 +78,13 @@ end
 
 global sN = sNList[Ωl];
 global MM = MMList[Ωl];
+dDict = Dict();
+tFull1w,xFull1w,ubFull1w,lbFull1w,timeIter1w,timedecomp1w = partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,3,5,1e-2,true);
+dDict["A1"] = [tFull1w,xFull1w,ubFull1w,lbFull1w,timeIter1w,timedecomp1w];
+save("test_progressComp.jld","dDict",dDict);
+
 tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp,recordList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,21600);
+dDict["A2"] = [tFull1w,xFull1w,ubFull1w,lbFull1w,timeIter1w,timedecomp1w];
+save("test_progressComp.jld","dDict",dDict);
+
 text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,ϵ,999999,30,"progress_Gurobi.log");
-save("test_progressComp.jld","data",[tFull,xFull,ubFull,lbFull,timedecomp,recordList]);
