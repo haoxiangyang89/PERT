@@ -155,6 +155,7 @@ function solveMP_para_Share_after(data)
       t[i in pData.II] >= 0
       y[i in pData.II, par in 1:length(divSet[i])], Bin
     end);
+    @variable(mp, tN >= 0);
     @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
     @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
     @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
@@ -162,8 +163,9 @@ function solveMP_para_Share_after(data)
     @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSet[i])));
     @constraint(mp, yConstr[i in pData.II], sum(y[i,par] for par in 1:length(divSet[i])) == 1);
     @constraint(mp, yLimit[i in pData.II, par in 1:length(divSet[i]); divDet[i][par] != 0], y[i,par] == 0);
+    @constraint(mp, tNConstr[i in pData.II], tN >= t[i]);
 
-    @objective(mp, Min, pData.p0*t[0] + sum(disData[ω].prDis*θ[ω] for ω in Ω));
+    @objective(mp, Min, pData.p0*tN + sum(disData[ω].prDis*θ[ω] for ω in Ω));
 
     tCurrent = Dict();
     xCurrent = Dict();
@@ -602,7 +604,7 @@ function partSolve_BB_para_after(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,n
     end
 
 
-    brInfo = precludeRelNew(pData,H,ubCost);
+    brInfo = precludeRelNew_after(pData,H,ubCost);
 
     # initialize cutSet and divSet
     HΩ = 1:length(H) - 2;

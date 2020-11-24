@@ -1628,6 +1628,7 @@ function sub_divT_after(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 
     sp = Model(solver = GurobiSolver(GUROBI_ENV,IntFeasTol = 1e-8,OutputFlag = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
     @variable(sp, t[i in pData.II] >= 0);
+    @variable(sp, tN >= 0);
     # relax the logic binary variables
     @variable(sp, 0 <= G[i in pData.II] <= 1);
     @variable(sp, 0 <= Gy[i in pData.II,par in 1:length(divSet[i])] <= 1);
@@ -1662,8 +1663,9 @@ function sub_divT_after(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 
     @constraint(sp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
     @constraint(sp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[2]] + dDω.d[k[2]]*G[k[2]]
         - sum(pData.D[k[2]]*pData.eff[k[2]][j]*x[k[2],j] + dDω.d[k[2]]*pData.eff[k[2]][j]*s[k[2],j] for j in pData.Ji[k[2]]));
+    @constraint(sp, tNConstr[i in pData.II], tN >= t[i]);
 
-    @objective(sp, Min, t[0]);
+    @objective(sp, Min, tN);
 
     # obtain the dual variables for cuts
     spStatus = solve(sp);
