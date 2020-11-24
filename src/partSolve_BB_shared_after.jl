@@ -22,7 +22,7 @@ function solveMP_para_Share_after(data)
     xbest = Dict();
     cutSelOpt = data[9];
 
-    Tmax1 =lDict[0];
+    Tmax1 =maximum(values(lDict));
     GList = [];
     cutSetNew = [];
     tError = [];
@@ -57,7 +57,7 @@ function solveMP_para_Share_after(data)
             # generate cuts
             θInt = Dict();
             ubCost = minimum(ubCostList);
-            ubTemp,θInt = ubCalP(pData,disData,Ω,xhat,that,Tmax1,1,wp);
+            ubTemp,θInt = ubCalP_after(pData,disData,Ω,xhat,that,Tmax1,1,wp);
 
             if ubCost > ubTemp
                 for i in pData.II
@@ -157,7 +157,7 @@ function solveMP_para_Share_after(data)
     end);
     @variable(mp, tN >= 0);
     @constraint(mp, budgetConstr, sum(sum(pData.b[i][j]*x[i,j] for j in pData.Ji[i]) for i in pData.II) <= pData.B);
-    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[1]]*(1-sum(pData.eff[k[1]][j]*x[k[1],j] for j in pData.Ji[k[1]])));
+    @constraint(mp, durationConstr[k in pData.K], t[k[2]] - t[k[1]] >= pData.D[k[2]]*(1-sum(pData.eff[k[2]][j]*x[k[2],j] for j in pData.Ji[k[2]])));
     @constraint(mp, xConstr[i in pData.II], sum(x[i,j] for j in pData.Ji[i]) <= 1);
     @constraint(mp, tub[i in pData.II], t[i] <= sum(H[divSet[i][par].endH]*y[i,par] for par in 1:length(divSet[i])));
     @constraint(mp, tlb[i in pData.II], t[i] >= sum(H[divSet[i][par].startH]*y[i,par] for par in 1:length(divSet[i])));
@@ -243,7 +243,7 @@ function solveMP_para_Share_after(data)
         subInfo = pmap(ω -> sub_divT_after(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,2),wp,Ω);
         GCurrent = [subInfo[ω][2] for ω in Ω];
         θCurrent = [subInfo[ω][1] for ω in Ω];
-        ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
+        ubCurrent,θIntCurrent = ubCalP_after(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
         # branch
         θDiff = [θIntCurrent[ω] - θCurrent[ω] for ω in Ω];
         θDiffPerm = sortperm(θDiff,rev = true);
@@ -538,7 +538,7 @@ function partSolve_BB_para_after(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,n
     iNo = 0;
     for i in pData.II
         for j in allSucc[i]
-            global iNo += 1;
+            iNo += 1;
             distanceShare[iNo,1] = i;
             distanceShare[iNo,2] = j;
             distanceShare[iNo,3] = detCal_after(pData,i,j);

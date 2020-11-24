@@ -36,6 +36,8 @@ for fileInd in 1:4
    for Ωl in 1:length(Ωsize)
       global Ω = 1:Ωsize[Ωl];
       randNo = 1;
+      sN = sNList[Ωl];
+      MM = MMList[Ωl];
       extBool = true;
 
       # test the after-start disruption effect
