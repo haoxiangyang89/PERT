@@ -26,4 +26,5 @@ include("partSolve_BB_shared_noMW.jl");
 include("partSolve_BB_shared_noUB.jl");
 include("partSolve_Callback_tightened_sol.jl");
 include("partSolve_BB_shared_revForm.jl");
+include("partSolve_BB_shared_after.jl");
 #include("partSolve_BB_shared_new.jl");
