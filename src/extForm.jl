@@ -244,7 +244,7 @@ function extForm_cheat_new(pData,disData,Ω,sN,MM,prec = 1e-4,TL = Inf,noTh = 30
     end
     ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noTh);
 
-    mp = Model(solver = GurobiSolver(GUROBI_ENV,IntFeasTol = 1e-9, TimeLimit = TL,MIPGap = prec,Threads = noTh,Cutoff = ubInc, ogFile = LogAdd));
+    mp = Model(solver = GurobiSolver(GUROBI_ENV,IntFeasTol = 1e-9, TimeLimit = TL,MIPGap = prec,Threads = noTh,Cutoff = ubInc, LogFile = LogAdd));
     # mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7,CPX_PARAM_TILIM = TL));
     @variable(mp,t0[i in pData.II] >= 0);
     @variable(mp,0 <= x0[i in pData.II, j in pData.Ji[i]] <= 1);
