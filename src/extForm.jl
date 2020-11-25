@@ -237,14 +237,14 @@ function extForm_cheat_reg(pData,disData,Ω,r = 1e-6,prec = 1e-4,TL = Inf,noTh =
 end
 
 
-function extForm_cheat_new(pData,disData,Ω,sN,MM,prec = 1e-4,TL = Inf,noTh = 30)
+function extForm_cheat_new(pData,disData,Ω,sN,MM,prec = 1e-4,TL = Inf,noTh = 30,LogAdd = "")
     M = Dict();
     for ω in Ω
         M[ω] = sum(max(pData.D[i],pData.D[i]+disData[ω].d[i]) for i in pData.II if i != 0);
     end
     ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noTh);
 
-    mp = Model(solver = GurobiSolver(GUROBI_ENV,IntFeasTol = 1e-9, TimeLimit = TL,MIPGap = prec,Threads = noTh));
+    mp = Model(solver = GurobiSolver(GUROBI_ENV,IntFeasTol = 1e-9, TimeLimit = TL,MIPGap = prec,Threads = noTh,Cutoff = ubInc, ogFile = LogAdd));
     # mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7,CPX_PARAM_TILIM = TL));
     @variable(mp,t0[i in pData.II] >= 0);
     @variable(mp,0 <= x0[i in pData.II, j in pData.Ji[i]] <= 1);

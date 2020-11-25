@@ -642,7 +642,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                         end
                         treeList[selectNode][3] = 1;
                         timeUpdate = time() - timeStart;
-                        push!(recordList, [ubCost, lbOverAll, timeUpdate]);
+                        push!(recordList, [selectNode, ubCost, lbOverAll, timeUpdate]);
                     else
                         println("**************Worker $(p) waiting for open nodes.**************");
                         remotecall_fetch(sleep, p, 10);

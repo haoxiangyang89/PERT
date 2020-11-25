@@ -53,9 +53,9 @@ global sN = sNList[Ωl];
 global MM = MMList[Ωl];
 
 # prerun to compile the codes
-tFull1w,xFull1w,ubFull1w,lbFull1w,timeIter1w,timedecomp1w = partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,3,5,1e-2,true);
+# tFull1w,xFull1w,ubFull1w,lbFull1w,timeIter1w,timedecomp1w = partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,3,5,1e-2,true);
 tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp,recordList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800);
-text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,ϵ,999999);
+text,xext,fext,gext,mext = extForm_cheat_new(pData,disData,Ω,sN,MM,1e-2,99999,noThreads);
 
 #######################################################################################################
 # run the full-scale experiments
@@ -79,12 +79,12 @@ end
 global sN = sNList[Ωl];
 global MM = MMList[Ωl];
 dDict = Dict();
-tFull1w,xFull1w,ubFull1w,lbFull1w,timeIter1w,timedecomp1w = partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,3,5,1e-2,true);
-dDict["A1"] = [tFull1w,xFull1w,ubFull1w,lbFull1w,timeIter1w,timedecomp1w];
-save("test_progressComp.jld","dDict",dDict);
+# tFull1w,xFull1w,ubFull1w,lbFull1w,timeIter1w,timedecomp1w = partSolve_tightened_share(pData,disData,Ω,sN,MM,noThreads,3,5,1e-2,true);
+# dDict["A1"] = [tFull1w,xFull1w,ubFull1w,lbFull1w,timeIter1w,timedecomp1w];
+# save("test_progressComp.jld","dDict",dDict);
 
 tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp,recordList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,21600);
-dDict["A2"] = [tFull1w,xFull1w,ubFull1w,lbFull1w,timeIter1w,timedecomp1w];
+dDict["A2"] = [tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp,recordList];
 save("test_progressComp.jld","dDict",dDict);
 
-text,xext,fext,gext,mext = extForm_cheat(pData,disData,Ω,ϵ,999999,30,"progress_Gurobi.log");
+text,xext,fext,gext,mext,timeext = extForm_cheat_new(pData,disData,Ω,sN,MM,1e-2,99999,noThreads,"progress_Gurobi.log");

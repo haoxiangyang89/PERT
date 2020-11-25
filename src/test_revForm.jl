@@ -81,7 +81,7 @@ for fileInd in 1:length(pathList)
         # noMW
         tFull_noMW,xFull_noMW,ubFull_noMW,lbFull_noMW,timeIter_noMW,treeList_noMW,timedecomp_noMW = partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,21600,true);
         # revForm
-        tFull_n,xFull_n,ubFull_n,lbFull_n,timeIter_n,treeList_n,timedecomp_n = partSolve_BB_para_rev(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2);
+        tFull_n,xFull_n,ubFull_n,lbFull_n,timeIter_n,treeList_n,timedecomp_n = partSolve_BB_para_rev(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,21600,true);
 
         dDict[fileInd][Ωsize[Ωl]] = [[tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp,recordList],
                                     [tFull_noMW,xFull_noMW,ubFull_noMW,lbFull_noMW,timeIter_noMW,treeList_noMW,timedecomp_noMW],
