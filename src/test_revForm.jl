@@ -51,13 +51,13 @@ global MM = 5;
 
 tFull2w,xFull2w,ubFull2w,lbFull2w,timeIter2w,treeList2w,timedecomp2w = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,true);
 tFull_noMW,xFull_noMW,ubFull_noMW,lbFull_noMW,timeIter_noMW,treeList_noMW,timedecomp_noMW = partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,21600,true);
-tFull_n,xFull_n,ubFull_n,lbFull_n,timeIter_n,treeList_n,timedecomp_n = partSolve_BB_para_rev(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2);
+tFull_n,xFull_n,ubFull_n,lbFull_n,timeIter_n,treeList_n,timedecomp_n = partSolve_BB_para_rev(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,21600,true);
 
 dDict = Dict();
 for fileInd in 1:length(pathList)
     filePath = pathList[fileInd];
     dDict[fileInd] = Dict();
-    for Ωl in 1:length(Ωsize)
+    for Ωl in 3:3
         global Ω = 1:Ωsize[Ωl];
         global ϵ = 1e-2;
         global pData;
@@ -86,6 +86,6 @@ for fileInd in 1:length(pathList)
         dDict[fileInd][Ωsize[Ωl]] = [[tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp,recordList],
                                     [tFull_noMW,xFull_noMW,ubFull_noMW,lbFull_noMW,timeIter_noMW,treeList_noMW,timedecomp_noMW],
                                     [tFull_n,xFull_n,ubFull_n,lbFull_n,timeIter_n,treeList_n,timedecomp_n]];
-        save("test_Ext_revForm_1.jld","dDict",dDict);
+        save("test_Ext_revForm.jld","dDict",dDict);
     end
 end
