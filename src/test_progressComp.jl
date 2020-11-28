@@ -27,7 +27,7 @@ altOpt = 1
 sNList = [10,0,0,0,20,25,25,40];
 MMList = [1,0,0,0,10,20,40,50];
 
-fileInd = 1;
+fileInd = 3;
 filePath = pathList[fileInd];
 # compile the functions
 Ωl = 5;

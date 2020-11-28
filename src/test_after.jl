@@ -64,3 +64,39 @@ for fileInd in 1:4
       save("test_Ext_after.jld","dDict",dDict);
    end
 end
+
+#%%
+# test the original model's solution in the new setting, how large is the optimality gap
+dataTime = load("test_Ext_time.jld");
+dataAfter = load("test_Ext_after.jld");
+
+for fileInd in 1:4
+   filePath = pathList[fileInd];
+   # compile the functions
+   Ωl = 3;
+   global Ω = 1:Ωsize[Ωl];
+   randNo = 1;
+   sN = sNList[Ωl];
+   MM = MMList[Ωl];
+   extBool = true;
+
+   # test (2)'s solution in (34)
+   pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,1,1,"test_P.csv","test_K.csv","test_Phi.csv","test_H.csv",
+                   0, 0, 0, true);
+   global pData = pData;
+   disDataRaw = load(pathList[fileInd]*"solData_$(Ωsize[Ωl]).jld");
+   disData = disDataRaw["data"][1];
+
+   that,xhat = t_convert(pData,dataTime["dDict"][fileInd][Ωsize[Ωl]][5][1],dataTime["dDict"][fileInd][Ωsize[Ωl]][5][2],1);
+   ub2 = ubCalP_after(pData,disData,Ω,xhat,that,999999);
+
+   pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,Ωsize[Ωl]);
+   global pData = pData;
+   disDataRaw = load(pathList[fileInd]*"solData_$(Ωsize[Ωl]).jld");
+   disData = disDataRaw["data"][1];
+
+   that,xhat = t_convert(pData,dataAfter["dDict"][fileInd][Ωsize[Ωl]][1],dataAfter["dDict"][fileInd][Ωsize[Ωl]][2],2);
+   ub34 = ubCalP(pData,disData,Ω,xhat,that,999999);
+
+   println("Case $(fileInd): ",ub2," ",ub34);
+end

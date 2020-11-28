@@ -237,12 +237,23 @@ function extForm_cheat_reg(pData,disData,Ω,r = 1e-6,prec = 1e-4,TL = Inf,noTh =
 end
 
 
-function extForm_cheat_new(pData,disData,Ω,sN,MM,prec = 1e-4,TL = Inf,noTh = 30,LogAdd = "")
+function extForm_cheat_new(pData,disData,Ω,sN,MM,prec = 1e-4,TL = Inf,noTh = 30,LogAdd = "",bigM = 999999)
     M = Dict();
     for ω in Ω
         M[ω] = sum(max(pData.D[i],pData.D[i]+disData[ω].d[i]) for i in pData.II if i != 0);
     end
     ubextList,tHList,ubInc,tbest,xbest,θbest,textList,xextList = iniPart(pData,disData,Ω,sN,MM,1,noTh);
+
+    # if the bigM is scenario generic, make it scenario specific
+    if length(bigM) == 1
+        bigMTemp = bigM;
+        bigM = Dict();
+        for i in pData.II
+            for ω in Ω
+                bigM[i,ω] = bigMTemp;
+            end
+        end
+    end
 
     mp = Model(solver = GurobiSolver(GUROBI_ENV,IntFeasTol = 1e-9, TimeLimit = TL,MIPGap = prec,Threads = noTh,Cutoff = ubInc, LogFile = LogAdd));
     # mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7,CPX_PARAM_TILIM = TL));
@@ -255,8 +266,8 @@ function extForm_cheat_new(pData,disData,Ω,sN,MM,prec = 1e-4,TL = Inf,noTh = 30
 
     @constraint(mp, FConstr[i in pData.II, ω in Ω], disData[ω].H - (1 - G[i,ω])*M[ω] <= t0[i]);
     @constraint(mp, GConstr[i in pData.II, ω in Ω], disData[ω].H + G[i,ω]*M[ω] >= t0[i]);
-    @constraint(mp, tConstr1[i in pData.II, ω in Ω], t[i,ω] + G[i,ω]*M[ω] >= t0[i]);
-    @constraint(mp, tConstr2[i in pData.II, ω in Ω], t[i,ω] - G[i,ω]*M[ω] <= t0[i]);
+    @constraint(mp, tConstr1[i in pData.II, ω in Ω], t[i,ω] + G[i,ω]*bigM[i,ω] >= t0[i]);
+    @constraint(mp, tConstr2[i in pData.II, ω in Ω], t[i,ω] - G[i,ω]*bigM[i,ω] <= t0[i]);
     @constraint(mp, tConstr3[i in pData.II, ω in Ω], t[i,ω] >= disData[ω].H * G[i,ω]);
     @constraint(mp, xConstr1[i in pData.II, j in pData.Ji[i], ω in Ω], x[i,j,ω] + G[i,ω] >= x0[i,j]);
     @constraint(mp, xConstr2[i in pData.II, j in pData.Ji[i], ω in Ω], x[i,j,ω] - G[i,ω] <= x0[i,j]);

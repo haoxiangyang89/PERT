@@ -157,3 +157,27 @@ for (j in 1:4){
   legend("topright",c("Upper Bound","Lower Bound"),col = c("#E41A1C","#377EB8"),pch = 20, cex = 2);
 }
 dev.off();
+
+# progress plot
+extList <- read.csv("/Users/haoxiangyang/Desktop/PERT_tests/results/extList.csv",header = TRUE);
+decompList <- read.csv("/Users/haoxiangyang/Desktop/PERT_tests/results/decompList.csv",header = TRUE);
+
+outString <- "/Users/haoxiangyang/Desktop/Git/PERT/Writeup/progress.png"
+png(file = outString, width= 10,height=6,units = 'in',res = 300);
+par(mar = c(5,5,2,2));
+plot(extList$Time, extList$UB, type = "l", ylim=range(c(250,360)), xlim = range(c(10,2500)),xlab = "Time (sec.)", ylab = "Bounds",
+     col = "#377EB8", lwd = 2, cex.main = 2, cex.lab = 2, cex.axis = 2,log = "x");
+lines(extList$Time, extList$LB, col = "#E41A1C", lwd = 2, log = "x");
+
+abline(v=decompList$Time, lty=2);
+text(decompList$Time[2]-2, 270, "1", cex = 2);
+text(decompList$Time[3]+3, 270, "2", cex = 2);
+text(decompList$Time[4]+25, 340, "3", cex = 2);
+text(decompList$Time[5]+60, 340, "4", cex = 2);
+text(decompList$Time[6]+90, 350, "5", cex = 2);
+
+points(decompList$Time, decompList$UB, col = "#377EB8", lwd = 5, pch = 20, log = "x");
+points(decompList$Time, decompList$LB, col = "#E41A1C", lwd = 5, pch = 20, log = "x");
+
+legend("bottomright",c("Upper Bound","Lower Bound"), , col = c("#377EB8","#E41A1C"),pch = 20,cex = 1.5);
+dev.off()

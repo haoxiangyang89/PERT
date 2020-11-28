@@ -212,6 +212,28 @@ function ubCalP_after(pData,disData,Ω,xhat,that,bigM,returnOpt = 0,wp = Caching
     end
 end
 
+function t_convert(pData,that,xhat,mode)
+    # convert the original solution to after solution
+    that_new = deepcopy(that);
+    xhat_new = deepcopy(xhat);
+    if mode == 1
+        that_new[0] = 0;
+        for i in pData.II
+            if i != 0
+                that_new[i] = that[i] + pData.D[i]*(1 - sum(pData.eff[i][j]*xhat_new[i,j] for j in pData.Ji[i]));
+            end
+        end
+    elseif mode == 2
+        that_new[0] = maximum(values(that_new));
+        for i in pData.II
+            if i != 0
+                that_new[i] = that[i] - pData.D[i]*(1 - sum(pData.eff[i][j]*xhat_new[i,j] for j in pData.Ji[i]));
+            end
+        end
+    end
+    return that_new, xhat_new;
+end
+
 function ubCalG(pData,disData,Ω,xhat,that,Ghat)
     # calculate the upper bound of the problem given the master solution
     ubCost = that[0]*pData.p0;

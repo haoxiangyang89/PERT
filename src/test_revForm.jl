@@ -25,17 +25,17 @@ pathList = ["/home/haoxiang/scratch/PERT_tests/current/11/",
 sNList = [10,20,25,25];
 MMList = [10,10,20,40];
 
-fileInd = 1;
+fileInd = 3;
 filePath = pathList[fileInd];
 # compile the functions
-Ωl = 1;
+Ωl = 2;
 global Ω = 1:Ωsize[Ωl];
 randNo = 1;
 extBool = true;
 
 pData,disDataSet,nameD,nameH,dparams,Hparams = genData(filePath,1);
 global pData = pData;
-disDataRaw = load(pathList[fileInd]*"solData_100.jld");
+disDataRaw = load(pathList[fileInd]*"solData_200.jld");
 disData = disDataRaw["data"][randNo];
 
 global allSucc = findSuccAll(pData);
@@ -46,8 +46,8 @@ for i in pData.II
     end
 end
 
-global sN = 20;
-global MM = 5;
+global sN = sNList[Ωl];
+global MM = MMList[Ωl];
 
 tFull2w,xFull2w,ubFull2w,lbFull2w,timeIter2w,treeList2w,timedecomp2w = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,10800,true);
 tFull_noMW,xFull_noMW,ubFull_noMW,lbFull_noMW,timeIter_noMW,treeList_noMW,timedecomp_noMW = partSolve_BB_para_noMW(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,21600,true);
