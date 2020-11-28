@@ -376,7 +376,7 @@ function solveMP_para_Share(data)
                 yCurrent[i,par] = getvalue(mp[:y][i,par]);
             end
         end
-        subInfo = pmap(ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,bigM,2),wp,Ω);
+        subInfo = pmap(ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,bigM[ω],2),wp,Ω);
         GCurrent = [subInfo[ω][2] for ω in Ω];
         θCurrent = [subInfo[ω][1] for ω in Ω];
         ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
@@ -453,7 +453,7 @@ function solveMP_para_Share(data)
                     yCurrent[i,par] = getvalue(mp[:y][i,par]);
                 end
             end
-            subInfo = pmap(ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,bigM,2),wp,Ω);
+            subInfo = pmap(ω -> sub_divT(pData,disData[ω],ω,tCurrent,xCurrent,yCurrent,divSet,H,lDict,bigM[ω],2),wp,Ω);
             GCurrent = [subInfo[ω][2] for ω in Ω];
             θCurrent = [subInfo[ω][1] for ω in Ω];
             ubCurrent,θIntCurrent = ubCalP(pData,disData,Ω,xCurrent,tCurrent,Tmax1,1,wp);
