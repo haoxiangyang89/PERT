@@ -1,12 +1,12 @@
 # B&B process with both MW and UB
 
-function subPara1(pData,disData,Ω,tbest,xbest,ybest,divSet,H,lDict,wp = CachingPool(workers()))
-    θList = pmap(ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict),wp,Ω);
+function subPara1(pData,disData,Ω,tbest,xbest,ybest,divSet,H,lDict,bigM,wp = CachingPool(workers()))
+    θList = pmap(ω -> sub_divT(pData,disData[ω],ω,tbest,xbest,ybest,divSet,H,lDict,bigM[ω]),wp,Ω);
     return θList;
 end
 
-function subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp = CachingPool(workers()))
-    dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore), wp, Ω);
+function subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,bigM,wp = CachingPool(workers()))
+    dataList = pmap(ω -> sub_divTDualT2(pData,disData[ω],ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,bigM[ω]), wp, Ω);
     return dataList;
 end
 
@@ -56,6 +56,7 @@ function solveMP_para_Share(data)
     roundLimit = data[13];
     cutSelOpt = data[14];
     BTOpt = data[15];
+    bigM = data[16];
     Ω = 1:length(disData);
 
     Tmax1 =lDict[0];
@@ -130,7 +131,7 @@ function solveMP_para_Share(data)
             # obtain the cores
             tcore,xcore,ycore = avgCore(pData,divSet,tcoreList,xcoreList,ycoreList);
             # here is the issue, pack it in a function prevent separating it
-            dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,wp);
+            dataList = subPara(pData,disData,Ω,that,xhat,yhat,divSet,H,lDict,tcore,xcore,ycore,bigM,wp);
             cutScen = [];
             errorInd = false;
             for ω in Ω
@@ -271,7 +272,7 @@ function solveMP_para_Share(data)
                 setvalue(y[i,par],yfeas[i,par]);
             end
         end
-        θfeas = subPara1(pData,disData,Ω,tfeas,xfeas,yfeas,divSet,H,lDict,wp);
+        θfeas = subPara1(pData,disData,Ω,tfeas,xfeas,yfeas,divSet,H,lDict,bigM,wp);
         for ω in Ω
             setvalue(θ[ω],θfeas[ω]);
         end
@@ -552,7 +553,7 @@ function solveMP_para_Share(data)
 end
 
 
-function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noTh,timeStart,ϵ = 1e-2,nSplit = 5,noPa = 1,cutSelOpt = true,BTOpt = true)
+function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tbest,xbest,batchNo,noTh,timeStart,ϵ = 1e-2,nSplit = 5,noPa = 1,cutSelOpt = true,BTOpt = true,bigM = 999999)
     # separate the workers to main processors and workers
     npList = workers()[1:batchNo];
     noMo = div(noThreads,batchNo);
@@ -598,7 +599,7 @@ function runPara_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ubCost,tb
                             # mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
                             #     tbest,xbest,noTh,wpDict[p],nSplit,pData,disData,lDict,H,allSucc,distanceDict]);
                             mpSolveInfo = remotecall_fetch(solveMP_para_Share,p,[cutData,divData,treeList[selectNode][4],tcoreList,xcoreList,ubcoreList,ubCost,
-                                tbest,xbest,noTh,wpDict[p],nSplit,treeList[selectNode][5],cutSelOpt,BTOpt]);
+                                tbest,xbest,noTh,wpDict[p],nSplit,treeList[selectNode][5],cutSelOpt,BTOpt,bigM]);
                             timeDict[selectNode] = time() - tempTimer;
                             # update the cutList with the added cuts and two new nodes
                             # update the cutSet
@@ -729,7 +730,7 @@ function runPara_Series_Share(treeList,cutList,tcoreList,xcoreList,ubcoreList,ub
     return tbest,xbest,ubCost,lbOverAll;
 end
 
-function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,noPa,ϵ = 1e-2,nSplit = 5,roundLimit = 10800,cutSelOpt = true, BTOpt = true)
+function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,noPa,ϵ = 1e-2,nSplit = 5,roundLimit = 10800,cutSelOpt = true, BTOpt = true, tightenedM = false)
     Tmax = disData[length(Ω)].H + longestPath(pData)[0];
     pdData = deepcopy(pData);
     for i in pData.II
@@ -869,10 +870,26 @@ function partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,batchNo,noTh,n
     push!(treeList,[lbCost,[],-1,[divSet,divDet],roundLimit]); # the empty set is the list of predecessors of the current node
     push!(cutList,[]);
 
+    # tighten the bigM of t-nonanticipativity constraint
+    bigM = Dict();
+    if tightenedM
+        Mω = getMomega(pData,disData);
+        for ω in Ω
+            bigM[ω] = Dict();
+            for i in pData.II
+                bigM[ω][i] = Mω[i,ω];
+            end
+        end
+    else
+        for ω in Ω
+            bigM[ω] = 999999;
+        end
+    end
+
     lbOverAll = -Inf;
     # transfer the data back to everywhere
     decompStart = time();
-    tbest,xbest,ubCost,lbOverAll,timeIter,treeList,recordList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,timeStart,ϵ,nSplit,noPa,cutSelOpt,BTOpt);
+    tbest,xbest,ubCost,lbOverAll,timeIter,treeList,recordList = runPara_Share(treeList,cutList,textList,xextList,ubextList,ubCost,tbest,xbest,batchNo,noTh,timeStart,ϵ,nSplit,noPa,cutSelOpt,BTOpt,bigM);
     decompTime = time() - decompStart;
     pushfirst!(recordList,[ubInc,0,decompStart - timeStart]);
 

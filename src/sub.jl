@@ -578,7 +578,7 @@ function sub_div(pData,dDω,ωCurr,that,xhat,yhat,divSet,ubInfo,lbInfo,M1 = 9999
     end
 end
 
-function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
+function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,bigM,returnOpt = 0)
     #global GUROBI_ENV;
     sp = Model(solver = GurobiSolver(GUROBI_ENV,IntFeasTol = 1e-8,OutputFlag = 0));
     @variable(sp, 0 <= x[i in pData.II,j in pData.Ji[i]] <= 1);
@@ -603,8 +603,13 @@ function sub_divT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,returnOpt = 0)
 
     # add the basic sub problem constraints
     @constraint(sp, tGbound[i in pData.II],t[i] >= dDω.H*G[i]);
-    @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*M[i] >= that[i]);
-    @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*M[i] <= that[i]);
+    if length(bigM) == 1
+        @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*M[i] >= that[i]);
+        @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*M[i] <= that[i]);
+    else
+        @constraint(sp, tFnAnt1[i in pData.II],t[i] + G[i]*bigM[i] >= that[i]);
+        @constraint(sp, tFnAnt2[i in pData.II],t[i] - G[i]*bigM[i] <= that[i]);
+    end
     @constraint(sp, xFnAnt1[i in pData.II, j in pData.Ji[i]],x[i,j] + G[i] >= xhat[i,j]);
     @constraint(sp, xFnAnt2[i in pData.II, j in pData.Ji[i]],x[i,j] - G[i] <= xhat[i,j]);
 
@@ -933,7 +938,7 @@ function sub_divTDualT(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,y
     end
 end
 
-function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,ycore,returnOpt = 0)
+function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,ycore,bigM,returnOpt = 0)
     # Magnanti-Wong with a small perturbation
     # smp = Model(solver = CplexSolver(CPX_PARAM_SCRIND = 0));
     #global GUROBI_ENV;
@@ -960,8 +965,13 @@ function sub_divTDualT2(pData,dDω,ωCurr,that,xhat,yhat,divSet,H,M,tcore,xcore,
 
     # add the basic sub problem constraints
     @constraint(smp, tGbound[i in pData.II],t[i] >= dDω.H*G[i]);
-    @constraint(smp, tFnAnt1[i in pData.II],t[i] + G[i]*M[i] >= that[i]);
-    @constraint(smp, tFnAnt2[i in pData.II],t[i] - G[i]*M[i] <= that[i]);
+    if length(bigM) == 1
+        @constraint(smp, tFnAnt1[i in pData.II],t[i] + G[i]*M[i] >= that[i]);
+        @constraint(smp, tFnAnt2[i in pData.II],t[i] - G[i]*M[i] <= that[i]);
+    else
+        @constraint(smp, tFnAnt1[i in pData.II],t[i] + G[i]*bigM[i] >= that[i]);
+        @constraint(smp, tFnAnt2[i in pData.II],t[i] - G[i]*bigM[i] <= that[i]);
+    end
     @constraint(smp, xFnAnt1[i in pData.II, j in pData.Ji[i]],x[i,j] + G[i] >= xhat[i,j]);
     @constraint(smp, xFnAnt2[i in pData.II, j in pData.Ji[i]],x[i,j] - G[i] <= xhat[i,j]);
 
