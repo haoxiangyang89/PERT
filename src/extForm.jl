@@ -250,12 +250,12 @@ function extForm_cheat_new(pData,disData,Ω,sN,MM,prec = 1e-4,TL = Inf,noTh = 30
         bigM = Dict();
         for i in pData.II
             for ω in Ω
-                bigM[i,ω] = bigMTemp;
+                bigM[i,ω] = min(bigMTemp,M[ω]);
             end
         end
     end
 
-    mp = Model(solver = GurobiSolver(GUROBI_ENV,IntFeasTol = 1e-9, TimeLimit = TL,MIPGap = prec,Threads = noTh,Cutoff = ubInc, LogFile = LogAdd));
+    mp = Model(solver = GurobiSolver(GUROBI_ENV,IntFeasTol = 1e-9, TimeLimit = TL,MIPGap = prec,Threads = noTh,Cutoff = ubInc, LogFile = LogAdd, Presolve = 0));
     # mp = Model(solver = CplexSolver(CPX_PARAM_EPRHS = 1e-7,CPX_PARAM_EPINT = 1e-7,CPX_PARAM_TILIM = TL));
     @variable(mp,t0[i in pData.II] >= 0);
     @variable(mp,0 <= x0[i in pData.II, j in pData.Ji[i]] <= 1);

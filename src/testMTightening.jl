@@ -21,11 +21,11 @@ pathList = ["/scratch/haoxiang/current/11/",
                "/scratch/haoxiang/current/55/",
                "/scratch/haoxiang/current/75/"];
 
-Ωsize = [100,200,500,1000];
+Ωsize = [50,100,200,500,1000];
 dDict = Dict();
 ϵ = 1e-2;
-sNList = [10,20,25,25];
-MMList = [10,10,20,40];
+sNList = [10,10,20,25,25];
+MMList = [5,10,10,20,40];
 
 fileInd = 1;
 filePath = pathList[fileInd];
@@ -49,11 +49,12 @@ end
 
 global sN = 20;
 global MM = 5;
+tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp,recordList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,21600);
 text,xext,fext,gext,mext = extForm_cheat_new(pData,disData,Ω,sN,MM,1e-2,99999,noThreads);
 
 #%%
 # Case 14 sample size 200
-fileInd = 2;
+fileInd = 3;
 filePath = pathList[fileInd];
 Ωl = 2;
 global Ω = 1:Ωsize[Ωl];
@@ -75,7 +76,9 @@ end
 
 global sN = sNList[Ωl];
 global MM = MMList[Ωl];
-text,xext,fext,gext,mext,timeext = extForm_cheat_new(pData,disData,Ω,sN,MM,1e-2,99999,noThreads);
+text,xext,fext,gext,mext,timeext = extForm_cheat_new(pData,disData,Ω,sN,MM,1e-3,99999,noThreads);
+tFull,xFull,ubFull,lbFull,timeIter,treeList,timedecomp,recordList = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,21600);
 
 Mω = getMomega(pData,disData);
-text_u,xext_u,fext_u,gext_u,mext_u,timeext_u = extForm_cheat_new(pData,disData,Ω,sN,MM,1e-2,99999,noThreads,"",Mω);
+text_u,xext_u,fext_u,gext_u,mext_u,timeext_u = extForm_cheat_new(pData,disData,Ω,sN,MM,1e-3,99999,noThreads,"",Mω);
+tFull_u,xFull_u,ubFull_u,lbFull_u,timeIter_u,treeList_u,timedecomp_u,recordList_u = partSolve_BB_para_share(pData,disData,Ω,sN,MM,noThreads,5,6,5,1e-2,5,21600,true,true,true);
